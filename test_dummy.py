@@ -4,7 +4,7 @@ def add(x, y):
     return z
 
 
-def if_add_is_called_with_two_numbers_sum_is_returned():
+def test_if_add_is_called_with_two_numbers_sum_is_returned():
     argument1 = 5
     argument2 = 16
     expected = 21
