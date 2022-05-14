@@ -1,8 +1,4 @@
-def add(x, y):
-    '''Sample function used for testing. Adds two numbers and returns its sum.'''
-    z = x + y
-    return z
-
+from tracing import add
 
 def test_if_add_is_called_with_two_numbers_sum_is_returned():
     argument1 = 5
