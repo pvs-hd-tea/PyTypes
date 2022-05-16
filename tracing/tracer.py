@@ -1,21 +1,20 @@
 from sys import settrace
 import inspect
-
+import pandas as pd
 import constants
-from tracing.trace_data_element import TraceDataElement
 from tracing.trace_data_category import TraceDataCategory
 
 
 class Tracer:
     def __init__(self):
-        self.trace_data = []
+        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
         self.old_values_by_variable = {}
         self.function_name = ""
         self.reset_members()
 
     def reset_members(self):
         """Resets the variables of the tracer."""
-        self.trace_data = []
+        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
         self.old_values_by_variable = {}
         self.function_name = ""
 
@@ -24,6 +23,7 @@ class Tracer:
         argument. """
         if not isinstance(function_name, str):
             raise TypeError()
+
         self.reset_members()
         settrace(self.on_trace_is_called)
         self.function_name = function_name
@@ -48,29 +48,27 @@ class Tracer:
             for item in values_by_variable.items():
                 variable_name, variable_value = item[0], item[1]
                 class_name_of_return_value = get_class_name_from(variable_value)
-                trace_data_element = TraceDataElement(file_name, function_name, line_number,
-                                                      TraceDataCategory.FUNCTION_ARGUMENT, variable_name,
-                                                      class_name_of_return_value)
-                self.trace_data.append(trace_data_element)
+                self.trace_data.loc[len(self.trace_data.index)] = [file_name, function_name, line_number,
+                                                                   TraceDataCategory.FUNCTION_ARGUMENT, variable_name,
+                                                                   class_name_of_return_value]
 
         elif event == 'return':
             class_name_of_return_value = get_class_name_from(arg)
-            trace_data_element = TraceDataElement(file_name, function_name, line_number,
-                                                  TraceDataCategory.FUNCTION_RETURN, None, class_name_of_return_value)
-            self.trace_data.append(trace_data_element)
+            self.trace_data.loc[len(self.trace_data.index)] = [file_name, function_name, line_number,
+                                                               TraceDataCategory.FUNCTION_RETURN, None,
+                                                               class_name_of_return_value]
 
         elif event == 'line':
             local_variable_name, local_variable_value = get_new_defined_variable(self.old_values_by_variable,
                                                                                  values_by_variable)
             if local_variable_name:
                 class_name_of_return_value = get_class_name_from(local_variable_value)
-                trace_data_element = TraceDataElement(file_name, function_name, line_number - 1,
-                                                      TraceDataCategory.LOCAL_VARIABLE, local_variable_name,
-                                                      class_name_of_return_value)
-                self.trace_data.append(
-                    trace_data_element)
-            self.old_values_by_variable = values_by_variable.copy()
+                self.trace_data.loc[len(self.trace_data.index)] = [file_name, function_name, line_number - 1,
+                                                                   TraceDataCategory.LOCAL_VARIABLE,
+                                                                   local_variable_name,
+                                                                   class_name_of_return_value]
 
+        self.old_values_by_variable = values_by_variable.copy()
         return self.on_trace_is_called
 
 
