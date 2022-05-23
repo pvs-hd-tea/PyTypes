@@ -1,5 +1,4 @@
 import sys
-
 import pandas as pd
 import pytest
 
@@ -28,12 +27,12 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     value2 = 17
     expected_trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
 
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['\\tests\\test_tracer.py', 'sample_compare', 10, TraceDataCategory.FUNCTION_ARGUMENT, 'value1', 'int']
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['\\tests\\test_tracer.py', 'sample_compare', 10, TraceDataCategory.FUNCTION_ARGUMENT,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare', 9, TraceDataCategory.FUNCTION_ARGUMENT, 'value1', 'int']
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare', 9, TraceDataCategory.FUNCTION_ARGUMENT,
                      'value2', 'int']
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['\\tests\\test_tracer.py', 'sample_compare', 11, TraceDataCategory.LOCAL_VARIABLE,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare', 10, TraceDataCategory.LOCAL_VARIABLE,
                      'result', 'bool']
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['\\tests\\test_tracer.py', 'sample_compare', 12, TraceDataCategory.FUNCTION_RETURN,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare', 11, TraceDataCategory.FUNCTION_RETURN,
                      None, 'bool']
 
     test_object.starttrace(sample_function_name)

@@ -9,6 +9,7 @@ license = "MIT"
 python = ">=3.9,<4"
 coverage = "^6.3.3"
 pandas = "^1.4.2"
+pathlib = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
