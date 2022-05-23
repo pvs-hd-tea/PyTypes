@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pytypes"
+version = "0.1.0"
+description = "Infer python types via test tracing"
+authors = ["Benjamin Sparks <ab270@stud.uni-heidelberg.de>", "Viet Tran Ba <viet.tran_ba@stud.uni-heidelberg.de>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4"
+coverage = "^6.3.3"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^4.0.1"
+pytest = "^7.1.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
