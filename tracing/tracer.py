@@ -35,7 +35,6 @@ class Tracer:
     def stoptrace(self) -> None:
         """Stops the trace."""
         settrace(None)
-        print(self.trace_data)
 
     def on_trace_is_called(self, frame, event, arg: any) -> Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
@@ -105,4 +104,4 @@ def get_new_defined_variable(old_values_by_variable: Dict[str, any], new_values_
 def get_filepath_from(static_filepath: str) -> str:
     """Gets the relative file path from the static file path."""
     relative_filepath = static_filepath.split(constants.PROJECT_NAME)[1]
-    return str(Path(relative_filepath))  # Makes it OS independent.
+    return str(Path(relative_filepath).resolve())  # Makes it OS independent.
