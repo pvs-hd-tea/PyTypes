@@ -60,7 +60,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         "sample_compare",
         11,
         TraceDataCategory.FUNCTION_RETURN,
-        None,
+        "sample_compare",
         btype,
     ]
 
@@ -71,10 +71,6 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     # Todo: Include the file name column.
     expected_trace_data = expected_trace_data.drop("Filename", axis=1)
     actual_trace_data = actual_trace_data.drop("Filename", axis=1)
-
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(actual_trace_data.head(n=20))
-        print(expected_trace_data.head(n=20))
 
     assert expected_trace_data.equals(actual_trace_data)
 

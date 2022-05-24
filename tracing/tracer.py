@@ -1,9 +1,7 @@
 import sys
-from pathlib import Path
 
 import pandas as pd
 import typing
-
 import pathlib
 
 import constants
@@ -14,10 +12,8 @@ class Tracer:
     def __init__(self, base_directory: pathlib.Path):
         self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
         self.basedir = base_directory
-
-    def reset_members(self) -> None:
-        """Resets the variables of the tracer."""
-        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
+        self.function_name = ""
+        self.old_values_by_variable = {}
 
     def start_trace(self, function_name: str) -> None:
         """Resets the trace values, starts the trace and infers the types of variables of the provided function name
@@ -25,12 +21,17 @@ class Tracer:
         if not isinstance(function_name, str):
             raise TypeError()
 
-        sys.settrace(self.on_trace_is_called)
+        self._reset_members()
+        sys.settrace(self._on_trace_is_called)
         self.function_name = function_name
 
     def stop_trace(self) -> None:
         """Stops the trace."""
         sys.settrace(None)
+
+    def _reset_members(self) -> None:
+        """Resets the variables of the tracer."""
+        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -39,9 +40,9 @@ class Tracer:
         return names2types
 
     def _on_return(self, frame, arg: typing.Any) -> dict[None, type]:
-        # TODO: We must find an identifier for this. Otherwise multiple returns cannot be disambiguated,
-        # TODO: which is problematic if different types are returned!
-        return {None: type(arg)}
+        code = frame.f_code
+        function_name = code.co_name
+        return {function_name: type(arg)}
 
     def _on_line(self, frame) -> dict[str, type]:
         local_variable_name, local_variable_value = _get_new_defined_variable(
@@ -54,18 +55,22 @@ class Tracer:
 
         return dict()
 
-    def on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
+    def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
         code = frame.f_code
         function_name = code.co_name
 
-        # TODO: What does this do? and why do we need it @RecurvedBow
+        # TODO: What does this do? and why do we need it @RecurvedBow ->
+        #  Because the dictionary containing the local variables changes/is a different dictionary compared
+        #  to the one of the previous frame when calling an inner function.
+        #  An improvement is worked on (See #20)
         if function_name != self.function_name:
-            return self.on_trace_is_called
+            return self._on_trace_is_called
 
         file_name = pathlib.Path(code.co_filename).relative_to(self.basedir)
         line_number = frame.f_lineno
 
+        names2types, category = None, None
         if event == "call":
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_ARGUMENT
@@ -78,50 +83,37 @@ class Tracer:
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
-        else:
-            names2types, category = None, None
-
         if names2types:
-            df = _build_frame_from(
-                file_name, function_name, names2types, line_number, category
-            )
-            self.trace_data = pd.concat((self.trace_data, df), ignore_index=True)
+            self._update_trace_data_with(file_name, function_name, line_number, category, names2types)
 
         self.old_values_by_variable = frame.f_locals.copy()
-        return self.on_trace_is_called
+        return self._on_trace_is_called
 
+    def _update_trace_data_with(
+            self,
+            file_name: pathlib.Path,
+            function_name: str,
+            line_number: int,
+            category: TraceDataCategory,
+            names2types: dict[str, type],
+    ) -> None:
+        """
+        Constructs a DataFrame from the provided arguments.
 
-def _build_frame_from(
-    filename: pathlib.Path,
-    function_name: str,
-    names2types: dict[str | None, type],
-    line_number: int,
-    category: TraceDataCategory,
-) -> pd.DataFrame:
-    """
-    Construct a DataFrame from the information passed
-
-    @param filename which file the variables were found in
-    @param function_name in which function the variables were found in
-    @param names2types a mapping of
-    """
-
-    varnames = list(names2types.keys())
-    vartypes = list(names2types.values())
-
-    d = {
-        constants.TraceData.FILENAME: [str(filename)] * len(varnames),
-        constants.TraceData.FUNCNAME: [function_name] * len(varnames),
-        constants.TraceData.VARNAME: varnames,
-        constants.TraceData.VARTYPE: vartypes,
-        constants.TraceData.LINENO: [line_number] * len(varnames),
-        constants.TraceData.CATEGORY: [category] * len(varnames),
-    }
-    return pd.DataFrame.from_dict(d)
+        @param file_name The file name in which the variables are declared.
+        @param function_name The function which declares the variable.
+        @param names2types A dictionary containing the variable name and its type.
+        @param line_number The line number.
+        @param category The data category of the row.
+        """
+        for variable_name in names2types.keys():
+            variable_type = names2types[variable_name]
+            row_to_append = [file_name, function_name, line_number, category, variable_name, variable_type]
+            self.trace_data.loc[len(self.trace_data)] = row_to_append
 
 
 def _get_new_defined_variable(
-    old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
+        old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
 ) -> tuple[str, any]:
     """Gets the new defined variable from one frame to the next frame."""
     local_variable_name = None
@@ -138,8 +130,3 @@ def _get_new_defined_variable(
             local_variable_name = variable_name
             local_variable_value = variable_value
     return local_variable_name, local_variable_value
-
-
-def _get_filepath_from(code_filepath: str) -> str:
-    """Gets the relative file path from the static file path."""
-    return code_filepath
