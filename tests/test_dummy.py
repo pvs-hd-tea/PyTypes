@@ -1,5 +1,6 @@
 from tracing import add
 
+
 def test_if_add_is_called_with_two_numbers_sum_is_returned():
     argument1 = 5
     argument2 = 16
