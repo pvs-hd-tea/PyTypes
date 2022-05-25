@@ -33,8 +33,9 @@ class Tracer:
 
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
-        self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys()) \
-            .astype(constants.TraceData.SCHEMA)
+        self.trace_data = pd.DataFrame(
+            columns=constants.TraceData.SCHEMA.keys()
+        ).astype(constants.TraceData.SCHEMA)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -103,7 +104,7 @@ class Tracer:
         names2types: dict[str, type],
     ) -> None:
         """
-        Constructs a DataFrame from the provided arguments, and appends 
+        Constructs a DataFrame from the provided arguments, and appends
         it to the existing trace data collection.
 
         @param file_name The file name in which the variables are declared.
@@ -123,11 +124,9 @@ class Tracer:
             constants.TraceData.LINENO: [line_number] * len(varnames),
             constants.TraceData.CATEGORY: [category] * len(varnames),
         }
-        update = pd.DataFrame.from_dict(d) \
-            .astype(constants.TraceData.SCHEMA)
+        update = pd.DataFrame.from_dict(d).astype(constants.TraceData.SCHEMA)
         self.trace_data = pd.concat(
-            [self.trace_data, update], 
-            ignore_index=True
+            [self.trace_data, update], ignore_index=True
         ).astype(constants.TraceData.SCHEMA)
 
 
