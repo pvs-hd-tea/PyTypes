@@ -14,28 +14,26 @@ class Tracer:
             constants.TraceData.SCHEMA
         )
         self.basedir = base_directory
-        self.function_name = ""
-        self.old_values_by_variable = {}
+        self.old_values_by_variable_by_function_name = {}
+        self._reset_members()
 
-    def start_trace(self, function_name: str) -> None:
-        """Resets the trace values, starts the trace and infers the types of variables of the provided function name
-        argument."""
-        if not isinstance(function_name, str):
-            raise TypeError()
-
+    def start_trace(self) -> None:
+        """Resets the trace values and starts the trace."""
         self._reset_members()
         sys.settrace(self._on_trace_is_called)
-        self.function_name = function_name
 
     def stop_trace(self) -> None:
         """Stops the trace."""
         sys.settrace(None)
+        self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
+        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True) # Last row is trace data of stoptrace.
 
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
         self.trace_data = pd.DataFrame(
             columns=constants.TraceData.SCHEMA.keys()
         ).astype(constants.TraceData.SCHEMA)
+        self.old_values_by_variable_by_function_name = {}
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -49,8 +47,10 @@ class Tracer:
         return {function_name: type(arg)}
 
     def _on_line(self, frame) -> dict[str, type]:
+        code = frame.f_code
+        function_name = code.co_name
         local_variable_name, local_variable_value = _get_new_defined_variable(
-            self.old_values_by_variable, frame.f_locals
+            self.old_values_by_variable_by_function_name[function_name], frame.f_locals
         )
         if local_variable_name:
             class_name_of_return_value = type(local_variable_value)
@@ -63,13 +63,6 @@ class Tracer:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
         code = frame.f_code
         function_name = code.co_name
-
-        # TODO: What does this do? and why do we need it @RecurvedBow ->
-        #  Because the dictionary containing the local variables changes/is a different dictionary compared
-        #  to the one of the previous frame when calling an inner function.
-        #  An improvement is worked on (See #20)
-        if function_name != self.function_name:
-            return self._on_trace_is_called
 
         file_name = pathlib.Path(code.co_filename).relative_to(self.basedir)
         line_number = frame.f_lineno
@@ -92,7 +85,7 @@ class Tracer:
                 file_name, function_name, line_number, category, names2types
             )
 
-        self.old_values_by_variable = frame.f_locals.copy()
+        self.old_values_by_variable_by_function_name[function_name] = frame.f_locals.copy()
         return self._on_trace_is_called
 
     def _update_trace_data_with(
