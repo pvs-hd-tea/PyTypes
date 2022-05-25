@@ -26,8 +26,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     test_object = Tracer(cwd)
     value1 = 18
     value2 = 17
-    expected_trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
-
+    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     itype = type(5)
     btype = type(False)
 
@@ -69,6 +68,8 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
     # Todo: Include the file name column.
+
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
     expected_trace_data = expected_trace_data.drop("Filename", axis=1)
     actual_trace_data = actual_trace_data.drop("Filename", axis=1)
 

@@ -10,7 +10,9 @@ from tracing.trace_data_category import TraceDataCategory
 
 class Tracer:
     def __init__(self, base_directory: pathlib.Path):
-        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
+        self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
+            constants.TraceData.SCHEMA
+        )
         self.basedir = base_directory
         self.function_name = ""
         self.old_values_by_variable = {}
@@ -31,7 +33,8 @@ class Tracer:
 
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
-        self.trace_data = pd.DataFrame(columns=constants.TRACE_DATA_COLUMNS)
+        self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys()) \
+            .astype(constants.TraceData.SCHEMA)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -39,7 +42,7 @@ class Tracer:
         }
         return names2types
 
-    def _on_return(self, frame, arg: typing.Any) -> dict[None, type]:
+    def _on_return(self, frame, arg: typing.Any) -> dict[str, type]:
         code = frame.f_code
         function_name = code.co_name
         return {function_name: type(arg)}
@@ -84,21 +87,24 @@ class Tracer:
             category = TraceDataCategory.LOCAL_VARIABLE
 
         if names2types:
-            self._update_trace_data_with(file_name, function_name, line_number, category, names2types)
+            self._update_trace_data_with(
+                file_name, function_name, line_number, category, names2types
+            )
 
         self.old_values_by_variable = frame.f_locals.copy()
         return self._on_trace_is_called
 
     def _update_trace_data_with(
-            self,
-            file_name: pathlib.Path,
-            function_name: str,
-            line_number: int,
-            category: TraceDataCategory,
-            names2types: dict[str, type],
+        self,
+        file_name: pathlib.Path,
+        function_name: str,
+        line_number: int,
+        category: TraceDataCategory,
+        names2types: dict[str, type],
     ) -> None:
         """
-        Constructs a DataFrame from the provided arguments.
+        Constructs a DataFrame from the provided arguments, and appends 
+        it to the existing trace data collection.
 
         @param file_name The file name in which the variables are declared.
         @param function_name The function which declares the variable.
@@ -106,14 +112,27 @@ class Tracer:
         @param line_number The line number.
         @param category The data category of the row.
         """
-        for variable_name in names2types.keys():
-            variable_type = names2types[variable_name]
-            row_to_append = [file_name, function_name, line_number, category, variable_name, variable_type]
-            self.trace_data.loc[len(self.trace_data)] = row_to_append
+        varnames = list(names2types.keys())
+        vartypes = list(names2types.values())
+
+        d = {
+            constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
+            constants.TraceData.FUNCNAME: [function_name] * len(varnames),
+            constants.TraceData.VARNAME: varnames,
+            constants.TraceData.VARTYPE: vartypes,
+            constants.TraceData.LINENO: [line_number] * len(varnames),
+            constants.TraceData.CATEGORY: [category] * len(varnames),
+        }
+        update = pd.DataFrame.from_dict(d) \
+            .astype(constants.TraceData.SCHEMA)
+        self.trace_data = pd.concat(
+            [self.trace_data, update], 
+            ignore_index=True
+        ).astype(constants.TraceData.SCHEMA)
 
 
 def _get_new_defined_variable(
-        old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
+    old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
 ) -> tuple[str, any]:
     """Gets the new defined variable from one frame to the next frame."""
     local_variable_name = None
