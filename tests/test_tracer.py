@@ -86,7 +86,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     btype = type(False)
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_compare_integers",
         21,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -94,7 +94,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_compare_integers",
         21,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -102,7 +102,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_compare_integers",
         23,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -110,7 +110,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         btype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_compare_integers",
         23,
         TraceDataCategory.FUNCTION_RETURN,
@@ -124,9 +124,8 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    # Todo: Include the file name column.
-    expected_trace_data = expected_trace_data.drop("Filename", axis=1)
-    actual_trace_data = actual_trace_data.drop("Filename", axis=1)
+    with pd.option_context("display.max_rows", None, "display.max_columns", None):
+        print(actual_trace_data.head(n=20))
 
     assert expected_trace_data.equals(actual_trace_data)
 
