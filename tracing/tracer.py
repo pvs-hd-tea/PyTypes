@@ -49,15 +49,9 @@ class Tracer:
     def _on_line(self, frame) -> dict[str, type]:
         code = frame.f_code
         function_name = code.co_name
-        local_variable_name, local_variable_value = _get_new_defined_variable(
-            self.old_values_by_variable_by_function_name[function_name], frame.f_locals
-        )
-        if local_variable_name:
-            class_name_of_return_value = type(local_variable_value)
-            names2types = {local_variable_name: class_name_of_return_value}
-            return names2types
-
-        return dict()
+        names2types = _get_new_defined_local_variables_with_types(
+            self.old_values_by_variable_by_function_name[function_name], frame.f_locals)
+        return names2types
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
@@ -79,6 +73,15 @@ class Tracer:
         elif event == "line":
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
+
+        elif event == "exception":
+            pass
+
+        else:
+            self.stop_trace()
+            print("The event " + str(event) + " is unknown.")
+            # Note: The value error does not stop the program for some reason.
+            raise ValueError("The event" + str(event) + " is unknown.")
 
         if names2types:
             self._update_trace_data_with(
@@ -123,21 +126,13 @@ class Tracer:
         ).astype(constants.TraceData.SCHEMA)
 
 
-def _get_new_defined_variable(
+def _get_new_defined_local_variables_with_types(
     old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
-) -> tuple[str, any]:
+) -> dict[str, any]:
     """Gets the new defined variable from one frame to the next frame."""
-    local_variable_name = None
-    local_variable_value = None
+    names2types = {}
     for item in new_values_by_variable.items():
         variable_name, variable_value = item[0], item[1]
         if variable_name not in old_values_by_variable:
-            # A new local variable has been defined.
-            if local_variable_name:
-                # A already new local variable has been found in this frame.
-                # Todo: Implement how multiple definitions of local variables are handled.
-                return None, None
-
-            local_variable_name = variable_name
-            local_variable_value = variable_value
-    return local_variable_name, local_variable_value
+            names2types[variable_name] = type(variable_value)
+    return names2types

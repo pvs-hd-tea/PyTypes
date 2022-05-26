@@ -17,7 +17,7 @@ class TraceData:
         FUNCNAME: pd.StringDtype(),
         LINENO: pd.UInt64Dtype(),
         # because of TraceDataCategory's inheritance from enum.Enum
-        CATEGORY: pd.CategoricalDtype(),
+        CATEGORY: pd.StringDtype(),
         VARNAME: pd.StringDtype(),
         VARTYPE: object,
     }
