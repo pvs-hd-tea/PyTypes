@@ -1,6 +1,6 @@
+import os
 import sys, pathlib
 import pandas as pd
-import pytest
 from typing import List, Union
 import constants
 from tracing import Tracer, TraceDataCategory
@@ -36,7 +36,9 @@ def sample_convert_string_to_int(string_to_convert: str) -> Union[int, None]:
         return None
 
 
-cwd = pathlib.Path.cwd().parent
+cwd = pathlib.Path.cwd()
+while os.path.basename(cwd) != constants.PROJECT_NAME:
+    cwd = cwd.parent
 
 
 def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
@@ -47,7 +49,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     none_type = type(None)
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_convert_string_to_int",
         31,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -55,7 +57,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_convert_string_to_int",
         36,
         TraceDataCategory.FUNCTION_RETURN,
@@ -69,10 +71,6 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-
-    # Todo: Include the file name column.
-    expected_trace_data = expected_trace_data.drop("Filename", axis=1)
-    actual_trace_data = actual_trace_data.drop("Filename", axis=1)
 
     assert expected_trace_data.equals(actual_trace_data)
 
@@ -138,7 +136,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
     tuple_type = type((int_type, string_type))
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_get_two_variables_declared_in_one_line",
         28,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -146,7 +144,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_get_two_variables_declared_in_one_line",
         28,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -154,7 +152,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        "/tests/test_tracer.py",
+        "tests/test_tracer.py",
         "sample_get_two_variables_declared_in_one_line",
         28,
         TraceDataCategory.FUNCTION_RETURN,
@@ -169,10 +167,6 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    # Todo: Include the file name column.
-    expected_trace_data = expected_trace_data.drop("Filename", axis=1)
-    actual_trace_data = actual_trace_data.drop("Filename", axis=1)
-
     assert expected_trace_data.equals(actual_trace_data)
 
 
@@ -186,42 +180,42 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     int_type = type(1)
     bool_type = type(True)
 
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists', 9,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists', 9,
                                                                TraceDataCategory.FUNCTION_ARGUMENT, 'list1', list_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists', 9,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists', 9,
                                                                TraceDataCategory.FUNCTION_ARGUMENT,
                                                                'list2', list_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists',
                                                                14,
                                                                TraceDataCategory.LOCAL_VARIABLE,
                                                                'i', int_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists',
                                                                14,
                                                                TraceDataCategory.LOCAL_VARIABLE,
                                                                'element1', int_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists', 15,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists', 15,
                                                                TraceDataCategory.LOCAL_VARIABLE,
                                                                'element2', int_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_integers', 21,
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_integers', 21,
                                                                TraceDataCategory.FUNCTION_ARGUMENT,
                                                                'value1', int_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_integers',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_integers',
                                                                21,
                                                                TraceDataCategory.FUNCTION_ARGUMENT,
                                                                'value2', int_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_integers',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_integers',
                                                                23,
                                                                TraceDataCategory.LOCAL_VARIABLE,
                                                                'result', bool_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_integers',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_integers',
                                                                23,
                                                                TraceDataCategory.FUNCTION_RETURN,
                                                                'sample_compare_integers', bool_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists',
                                                                16,
                                                                TraceDataCategory.LOCAL_VARIABLE,
                                                                'are_elements_equal', bool_type]
-    expected_trace_data.loc[len(expected_trace_data.index)] = ['/tests/test_tracer.py', 'sample_compare_two_int_lists',
+    expected_trace_data.loc[len(expected_trace_data.index)] = ['tests/test_tracer.py', 'sample_compare_two_int_lists',
                                                                17,
                                                                TraceDataCategory.FUNCTION_RETURN,
                                                                'sample_compare_two_int_lists', bool_type]
@@ -232,9 +226,6 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-    # Todo: Include the file name column.
-    expected_trace_data = expected_trace_data.drop('Filename', axis=1)
-    actual_trace_data = actual_trace_data.drop('Filename', axis=1)
     #with pd.option_context("display.max_rows", None, "display.max_columns", None):
     #    print(actual_trace_data.head(n=20))
     #    print(actual_trace_data.dtypes)
