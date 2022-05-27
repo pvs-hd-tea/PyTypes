@@ -1,3 +1,23 @@
+import pandas as pd
+
 # Tracing
-PROJECT_NAME = 'PyTypes'
-TRACE_DATA_COLUMNS = ['Filename', 'Function Name', 'Line Number', 'Category', 'Name', 'Type']
+PROJECT_NAME = "PyTypes"
+
+
+class TraceData:
+    FILENAME = "Filename"
+    FUNCNAME = "Function Name"
+    LINENO = "Line Number"
+    CATEGORY = "Category"
+    VARNAME = "Name"
+    VARTYPE = "Type"
+
+    SCHEMA = {
+        FILENAME: pd.StringDtype(),
+        FUNCNAME: pd.StringDtype(),
+        LINENO: pd.UInt64Dtype(),
+        # because of TraceDataCategory's inheritance from enum.Enum
+        CATEGORY: pd.StringDtype(),
+        VARNAME: pd.StringDtype(),
+        VARTYPE: object,
+    }
