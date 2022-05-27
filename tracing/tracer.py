@@ -10,6 +10,8 @@ from tracing.trace_data_category import TraceDataCategory
 
 class Tracer:
     def __init__(self, base_directory: pathlib.Path):
+        if not isinstance(base_directory, pathlib.Path):
+            raise TypeError(type(base_directory))
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
