@@ -1,8 +1,8 @@
 import pandas as pd
 
-# Tracing
 PROJECT_NAME = "PyTypes"
 
+CONFIG_FILE_NAME = "pytypes.toml"
 
 class TraceData:
     FILENAME = "Filename"

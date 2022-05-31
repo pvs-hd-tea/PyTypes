@@ -10,6 +10,7 @@ import pandas as pd
 import dacite, toml
 
 from .tracer import Tracer
+import constants
 
 
 @dataclass
@@ -28,6 +29,7 @@ def register(proj_root: pathlib.Path | None = None):
     Register a test function for tracing.
     @param proj_root the path to project's root directory
     """
+
     def impl(test_function: Callable[[], None]):
         test_function.pytype_trace = Tracer(project_dir=proj_root or pathlib.Path.cwd())
         return test_function
@@ -37,7 +39,7 @@ def register(proj_root: pathlib.Path | None = None):
 
 def entrypoint(proj_root: pathlib.Path | None = None):
     """
-    Execute and trace all registered test functions in the same module as the marked function 
+    Execute and trace all registered test functions in the same module as the marked function
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
     """
     root = proj_root or pathlib.Path.cwd()
@@ -49,7 +51,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(
-                function, "pytype_trace"
+                function, constants.CONFIG_FILE_NAME
             ):
                 continue
 
