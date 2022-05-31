@@ -1,3 +1,4 @@
+import inspect
 import sys
 
 import pandas as pd
@@ -41,18 +42,36 @@ class Tracer:
         names2types = {
             var_name: type(var_value) for var_name, var_value in frame.f_locals.items()
         }
+
         return names2types
 
     def _on_return(self, frame, arg: typing.Any) -> dict[str, type]:
         code = frame.f_code
         function_name = code.co_name
-        return {function_name: type(arg)}
+        names2types = {}
+        if function_name == '__init__':
+            names2types = self._on_class_function_return(frame)
+
+        names2types[function_name] = type(arg)
+        return names2types
 
     def _on_line(self, frame) -> dict[str, type]:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
             self.old_values_by_variable_by_function_name[function_name], frame.f_locals)
+        return names2types
+
+    def _on_class_function_return(self, frame) -> dict[str, type]:
+        first_element_name = list(frame.f_locals)[0]
+        self_object = frame.f_locals[first_element_name]
+        return self._evaluate_object(self_object)
+
+    def _evaluate_object(self, class_object: typing.Any) -> dict[str, type]:
+        object_dict = class_object.__dict__
+        names2types = {
+            var_name: type(var_value) for var_name, var_value in object_dict.items()
+        }
         return names2types
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
