@@ -1,13 +1,10 @@
-from contextlib import contextmanager
 from dataclasses import dataclass, field
-import functools
 import inspect
-import sys
-import os, pathlib
+import pathlib
 from typing import Callable
 
-import pandas as pd
-import dacite, toml
+import dacite
+import toml
 
 from .tracer import Tracer
 import constants
