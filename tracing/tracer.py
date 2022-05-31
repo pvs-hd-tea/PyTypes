@@ -10,13 +10,11 @@ from tracing.trace_data_category import TraceDataCategory
 
 
 class Tracer:
-    def __init__(self, base_directory: pathlib.Path):
-        if not isinstance(base_directory, pathlib.Path):
-            raise TypeError(type(base_directory))
+    def __init__(self, project_dir: pathlib.Path):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
-        self.basedir = base_directory
+        self.project_dir = project_dir
         self.old_values_by_variable_by_function_name = {}
         self._reset_members()
 
@@ -72,10 +70,10 @@ class Tracer:
 
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         full_path = pathlib.Path(code.co_filename)
-        if not full_path.is_relative_to(self.basedir):
+        if not full_path.is_relative_to(self.project_dir):
             return self._on_trace_is_called
 
-        file_name = pathlib.Path(code.co_filename).relative_to(self.basedir)
+        file_name = pathlib.Path(code.co_filename).relative_to(self.project_dir)
         line_number = frame.f_lineno
 
         names2types, category = None, None
