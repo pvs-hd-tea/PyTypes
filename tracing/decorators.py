@@ -40,7 +40,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
     """
     root = proj_root or pathlib.Path.cwd()
-    cfg = _load_config(root / "pytypes.toml")
+    cfg = _load_config(root / constants.CONFIG_FILE_NAME)
 
     def impl(main: Callable[[], None]):
         main()
@@ -48,7 +48,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(
-                function, constants.CONFIG_FILE_NAME
+                function, "pytype_trace"
             ):
                 continue
 
