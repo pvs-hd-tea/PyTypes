@@ -1,3 +1,4 @@
+import contextlib
 import sys
 
 import pandas as pd
@@ -30,6 +31,14 @@ class Tracer:
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
         self.trace_data.drop(self.trace_data.tail(1).index, inplace=True) # Last row is trace data of stoptrace.
 
+    @contextlib.contextmanager
+    def active_trace(self) -> None:
+        self.start_trace()
+        try:
+            yield None
+        finally:
+            self.stop_trace()
+
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
         self.trace_data = pd.DataFrame(
@@ -57,8 +66,14 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
+
         code = frame.f_code
         function_name = code.co_name
+
+        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
+        full_path = pathlib.Path(code.co_filename)
+        if not full_path.is_relative_to(self.basedir):
+            return self._on_trace_is_called
 
         file_name = pathlib.Path(code.co_filename).relative_to(self.basedir)
         line_number = frame.f_lineno
