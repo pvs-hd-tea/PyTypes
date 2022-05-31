@@ -4,6 +4,7 @@ PROJECT_NAME = "PyTypes"
 
 CONFIG_FILE_NAME = "pytypes.toml"
 
+
 class TraceData:
     FILENAME = "Filename"
     FUNCNAME = "Function Name"

@@ -27,7 +27,9 @@ class Tracer:
         """Stops the trace."""
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
-        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True) # Last row is trace data of stoptrace.
+
+        # Last row is trace data of stoptrace.
+        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
     def active_trace(self) -> None:
@@ -59,7 +61,8 @@ class Tracer:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
-            self.old_values_by_variable_by_function_name[function_name], frame.f_locals)
+            self.old_values_by_variable_by_function_name[function_name], frame.f_locals
+        )
         return names2types
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
@@ -103,7 +106,9 @@ class Tracer:
                 file_name, function_name, line_number, category, names2types
             )
 
-        self.old_values_by_variable_by_function_name[function_name] = frame.f_locals.copy()
+        self.old_values_by_variable_by_function_name[
+            function_name
+        ] = frame.f_locals.copy()
         return self._on_trace_is_called
 
     def _update_trace_data_with(
