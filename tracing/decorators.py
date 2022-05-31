@@ -23,18 +23,25 @@ def _load_config(config_path: pathlib.Path) -> Config:
     return dacite.from_dict(Config, cfg)
 
 
-def register(root: pathlib.Path | None = None):
+def register(proj_root: pathlib.Path | None = None):
+    """
+    Register a test function for tracing.
+    @param proj_root the path to project's root directory
+    """
     def impl(test_function: Callable[[], None]):
-        # FUTURE: Do not pass the path to the tracer; we will shorten paths later
-        test_function.pytype_trace = Tracer(base_directory=root or pathlib.Path.cwd())
+        test_function.pytype_trace = Tracer(project_dir=proj_root or pathlib.Path.cwd())
         return test_function
 
     return impl
 
 
 def entrypoint(proj_root: pathlib.Path | None = None):
+    """
+    Execute and trace all registered test functions in the same module as the marked function 
+    @param proj_root the path to project's root directory, which contains `pytypes.toml`
+    """
     root = proj_root or pathlib.Path.cwd()
-    cfg = _load_config(root / "pytype.toml")
+    cfg = _load_config(root / "pytypes.toml")
 
     def impl(main: Callable[[], None]):
         main()
