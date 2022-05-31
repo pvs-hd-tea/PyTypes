@@ -3,14 +3,14 @@ import sys, os
 root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(root))
 
-from tracing import hook
+from tracing import entrypoint, register
 
 
 def magic():
     return None
 
 
-@hook
+@register()
 def make_collections():
     l = list()
     l.append(1)
@@ -28,3 +28,7 @@ def make_collections():
     another_collection = magic()
 
     return d
+
+@entrypoint()
+def main():
+    ...

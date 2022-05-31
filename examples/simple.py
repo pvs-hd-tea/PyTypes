@@ -1,10 +1,9 @@
-import sys, os
+import sys, os, pathlib
 
 root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(root))
 
-from tracing import hook
-
+from tracing import entrypoint, register
 
 def sample_compare_two_int_lists(list1, list2):
     if len(list1) != len(list2):
@@ -17,16 +16,13 @@ def sample_compare_two_int_lists(list1, list2):
             return False
     return True
 
-
 def sample_compare_integers(value1, value2) -> bool:
     result = value1 == value2
     return result
 
-
 def sample_get_two_variables_declared_in_one_line():
     variable1, variable2 = 1, "string"
     return variable1, variable2
-
 
 def sample_convert_string_to_int(string_to_convert):
     try:
@@ -35,9 +31,13 @@ def sample_convert_string_to_int(string_to_convert):
     except ValueError:
         return None
 
-@hook
+@register()
 def driver():
     sample_compare_two_int_lists([1, 2, 3], [4, 5, 6])
     sample_compare_integers(1, 2)
     sample_get_two_variables_declared_in_one_line()
     sample_convert_string_to_int("123")
+
+@entrypoint()
+def main():
+    ...
