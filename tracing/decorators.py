@@ -28,7 +28,7 @@ def register(proj_root: pathlib.Path | None = None):
     """
 
     def impl(test_function: Callable[[], None]):
-        test_function.pytype_trace = Tracer(project_dir=proj_root or pathlib.Path.cwd())
+        test_function.pytype_tracer = Tracer(project_dir=proj_root or pathlib.Path.cwd())
         return test_function
 
     return impl
@@ -48,14 +48,14 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(
-                function, "pytype_trace"
+                function, "pytype_tracer"
             ):
                 continue
 
             substituted_output = cfg.output_template.format_map(
                 {"project": cfg.project, "func_name": fname}
             )
-            tracer = function.pytype_trace
+            tracer = function.pytype_tracer
 
             with tracer.active_trace():
                 function()
