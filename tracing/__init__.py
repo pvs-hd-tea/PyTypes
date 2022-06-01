@@ -1,4 +1,11 @@
 from .trace_data_category import TraceDataCategory
 from .tracer import Tracer
 
-__all__ = [Tracer.__name__, TraceDataCategory.__name__]
+from .decorators import entrypoint, register
+
+__all__ = [
+    Tracer.__name__,
+    TraceDataCategory.__name__,
+    entrypoint.__name__,
+    register.__name__,
+]

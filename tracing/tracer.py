@@ -1,4 +1,5 @@
 import inspect
+import contextlib
 import sys
 
 import pandas as pd
@@ -10,13 +11,11 @@ from tracing.trace_data_category import TraceDataCategory
 
 
 class Tracer:
-    def __init__(self, base_directory: pathlib.Path):
-        if not isinstance(base_directory, pathlib.Path):
-            raise TypeError(type(base_directory))
+    def __init__(self, project_dir: pathlib.Path):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
-        self.basedir = base_directory
+        self.project_dir = project_dir
         self.old_values_by_variable_by_function_name = {}
         self._reset_members()
 
@@ -29,7 +28,17 @@ class Tracer:
         """Stops the trace."""
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
-        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)  # Last row is trace data of stoptrace.
+
+        # Last row is trace data of stoptrace.
+        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
+
+    @contextlib.contextmanager
+    def active_trace(self) -> None:
+        self.start_trace()
+        try:
+            yield None
+        finally:
+            self.stop_trace()
 
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
@@ -55,7 +64,8 @@ class Tracer:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
-            self.old_values_by_variable_by_function_name[function_name], frame.f_locals)
+            self.old_values_by_variable_by_function_name[function_name], frame.f_locals
+        )
         return names2types
 
     def _on_class_function_return(self, frame) -> dict[str, type]:
@@ -73,12 +83,15 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
-        _is_frame_within_class_function(frame)
-
         code = frame.f_code
         function_name = code.co_name
 
-        file_name = pathlib.Path(code.co_filename).relative_to(self.basedir)
+        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
+        full_path = pathlib.Path(code.co_filename)
+        if not full_path.is_relative_to(self.project_dir):
+            return self._on_trace_is_called
+
+        file_name = pathlib.Path(code.co_filename).relative_to(self.project_dir)
         line_number = frame.f_lineno
 
         names2types, category = None, None
@@ -114,7 +127,9 @@ class Tracer:
                 file_name, function_name, line_number, category, names2types
             )
 
-        self.old_values_by_variable_by_function_name[function_name] = frame.f_locals.copy()
+        self.old_values_by_variable_by_function_name[
+            function_name
+        ] = frame.f_locals.copy()
         return self._on_trace_is_called
 
     def _update_trace_data_with(
