@@ -42,9 +42,9 @@ class SampleClass:
         this.integer = integer
         this.string = string
 
-    def sample_check_if_arguments_match_members(self, integer, string):
-        are_integers_equal = self.integer == integer
-        are_strings_equal = self.string == string
+    def sample_check_if_arguments_match_members(a, integer, string):
+        are_integers_equal = a.integer == integer
+        are_strings_equal = a.string == string
         return are_integers_equal and are_strings_equal
 
 
@@ -124,6 +124,94 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     test_object.start_trace()
     SampleClass(integer, string)
+    test_object.stop_trace()
+
+    actual_trace_data = test_object.trace_data
+    assert expected_trace_data.equals(actual_trace_data)
+
+
+def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_data():
+    test_object = Tracer(cwd)
+    integer = 5
+    string = "sample"
+
+    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    sample_class_type = type(SampleClass(integer, string))
+    string_type = type(string)
+    integer_type = type(integer)
+    bool_type = type(True)
+
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        45,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "a",
+        sample_class_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        45,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "integer",
+        integer_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        45,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "string",
+        string_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        47,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "are_integers_equal",
+        bool_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        48,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "are_strings_equal",
+        bool_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        48,
+        TraceDataCategory.CLASS_MEMBER,
+        "integer",
+        integer_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        48,
+        TraceDataCategory.CLASS_MEMBER,
+        "string",
+        string_type,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        "tests/test_tracer.py",
+        "sample_check_if_arguments_match_members",
+        48,
+        TraceDataCategory.FUNCTION_RETURN,
+        "sample_check_if_arguments_match_members",
+        bool_type,
+    ]
+
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+
+    sample_object = SampleClass(integer, string)
+
+    test_object.start_trace()
+    sample_object.sample_check_if_arguments_match_members(integer, string)
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data

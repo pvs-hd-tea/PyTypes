@@ -29,7 +29,7 @@ class Tracer:
         """Stops the trace."""
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
-        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True) # Last row is trace data of stoptrace.
+        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)  # Last row is trace data of stoptrace.
 
     def _reset_members(self) -> None:
         """Resets the variables of the tracer."""
@@ -73,6 +73,8 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
+        _is_frame_within_class_function(frame)
+
         code = frame.f_code
         function_name = code.co_name
 
@@ -88,8 +90,8 @@ class Tracer:
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
 
-            # Handles a special case where init is returned.
-            if function_name == '__init__':
+            # Adds tracing data of class members if the return is from a class function.
+            if _is_frame_within_class_function(frame):
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
                 self._update_trace_data_with(file_name, function_name, line_number, category2, names2types2)
@@ -116,12 +118,12 @@ class Tracer:
         return self._on_trace_is_called
 
     def _update_trace_data_with(
-        self,
-        file_name: pathlib.Path,
-        function_name: str,
-        line_number: int,
-        category: TraceDataCategory,
-        names2types: dict[str, type],
+            self,
+            file_name: pathlib.Path,
+            function_name: str,
+            line_number: int,
+            category: TraceDataCategory,
+            names2types: dict[str, type],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
@@ -151,7 +153,7 @@ class Tracer:
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
+        old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
 ) -> dict[str, any]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
@@ -160,3 +162,19 @@ def _get_new_defined_local_variables_with_types(
         if variable_name not in old_values_by_variable:
             names2types[variable_name] = type(variable_value)
     return names2types
+
+
+def _is_frame_within_class_function(frame) -> bool:
+    code = frame.f_code
+    function_name = code.co_name
+    all_possible_classes = [value for value in frame.f_globals.values() if inspect.isclass(value)]
+    for possible_class in all_possible_classes:
+        if hasattr(possible_class, function_name):
+            member = getattr(possible_class, function_name)
+            if not inspect.isfunction(member):
+                continue
+
+            if member.__code__ == code:
+                return True
+
+    return False
