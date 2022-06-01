@@ -48,11 +48,7 @@ class Tracer:
     def _on_return(self, frame, arg: typing.Any) -> dict[str, type]:
         code = frame.f_code
         function_name = code.co_name
-        names2types = {}
-        if function_name == '__init__':
-            names2types = self._on_class_function_return(frame)
-
-        names2types[function_name] = type(arg)
+        names2types = {function_name: type(arg)}
         return names2types
 
     def _on_line(self, frame) -> dict[str, type]:
@@ -63,6 +59,7 @@ class Tracer:
         return names2types
 
     def _on_class_function_return(self, frame) -> dict[str, type]:
+        """Updates the trace data with the members of the class object."""
         first_element_name = list(frame.f_locals)[0]
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
@@ -90,6 +87,12 @@ class Tracer:
         elif event == "return":
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
+
+            # Handles a special case where init is returned.
+            if function_name == '__init__':
+                names2types2 = self._on_class_function_return(frame)
+                category2 = TraceDataCategory.CLASS_MEMBER
+                self._update_trace_data_with(file_name, function_name, line_number, category2, names2types2)
 
         elif event == "line":
             names2types = self._on_line(frame)

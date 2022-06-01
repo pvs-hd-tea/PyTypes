@@ -99,7 +99,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         "tests\\test_tracer.py",
         "__init__",
         43,
-        TraceDataCategory.FUNCTION_RETURN,
+        TraceDataCategory.CLASS_MEMBER,
         "integer",
         integer_type,
     ]
@@ -107,7 +107,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         "tests\\test_tracer.py",
         "__init__",
         43,
-        TraceDataCategory.FUNCTION_RETURN,
+        TraceDataCategory.CLASS_MEMBER,
         "string",
         string_type,
     ]
