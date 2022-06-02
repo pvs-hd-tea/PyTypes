@@ -17,14 +17,14 @@ class Config:
 
 
 @dataclass
-class PyTypesConfig:
+class PyTypesToml:
     pytypes: Config
 
 
 def _load_config(config_path: pathlib.Path) -> Config:
     cfg = toml.load(config_path.open())
     return dacite.from_dict(
-        data_class=PyTypesConfig, data=cfg, config=dacite.Config(strict=True)
+        data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
     )
 
 
@@ -60,8 +60,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             ):
                 continue
 
-            substituted_output = cfg.pytypesoutput_template.format_map(
-                {"project": cfg.pytypesproject, "func_name": fname}
+            substituted_output = cfg.output_template.format_map(
+                {"project": cfg.project, "func_name": fname}
             )
             tracer = getattr(function, constants.TRACER_ATTRIBUTE)
             # delattr(function, constants.TRACER_ATTRIBUTE)
