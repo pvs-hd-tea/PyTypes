@@ -27,6 +27,7 @@ class Tracer:
         """Stops the trace."""
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
+        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:

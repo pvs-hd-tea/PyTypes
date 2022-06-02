@@ -77,9 +77,6 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             with tracer.active_trace():
                 function()
 
-            # Last row is trace data of stoptrace.
-            tracer.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
-
             tracer.trace_data.to_pickle(str(tracer.project_dir / substituted_output))
 
     return impl
