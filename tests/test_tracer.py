@@ -247,7 +247,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
 
     actual_trace_data = test_object.trace_data
 
-    assert expected_trace_data.equals(actual_trace_data)
+    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
 
 
 def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
@@ -297,7 +297,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    assert expected_trace_data.equals(actual_trace_data)
+    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
 
 
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
@@ -339,7 +339,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    assert expected_trace_data.equals(actual_trace_data)
+    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
 
 
 def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data():
@@ -451,7 +451,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     #    print(actual_trace_data.head(n=20))
     #    print(actual_trace_data.dtypes)
     #    print(expected_trace_data.dtypes)
-    assert expected_trace_data.equals(actual_trace_data)
+    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
 
 
 def test_if_tracer_starts_trace_data_is_none_or_empty():
