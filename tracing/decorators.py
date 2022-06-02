@@ -16,9 +16,16 @@ class Config:
     output_template: str = field(default="{project}-{func_name}.pytype")
 
 
+@dataclass
+class PyTypesToml:
+    pytypes: Config
+
+
 def _load_config(config_path: pathlib.Path) -> Config:
     cfg = toml.load(config_path.open())
-    return dacite.from_dict(Config, cfg)
+    return dacite.from_dict(
+        data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
+    )
 
 
 def register(proj_root: pathlib.Path | None = None):
