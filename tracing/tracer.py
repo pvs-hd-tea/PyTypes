@@ -70,7 +70,7 @@ class Tracer:
 
     def _on_class_function_return(self, frame) -> dict[str, type]:
         """Updates the trace data with the members of the class object."""
-        first_element_name, _ = next(iter(frame.f_locals))
+        first_element_name = next(iter(frame.f_locals))
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
 
