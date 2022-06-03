@@ -81,7 +81,7 @@ class Tracer:
         }
         return names2types
 
-    def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
+    def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
         code = frame.f_code
         function_name = code.co_name
