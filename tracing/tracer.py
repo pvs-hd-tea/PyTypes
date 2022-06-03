@@ -24,6 +24,7 @@ class Tracer:
     def start_trace(self) -> None:
         """Starts the trace."""
         sys.settrace(self._on_trace_is_called)
+        # sys.setprofile(self._on_trace_is_called)
 
     def stop_trace(self) -> None:
         """Stops the trace."""
@@ -141,11 +142,8 @@ class Tracer:
         elif event == "exception":
             pass
 
-        else:
-            self.stop_trace()
-            print(f"The event {event} is unknown.")
-            # Note: The value error does not stop the program for some reason.
-            raise ValueError(f"The event {event} is unknown.")
+        # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
+        # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
 
         if names2types and category:
             self._update_trace_data_with(
