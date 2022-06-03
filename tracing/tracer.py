@@ -20,17 +20,13 @@ class Tracer:
         self._reset_members()
 
     def start_trace(self) -> None:
-        """Resets the trace values and starts the trace."""
-        self._reset_members()
+        """Starts the trace."""
         sys.settrace(self._on_trace_is_called)
 
     def stop_trace(self) -> None:
         """Stops the trace."""
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
-
-        # Last row is trace data of stoptrace.
-        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -39,13 +35,6 @@ class Tracer:
             yield None
         finally:
             self.stop_trace()
-
-    def _reset_members(self) -> None:
-        """Resets the variables of the tracer."""
-        self.trace_data = pd.DataFrame(
-            columns=constants.TraceData.SCHEMA.keys()
-        ).astype(constants.TraceData.SCHEMA)
-        self.old_values_by_variable_by_function_name = {}
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
