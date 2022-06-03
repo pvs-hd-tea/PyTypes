@@ -1,7 +1,7 @@
 # This file is used to test if the test function collector works.
 import pytest
 
-from examples.simple import sample_compare_integers, sample_convert_string_to_int, sample_compare_two_int_lists
+from examples import sample_compare_integers, sample_convert_string_to_int, sample_compare_two_int_lists
 
 
 def test_if_two_integers_are_equal_true_is_returned():
