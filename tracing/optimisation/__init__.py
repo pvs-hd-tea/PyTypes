@@ -1,25 +1,15 @@
 from abc import abstractmethod
 import enum
 
-class TriggerStatus(enum.Enum):
-    INACTIVE = 0
-    ENTRY = 1
-    ONGOING = 2
-    EXIT = 3
+from .enums import TriggerStatus
+from .base import Optimisation
+from .ignore import Ignore
+from .looping import TypeStableLoop
 
-class Optimisation:
-    """Base class for tracing-oriented optimisations"""
-    def apply(self, frame):
-        if status := self.status() in (TriggerStatus.ENTRY, TriggerStatus.ONGOING):
-            frame.f_trace_lines = False
-        else:
-            frame.f_trace_lines = True
-        return frame.f_trace_lines
 
-    @abstractmethod
-    def status(self) -> TriggerStatus:
-        pass
-
-    @abstractmethod
-    def advance(self) -> None:
-        pass
+__all__ = [
+    TriggerStatus.__name__,
+    Optimisation.__name__,
+    Ignore.__name__,
+    TypeStableLoop.__name__
+]
