@@ -6,6 +6,7 @@ CONFIG_FILE_NAME = "pytypes.toml"
 
 TRACER_ATTRIBUTE = "pytype_tracer"
 
+
 class TraceData:
     FILENAME = "Filename"
     FUNCNAME = "Function Name"
