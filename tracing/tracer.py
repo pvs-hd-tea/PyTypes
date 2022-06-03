@@ -9,15 +9,17 @@ import pathlib
 import constants
 from tracing.trace_data_category import TraceDataCategory
 
+from .optimisation import Ignore, Optimisation, TypeStableLoop
+
 
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
+        self.optimisation_stack: list[Optimisation] = list()
         self.project_dir = project_dir
-        self.old_values_by_variable_by_function_name: dict[str, dict] = {}
-        self._reset_members()
+        self.old_values_by_variable_by_function_name: dict[str, dict] = dict()
 
     def start_trace(self) -> None:
         """Starts the trace."""
@@ -36,6 +38,36 @@ class Tracer:
             yield None
         finally:
             self.stop_trace()
+
+    def _update_optimisations(self, frame) -> None:
+        ## TODO: Removal
+
+        ## Appending
+        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
+        # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
+        # NOTE: if the newest optimisation is not the same Ignore and we are in an unwanted path
+        ignore = Ignore()
+        frame_path = pathlib.Path(frame.f_code.co_filename)
+        if (
+            not self.optimisation_stack or ignore != self.optimisation_stack[-1]
+        ) and not frame_path.is_relative_to(self.project_dir):
+            self.optimisation_stack.append(ignore)
+            return
+
+        # Entering a loop for the first time
+        tsl = TypeStableLoop(frame)
+        if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
+            self.optimisation_stack.append(tsl)
+            return
+
+    def _advance_optimisation(self, frame) -> None:
+        if self.optimisation_stack is not None:
+            self.optimisation_stack[-1].advance(frame)
+        pass
+
+    def _apply_optimisation(self, frame) -> None:
+        if self.optimisation_stack:
+            self.optimisation_stack[-1].apply(frame)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -73,13 +105,16 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
+
+        self._update_optimisations(frame)
+        self._apply_optimisation(frame)
+
+        # Tracing has been toggled off for this line now, simply return
+        if self.optimisation_stack and isinstance(self.optimisation_stack[-1], Ignore):
+            return self._on_trace_is_called
+
         code = frame.f_code
         function_name = code.co_name
-
-        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
-        full_path = pathlib.Path(code.co_filename)
-        if not full_path.is_relative_to(self.project_dir):
-            return self._on_trace_is_called
 
         file_name = pathlib.Path(code.co_filename).relative_to(self.project_dir)
         line_number = frame.f_lineno
@@ -108,9 +143,9 @@ class Tracer:
 
         else:
             self.stop_trace()
-            print("The event " + str(event) + " is unknown.")
+            print(f"The event {event} is unknown.")
             # Note: The value error does not stop the program for some reason.
-            raise ValueError("The event" + str(event) + " is unknown.")
+            raise ValueError(f"The event {event} is unknown.")
 
         if names2types and category:
             self._update_trace_data_with(
@@ -120,6 +155,8 @@ class Tracer:
         self.old_values_by_variable_by_function_name[
             function_name
         ] = frame.f_locals.copy()
+
+        self._advance_optimisation(frame)
         return self._on_trace_is_called
 
     def _update_trace_data_with(
