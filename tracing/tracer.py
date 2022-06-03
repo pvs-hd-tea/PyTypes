@@ -15,7 +15,7 @@ class Tracer:
             constants.TraceData.SCHEMA
         )
         self.project_dir = project_dir
-        self.old_values_by_variable_by_function_name = {}
+        self.old_values_by_variable_by_function_name: dict[str, dict] = {}
         self._reset_members()
 
     def start_trace(self) -> None:
@@ -32,7 +32,7 @@ class Tracer:
         self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
-    def active_trace(self) -> None:
+    def active_trace(self) -> typing.Iterator[None]:
         self.start_trace()
         try:
             yield None
@@ -65,7 +65,7 @@ class Tracer:
         )
         return names2types
 
-    def _on_trace_is_called(self, frame, event, arg: any) -> typing.Callable:
+    def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
 
         code = frame.f_code
@@ -101,7 +101,7 @@ class Tracer:
             # Note: The value error does not stop the program for some reason.
             raise ValueError("The event" + str(event) + " is unknown.")
 
-        if names2types:
+        if names2types and category:
             self._update_trace_data_with(
                 file_name, function_name, line_number, category, names2types
             )
@@ -140,15 +140,16 @@ class Tracer:
             constants.TraceData.LINENO: [line_number] * len(varnames),
             constants.TraceData.CATEGORY: [category] * len(varnames),
         }
-        update = pd.DataFrame.from_dict(d).astype(constants.TraceData.SCHEMA)
+        update = pd.DataFrame(d).astype(constants.TraceData.SCHEMA)
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
         ).astype(constants.TraceData.SCHEMA)
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, any], new_values_by_variable: dict[str, any]
-) -> dict[str, any]:
+    old_values_by_variable: dict[str, typing.Any],
+    new_values_by_variable: dict[str, typing.Any],
+) -> dict[str, typing.Any]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
     for item in new_values_by_variable.items():

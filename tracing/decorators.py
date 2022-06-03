@@ -21,7 +21,7 @@ class PyTypesToml:
     pytypes: Config
 
 
-def _load_config(config_path: pathlib.Path) -> Config:
+def _load_config(config_path: pathlib.Path) -> PyTypesToml:
     cfg = toml.load(config_path.open())
     return dacite.from_dict(
         data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
@@ -52,7 +52,15 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
     def impl(main: Callable[[], None]):
         main()
-        prev_frame = inspect.currentframe().f_back
+        current_frame = inspect.currentframe()
+        if current_frame is None:
+            raise RuntimeError(
+                f"inspect.currentframe returned None, unable to trace execution!"
+            )
+
+        prev_frame = current_frame.f_back
+        if prev_frame is None:
+            raise RuntimeError(f"The current stack frame has no predecessor, unable to trace execution!")
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(
@@ -60,8 +68,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             ):
                 continue
 
-            substituted_output = cfg.output_template.format_map(
-                {"project": cfg.project, "func_name": fname}
+            substituted_output = cfg.pytypes.output_template.format_map(
+                {"project": cfg.pytypes.project, "func_name": fname}
             )
             tracer = getattr(function, constants.TRACER_ATTRIBUTE)
             # delattr(function, constants.TRACER_ATTRIBUTE)
