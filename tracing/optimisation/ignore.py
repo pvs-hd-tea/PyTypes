@@ -1,18 +1,25 @@
 from . import Optimisation, TriggerStatus
 
+
 class Ignore(Optimisation):
     """
     Dumb optimisation that is always ONGOING, in order to unconditionally
     disable tracing for the relevant scope.
     """
-    def __init__(self):
-        super().__init__()
 
-    def advance(self, current_frame) -> None:
-        pass
+    def __init__(self, frame):
+        super().__init__(frame)
+        # By default, this optimisation is constantly active, as long as the current scope is active
+        self._status = TriggerStatus.ONGOING
+
+    def advance(self, current_frame: utils.FrameWithLine, traced: pd.DataFrame) -> None:
+        # Anything that indicates leaving the scope
+        if current_frame.is_return():
+            self._status = TriggerStatus.EXITED
 
     def status(self) -> TriggerStatus:
-        return TriggerStatus.ONGOING
+        return self._status
 
     def __eq__(self, o: object) -> bool:
-        return isinstance(o, Ignore)
+        # Address comparison, no need to do more than shallow equality
+        return isinstance(o, Ignore) and self.frame.f_code == o.frame.f_code
