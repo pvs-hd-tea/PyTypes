@@ -29,7 +29,7 @@ class TypeStableLoop(Optimisation):
     def advance(self, current_frame: utils.FrameWithLine, traced: pd.DataFrame):
         # Early exit conditions: Encountering break or return
         if current_frame.is_break() or current_frame.is_return():
-            self.status = TriggerStatus.EXIT
+            self.status = TriggerStatus.EXITED
             return
 
         # We have reached the head of the loop, update iteration count
@@ -51,7 +51,7 @@ class TypeStableLoop(Optimisation):
         # NOTE: Technically unreachable code right now, but perhaps a
         # NOTE: future change will create a need for an explicit exit.
         else:
-            return TriggerStatus.EXIT
+            return TriggerStatus.EXITED
 
     def _when_inactive(
         self, current_frame: utils.FrameWithLine, traced: pd.DataFrame
