@@ -9,7 +9,7 @@ import pathlib
 import constants
 from tracing.trace_data_category import TraceDataCategory
 
-from .optimisation import Ignore, Optimisation, TypeStableLoop
+from .optimisation import TriggerStatus, FrameWithLine, Ignore, Optimisation, TypeStableLoop
 
 
 class Tracer:
@@ -17,8 +17,9 @@ class Tracer:
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
-        self.optimisation_stack: list[Optimisation] = list()
         self.project_dir = project_dir
+
+        self.optimisation_stack: list[Optimisation] = list()
         self.old_values_by_variable_by_function_name: dict[str, dict] = dict()
 
     def start_trace(self) -> None:
@@ -40,15 +41,18 @@ class Tracer:
         finally:
             self.stop_trace()
 
-    def _update_optimisations(self, frame) -> None:
-        ## TODO: Removal
+    def _update_optimisations(self, frame: FrameWithLine) -> None:
+        # Remove dead optimisations
+        while self.optimisation_stack:
+            if self.optimisation_stack[-1].status() == TriggerStatus.EXITED:
+                self.optimisation_stack.pop()
 
-        ## Appending
+        ## Appending; only one optimisation at a time
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
         # NOTE: if the newest optimisation is not the same Ignore and we are in an unwanted path
         ignore = Ignore()
-        frame_path = pathlib.Path(frame.f_code.co_filename)
+        frame_path = pathlib.Path(frame.frame.f_code.co_filename)
         if (
             not self.optimisation_stack or ignore != self.optimisation_stack[-1]
         ) and not frame_path.is_relative_to(self.project_dir):
@@ -56,15 +60,15 @@ class Tracer:
             return
 
         # Entering a loop for the first time
-        tsl = TypeStableLoop(frame)
-        if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
-            self.optimisation_stack.append(tsl)
-            return
+        if frame.is_for_loop():
+            tsl = TypeStableLoop(frame)
+            if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
+                self.optimisation_stack.append(tsl)
+                return
 
-    def _advance_optimisation(self, frame) -> None:
-        if self.optimisation_stack is not None:
-            self.optimisation_stack[-1].advance(frame)
-        pass
+    def _advance_optimisations(self, frame: FrameWithLine) -> None:
+        for optimisation in self.optimisation_stack:
+            optimisation.advance(frame, self.trace_data)
 
     def _apply_optimisation(self, frame) -> None:
         if self.optimisation_stack:
@@ -105,7 +109,7 @@ class Tracer:
         return names2types
 
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
-        """Is called during execution of a function which is traced. Collects trace data from the frame."""
+        """Called during execution of a function which is traced. Collects trace data from the frame."""
 
         self._update_optimisations(frame)
         self._apply_optimisation(frame)
@@ -133,7 +137,9 @@ class Tracer:
             if _is_frame_within_class_function(frame):
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(file_name, function_name, line_number, category2, names2types2)
+                self._update_trace_data_with(
+                    file_name, function_name, line_number, category2, names2types2
+                )
 
         elif event == "line":
             names2types = self._on_line(frame)
@@ -154,16 +160,16 @@ class Tracer:
             function_name
         ] = frame.f_locals.copy()
 
-        self._advance_optimisation(frame)
+        self._advance_optimisations(frame)
         return self._on_trace_is_called
 
     def _update_trace_data_with(
-            self,
-            file_name: pathlib.Path,
-            function_name: str,
-            line_number: int,
-            category: TraceDataCategory,
-            names2types: dict[str, type],
+        self,
+        file_name: pathlib.Path,
+        function_name: str,
+        line_number: int,
+        category: TraceDataCategory,
+        names2types: dict[str, type],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
@@ -208,7 +214,9 @@ def _get_new_defined_local_variables_with_types(
 def _is_frame_within_class_function(frame) -> bool:
     code = frame.f_code
     function_name = code.co_name
-    all_possible_classes = [value for value in frame.f_globals.values() if inspect.isclass(value)]
+    all_possible_classes = [
+        value for value in frame.f_globals.values() if inspect.isclass(value)
+    ]
     for possible_class in all_possible_classes:
         if hasattr(possible_class, function_name):
             member = getattr(possible_class, function_name)
