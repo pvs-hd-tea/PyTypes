@@ -11,5 +11,6 @@ __all__ = [
     TriggerStatus.__name__,
     Optimisation.__name__,
     Ignore.__name__,
-    TypeStableLoop.__name__
+    TypeStableLoop.__name__,
+    FrameWithLine.__name__
 ]
