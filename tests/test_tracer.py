@@ -7,6 +7,15 @@ import constants
 from tracing import Tracer, TraceDataCategory
 
 
+def _compare_dataframes(expected: pd.DataFrame, actual: pd.DataFrame):
+    if not expected.equals(actual):
+        with pd.option_context("display.max_rows", None, "display.max_columns", None):
+            print(f"expected:\n{expected}\n\n")
+            print(f"actual:\n{actual}\n\n")
+            print(expected.compare(actual))
+            assert False
+
+
 def sample_compare_two_int_lists(list1: List[int], list2: List[int]):
     if len(list1) != len(list2):
         return False
@@ -125,7 +134,8 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-    assert expected_trace_data.equals(actual_trace_data)
+
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_data():
@@ -213,7 +223,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-    assert expected_trace_data.equals(actual_trace_data)
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
@@ -246,8 +256,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-
-    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
@@ -297,7 +306,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
@@ -339,7 +348,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
     test_object.stop_trace()
     actual_trace_data = test_object.trace_data
 
-    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data():
@@ -451,7 +460,8 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     #    print(actual_trace_data.head(n=20))
     #    print(actual_trace_data.dtypes)
     #    print(expected_trace_data.dtypes)
-    assert expected_trace_data.equals(actual_trace_data), f"{expected_trace_data.compare(actual_trace_data)}"
+
+    _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_starts_trace_data_is_none_or_empty():
