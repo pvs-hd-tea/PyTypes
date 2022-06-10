@@ -1,7 +1,9 @@
 from . import Optimisation, TriggerStatus, utils
 import constants
 
-# TODO: Pass in trace data during first n iteration of loops
+import pandas as pd
+
+
 class TypeStableLoop(Optimisation):
     """
     Triggers when the types of instances within loop bodies are stable for
@@ -20,13 +22,13 @@ class TypeStableLoop(Optimisation):
         self._iterations_since_type_changes = 0
         self._status = TriggerStatus.INACTIVE
 
-        self._relevant_lines = (self.frame.f_lineno, None)
+        self._relevant_lines = (self.fwm.frame.f_lineno, None)
         self._loop_traced_count = None
 
     def status(self) -> TriggerStatus:
         return self._status
 
-    def advance(self, current_frame: utils.FrameWithLine, traced: pd.DataFrame):
+    def advance(self, current_frame: utils.FrameWithMetadata, traced: pd.DataFrame):
         # Early exit conditions: Encountering break or return
         if current_frame.is_break() or current_frame.is_return():
             self._status = TriggerStatus.EXITED
@@ -54,12 +56,12 @@ class TypeStableLoop(Optimisation):
             return TriggerStatus.EXITED
 
     def _when_inactive(
-        self, current_frame: utils.FrameWithLine, traced: pd.DataFrame
+        self, current_frame: utils.FrameWithMetadata, traced: pd.DataFrame
     ) -> None:
         # In the first iteration, update line range information
         if self._total_iterations == 0:
             begin, _ = self._relevant_lines
-            self._relevant_lines = begin, current_frame.frame.line_no
+            self._relevant_lines = begin, current_frame.frame.f_lineno
 
         # In later iterations, at the start of each iteration,
         # compare against known type information
@@ -71,7 +73,7 @@ class TypeStableLoop(Optimisation):
             if self._is_loop_head(current_frame):
                 new_loop_traced_count = (
                     traced[constants.TraceData.LINENO]
-                    .between(*self._relevant_lines, inclusive=True)
+                    .between(*self._relevant_lines, inclusive="both")
                     .shape[0]
                 )
                 if (
@@ -87,19 +89,22 @@ class TypeStableLoop(Optimisation):
                 self._iterations_since_type_changes += 1
 
     def _when_entry(
-        self, current_frame: utils.FrameWithLine, traced: pd.DataFrame
+        self, current_frame: utils.FrameWithMetadata, traced: pd.DataFrame
     ) -> None:
         if self._is_loop_head(current_frame):
             self._iterations_since_type_changes += 1
 
     def _when_ongoing(
-        self, current_frame: utils.FrameWithLine, traced: pd.DataFrame
+        self, current_frame: utils.FrameWithMetadata, traced: pd.DataFrame
     ) -> None:
         if self._is_loop_head(current_frame):
             self._iterations_since_type_changes += 1
 
-    def _is_loop_head(self, current_frame: utils.FrameWithLine) -> bool:
-        return self.frame.f_lineno == current_frame.frame.f_lineno
+    def _is_loop_head(self, current_frame: utils.FrameWithMetadata) -> bool:
+        return self.fwm.frame.f_lineno == current_frame.frame.f_lineno
 
     def __eq__(self, o: object) -> bool:
-        return isinstance(o, TypeStableLoop) and self.frame.f_lineno == o.frame.f_lineno
+        return (
+            isinstance(o, TypeStableLoop)
+            and self.fwm.frame.f_lineno == o.fwm.frame.f_lineno
+        )

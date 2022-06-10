@@ -1,3 +1,4 @@
+import logging
 import inspect
 import contextlib
 import sys
@@ -9,7 +10,13 @@ import pathlib
 import constants
 from tracing.trace_data_category import TraceDataCategory
 
-from .optimisation import TriggerStatus, FrameWithLine, Ignore, Optimisation, TypeStableLoop
+from .optimisation import (
+    TriggerStatus,
+    FrameWithMetadata,
+    Ignore,
+    Optimisation,
+    TypeStableLoop,
+)
 
 
 class Tracer:
@@ -24,11 +31,13 @@ class Tracer:
 
     def start_trace(self) -> None:
         """Starts the trace."""
+        logging.info("Starting trace")
         sys.settrace(self._on_trace_is_called)
         # sys.setprofile(self._on_trace_is_called)
 
     def stop_trace(self) -> None:
         """Stops the trace."""
+        logging.info("Stopping trace")
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
         self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
@@ -41,18 +50,23 @@ class Tracer:
         finally:
             self.stop_trace()
 
-    def _update_optimisations(self, frame: FrameWithLine) -> None:
+    def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
         # Remove dead optimisations
         while self.optimisation_stack:
             if self.optimisation_stack[-1].status() == TriggerStatus.EXITED:
+                logging.debug(
+                    f"Removing {self.optimisation_stack[-1].__name__} from optimisations"
+                )
                 self.optimisation_stack.pop()
+            else:
+                break
 
         ## Appending; only one optimisation at a time
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
         # NOTE: if the newest optimisation is not the same Ignore and we are in an unwanted path
-        ignore = Ignore()
-        frame_path = pathlib.Path(frame.frame.f_code.co_filename)
+        ignore = Ignore(fwm)
+        frame_path = pathlib.Path(fwm.frame.f_code.co_filename)
         if (
             not self.optimisation_stack or ignore != self.optimisation_stack[-1]
         ) and not frame_path.is_relative_to(self.project_dir):
@@ -60,19 +74,19 @@ class Tracer:
             return
 
         # Entering a loop for the first time
-        if frame.is_for_loop():
-            tsl = TypeStableLoop(frame)
+        if fwm.is_for_loop():
+            tsl = TypeStableLoop(fwm)
             if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
                 self.optimisation_stack.append(tsl)
                 return
 
-    def _advance_optimisations(self, frame: FrameWithLine) -> None:
+    def _advance_optimisations(self, fwm: FrameWithMetadata) -> None:
         for optimisation in self.optimisation_stack:
-            optimisation.advance(frame, self.trace_data)
+            optimisation.advance(fwm, self.trace_data)
 
-    def _apply_optimisation(self, frame) -> None:
+    def _apply_optimisation(self, fwm) -> None:
         if self.optimisation_stack:
-            self.optimisation_stack[-1].apply(frame)
+            self.optimisation_stack[-1].apply(fwm)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -111,8 +125,11 @@ class Tracer:
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Called during execution of a function which is traced. Collects trace data from the frame."""
 
-        self._update_optimisations(frame)
-        self._apply_optimisation(frame)
+        fwm = FrameWithMetadata(frame)
+
+        self._update_optimisations(fwm)
+        self._advance_optimisations(fwm)
+        self._apply_optimisation(fwm)
 
         # Tracing has been toggled off for this line now, simply return
         if self.optimisation_stack and isinstance(self.optimisation_stack[-1], Ignore):
@@ -160,7 +177,6 @@ class Tracer:
             function_name
         ] = frame.f_locals.copy()
 
-        self._advance_optimisations(frame)
         return self._on_trace_is_called
 
     def _update_trace_data_with(
