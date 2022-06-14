@@ -7,9 +7,7 @@ class TracerDecoratorAppender:
     def __init__(self):
         self.pytest_function_regex_pattern = re.compile(r"[\w\s]*test_[\w\s]*\([\w\s]*\)[\w\s]*:[\w\s]*")
         self.decorator_to_append_line = "@register()\n"
-        self.first_file_line = "import sys, os\nroot = " \
-                                     "os.path.dirname(os.path.abspath(__file__))\nsys.path.append(os.path.dirname(" \
-                                     "root))\nfrom tracing import register, entrypoint\n"
+        self.first_file_line = "from tracing import register, entrypoint\n"
         self.last_file_line = "\n@entrypoint()\ndef main():\n  ...\n"
         self.file_ending = "_decorators_appended.py"
 
@@ -52,4 +50,10 @@ class TracerDecoratorAppender:
                 file.writelines(lines)
 
             self.decorator_appended_file_paths.append(file_path_with_appended_decorators)
+
+    def execute_decorator_appended_files(self):
+        for decorator_appended_file_path in self.decorator_appended_file_paths:
+            global_variables = {"__file__": decorator_appended_file_path}
+            with decorator_appended_file_path.open("r") as file:
+                exec(compile(file.read(), decorator_appended_file_path, 'exec'), global_variables, None)
 
