@@ -2,31 +2,27 @@ import pathlib
 
 import toml
 
-from .base import ApplicationStrategy, TestDetector
+from .detector import TestDetector
+from .strat import ApplicationStrategy
+from .projio import Project
 
 
 class PyTestDetector(TestDetector):
-    def __init__(self, path2project: pathlib.Path):
-        super().__init__(path2project)
+    def __init__(self, project: Project):
+        super().__init__(project)
 
     def matches(self) -> bool:
-        if self._has_pytest_ini():
-            return True
-
-        if self._has_pytest_in_pyproject():
-            return True
-
-        return False
+        return self._has_pytest_ini() or self._has_pytest_in_pyproject()
 
     def create_strategy(self) -> ApplicationStrategy:
         return PyTestStrategy()
 
     def _has_pytest_ini(self) -> bool:
-        pytest_config = self.path2project / "pytest.ini"
+        pytest_config = self.project.root / "pytest.ini"
         return pytest_config.is_file()
 
     def _has_pytest_in_pyproject(self) -> bool:
-        pyproj = self.path2project / "pyproject.toml"
+        pyproj = self.project.root / "pyproject.toml"
         if not pyproj.is_file():
             return False
 

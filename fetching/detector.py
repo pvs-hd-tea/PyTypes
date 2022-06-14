@@ -1,15 +1,8 @@
 from abc import ABC, abstractmethod
 import pathlib
 
-
-class ApplicationStrategy(ABC):
-    """
-    Implement for a specific test framework; 
-    When given a file that uses the specified framework,
-    parse this file and insert code that will cause the test functions to be traced 
-    upon execution
-    """
-    pass
+from .projio import Project
+from .strat import ApplicationStrategy
 
 
 class TestDetector(ABC):
@@ -19,10 +12,10 @@ class TestDetector(ABC):
     if there is a match.
     """
 
-    def __init__(self, path2project: pathlib.Path):
+    def __init__(self, project: Project):
         # TODO: Should this take an instance of repository?
         # TODO: Perhaps a project class is needed, in order to interact better with the project structure
-        self.path2project = path2project
+        self.project = project
 
     @abstractmethod
     def matches(self) -> bool:
@@ -33,3 +26,7 @@ class TestDetector(ABC):
     def create_strategy(self) -> ApplicationStrategy:
         """Create application strategy."""
         pass
+
+
+def detector_factory(proj: Project) -> TestDetector:
+    pass

@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 
+import requests
 import pathlib
 import tempfile
 import shutil
+
+from .projio import Project
 
 import git
 
@@ -11,9 +14,15 @@ class Repository(ABC):
     def __init__(self, project_url: str):
         self.project_url = project_url
 
-    def fetch(self, output: pathlib.Path):
+    def fetch(self, output: pathlib.Path) -> Project:
+        """
+        Download the project from the URL specified in the constructor
+        and store it in the path specified by output 
+        """
         td = self._fetch()
         self._write_to(td, output)
+
+        return Project(output)
 
     @property
     @abstractmethod
@@ -60,6 +69,11 @@ class ArchiveRepository(Repository):
         super().__init__(project_url)
 
     fmt = "Archive"
+
+    def _fetch(self) -> tempfile.TemporaryDirectory:
+        td = tempfile.TemporaryDirectory()
+        git.Repo.clone_from(self.project_url, td.name)
+        return td
 
 
 def repository_factory(project_url: str, fmt: str | None) -> Repository:
