@@ -6,15 +6,21 @@ class TracerDecoratorAppender:
     """Appends the tracer decorators to pytest test functions in files in the specified path."""
     def __init__(self):
         self.pytest_function_regex_pattern = re.compile(r"[\w\s]*test_[\w\s]*\([\w\s]*\)[\w\s]*:[\w\s]*")
-        self.decorator_to_append_line = "@register\n"
-        self.import_decorator_line = "from tracing import register, entrypoint\n"
-        self.final_file_line = "\n@entrypoint\ndef main():\n  ...\n"
+        self.decorator_to_append_line = "@register()\n"
+        self.first_file_line = "import sys, os\nroot = " \
+                                     "os.path.dirname(os.path.abspath(__file__))\nsys.path.append(os.path.dirname(" \
+                                     "root))\nfrom tracing import register, entrypoint\n"
+        self.last_file_line = "\n@entrypoint()\ndef main():\n  ...\n"
         self.file_ending = "_decorators_appended.py"
+
+        self.decorator_appended_file_paths = []
 
     def append_decorator_on_all_files_in(self, path: pathlib.Path,
                                          include_also_files_in_subdirectories: bool = False) -> None:
         """Finds all pytest files in the provided path argument and generates copies of these files with the
-        decorators appended to the pytest functions. """
+        decorators appended to the pytest functions. Stores the file paths of the new files."""
+        self.decorator_appended_file_paths.clear()
+
         if include_also_files_in_subdirectories:
             file_paths = path.rglob('test_*.py')
         else:
@@ -38,9 +44,12 @@ class TracerDecoratorAppender:
                     contains_pytest_test_function = True
 
             if contains_pytest_test_function:
-                lines.insert(0, self.import_decorator_line)
-                lines.append(self.final_file_line)
+                lines.insert(0, self.first_file_line)
+                lines.append(self.last_file_line)
 
             file_path_with_appended_decorators = pathlib.Path(str(file_path).replace(".py", self.file_ending))
             with file_path_with_appended_decorators.open("w") as file:
                 file.writelines(lines)
+
+            self.decorator_appended_file_paths.append(file_path_with_appended_decorators)
+
