@@ -31,7 +31,7 @@ class Repository:
 
         inter_path = pathlib.Path(intermediary.name)
         for inpath in inter_path.iterdir():
-            relpath = each_file.relative_to(inter_path)
+            relpath = inpath.relative_to(inter_path)
             outpath = output / relpath
 
             shutil.move(inpath, outpath)
