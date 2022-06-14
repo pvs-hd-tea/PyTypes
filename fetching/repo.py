@@ -1,13 +1,16 @@
 from abc import ABC, abstractmethod
 
+import logging
 import requests
 import pathlib
 import tempfile
+import typing
 import shutil
 
-from .projio import Project
-
 import git
+import tqdm # type: ignore
+
+from .projio import Project
 
 
 class Repository(ABC):
@@ -17,7 +20,7 @@ class Repository(ABC):
     def fetch(self, output: pathlib.Path) -> Project:
         """
         Download the project from the URL specified in the constructor
-        and store it in the path specified by output 
+        and store it in the path specified by output
         """
         td = self._fetch()
         self._write_to(td, output)
@@ -55,13 +58,34 @@ class Repository(ABC):
 class GitRepository(Repository):
     def __init__(self, project_url: str):
         super().__init__(project_url)
+        self.pbar = None
 
     fmt = "Git"
 
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
-        git.Repo.clone_from(self.project_url, td.name)
+        git.Repo.clone_from(self.project_url, td.name, progress=self._progress())
         return td
+
+    def _progress(self) -> typing.Callable:
+        if logging.root.isEnabledFor(logging.INFO):
+            self.pbar = tqdm.tqdm()
+            return self._info_progress
+
+        return self._sentinel_progress
+
+    def _info_progress(self, _, cur_count: int, max_count: int, message: str) -> None:
+        assert self.pbar is not None
+
+        self.pbar.total = max_count
+        self.pbar.n = cur_count
+        self.pbar.desc = message
+        self.pbar.refresh()
+
+    def _sentinel_progress(
+        self, _, cur_count: int, max_count: int, message: str
+    ) -> None:
+        return None
 
 
 class ArchiveRepository(Repository):
@@ -72,15 +96,17 @@ class ArchiveRepository(Repository):
 
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
-        git.Repo.clone_from(self.project_url, td.name)
+        git.Repo.clone_from(self.project_url, td.name, depth=1)
         return td
 
 
 def repository_factory(project_url: str, fmt: str | None) -> Repository:
     if fmt == GitRepository.fmt or project_url.endswith(".git"):
+        logging.info(f"Interpreted {project_url} as Git repository")
         return GitRepository(project_url)
 
     if fmt == ArchiveRepository.fmt or project_url.endswith((".tar.gz", ".zip")):
+        logging.info(f"Interpreted {project_url} as an URL to an archive")
         return ArchiveRepository(project_url)
 
     raise LookupError(f"Unsupported repository format: {project_url}")
