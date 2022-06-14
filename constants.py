@@ -6,6 +6,8 @@ CONFIG_FILE_NAME = "pytypes.toml"
 
 TRACER_ATTRIBUTE = "pytype_tracer"
 
+SAMPLE_CODE_FOLDER_NAME = "examples"
+
 
 class TraceData:
     FILENAME = "Filename"
