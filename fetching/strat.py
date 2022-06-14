@@ -1,5 +1,5 @@
 from abc import ABC
-
+from .projio import Project
 class ApplicationStrategy(ABC):
     """
     Implement for a specific test framework; 
@@ -7,4 +7,5 @@ class ApplicationStrategy(ABC):
     parse this file and insert code that will cause the test 
     functions to be traced upon execution.
     """
-    pass
+    def apply(self, project: Project):
+        pass
