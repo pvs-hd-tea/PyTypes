@@ -2,7 +2,7 @@ import pandas as pd
 
 PROJECT_NAME = "PyTypes"
 
-CONFIG_FILE_NAME = "pytypes.toml"
+CONFIG_FILE_NAME = "examples/pytypes.toml"
 
 TRACER_ATTRIBUTE = "pytype_tracer"
 
