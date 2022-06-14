@@ -28,7 +28,7 @@ def _load_config(config_path: pathlib.Path) -> PyTypesToml:
     )
 
 
-def register(proj_root: Union[pathlib.Path, None] = None):
+def register(proj_root: pathlib.Path | None = None):
     """
     Register a test function for tracing.
     @param proj_root the path to project's root directory
@@ -42,7 +42,7 @@ def register(proj_root: Union[pathlib.Path, None] = None):
     return impl
 
 
-def entrypoint(proj_root: Union[pathlib.Path, None] = None):
+def entrypoint(proj_root: pathlib.Path | None = None):
     """
     Execute and trace all registered test functions in the same module as the marked function
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
