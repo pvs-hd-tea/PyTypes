@@ -23,9 +23,7 @@ class Repository:
         pass
 
     def _write_to(
-        self,
-        intermediary: tempfile.TemporaryDirectory,
-        output: pathlib.Path
+        self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path
     ):
         output.mkdir(parents=True, exist_ok=True)
 

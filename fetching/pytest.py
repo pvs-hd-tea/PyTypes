@@ -1,13 +1,6 @@
-from abc import abstractmethod
 import pathlib
 
-class TestDetector:
-    def __init__(self, path2project: pathlib.Path):
-        self.path2project = path2project
-
-    @abstractmethod
-    def matches(self) -> bool:
-        pass
+from .base import ApplicationStrategy, TestDetector
 
 
 class PyTestDetector(TestDetector):
@@ -21,5 +14,8 @@ class PyTestDetector(TestDetector):
 
         # TODO: support pyproject.toml
 
-
         return False
+
+
+class PyTestStrategy(ApplicationStrategy):
+    pass
