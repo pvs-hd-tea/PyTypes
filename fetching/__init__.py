@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import click
@@ -31,8 +32,23 @@ __all__ = [repository_factory.__name__, Repository.__name__]
     help="Download output path",
     required=True,
 )
+@click.option(
+    "-v",
+    "--verbose",
+    help="Each occurrence increases the logging level from NOTSET to CRITICAL",
+    is_flag=True,
+    callback=lambda ctx, _, val: logging.INFO if val else logging.CRITICAL,
+    required=False,
+    default=False,
+)
 def main(**params):
-    url, fmt, out = params["url"], params.get["format"], params["output"]
+    url, fmt, out, verb = (
+        params["url"],
+        params["format"],
+        params["output"],
+        params["verbose"],
+    )
+    logging.basicConfig(level=verb)
 
     repo = repository_factory(project_url=url, fmt=fmt)
     project = repo.fetch(out)
