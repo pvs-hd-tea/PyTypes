@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import inspect
 import pathlib
-from typing import Callable
+from typing import Callable, Union
 
 import dacite
 import toml
