@@ -38,11 +38,13 @@ class Repository:
 
 
 class GitRepository(Repository):
-    def __init__(self, project_url: str, output: pathlib.Path):
-        super().__init__(project_url, output)
+    def __init__(self, project_url: str):
+        super().__init__(project_url)
 
-    def _fetch(self) -> None:
-        git.Repo.clone_from(self.project_url, self.output)
+    def _fetch(self) -> tempfile.TemporaryDirectory:
+        td = tempfile.TemporaryDirectory()
+        git.Repo.clone_from(self.project_url, td.name)
+        return td
 
 
 def repository_factory(project_url: str) -> Repository:
