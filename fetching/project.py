@@ -4,38 +4,45 @@ import pathlib
 import tempfile
 import shutil
 
-from .repositories import gitrepo
+import git
 
 
 class Repository:
     def __init__(self, project_url: str):
         self.project_url = project_url
 
+    def fetch(self, output: pathlib.Path):
+        td = self._fetch()
+        self._write_to(td, output)
+
     @abstractmethod
-    def fetch(self) -> tempfile.TemporaryDirectory:
+    def _fetch(self) -> tempfile.TemporaryDirectory:
         """
         Fetch the project at the specified URL, and store it under a temporary directory
         """
         pass
 
-    def write_to(self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path, copy=False):
-        method = shutil.copy if copy else shutil.move
-
+    def _write_to(
+        self,
+        intermediary: tempfile.TemporaryDirectory,
+        output: pathlib.Path
+    ):
         output.mkdir(parents=True, exist_ok=True)
 
         inter_path = pathlib.Path(intermediary.name)
         for inpath in inter_path.iterdir():
-            relpath = each_file.relative_to(each_file)
+            relpath = each_file.relative_to(inter_path)
             outpath = output / relpath
 
-            method(inpath, outpath)
+            shutil.move(inpath, outpath)
 
 
 class GitRepository(Repository):
-    def __init__(self, project_url: str):
-        super().__init__(project_url)
+    def __init__(self, project_url: str, output: pathlib.Path):
+        super().__init__(project_url, output)
 
-    def fetch(self):
+    def _fetch(self) -> None:
+        git.Repo.clone_from(self.project_url, self.output)
 
 
 def repository_factory(project_url: str) -> Repository:
