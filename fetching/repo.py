@@ -66,4 +66,7 @@ def repository_factory(project_url: str, fmt: str | None) -> Repository:
     if fmt == GitRepository.fmt or project_url.endswith(".git"):
         return GitRepository(project_url)
 
+    if fmt == ArchiveRepository.fmt or project_url.endswith((".tar.gz", ".zip")):
+        return ArchiveRepository(project_url)
+
     raise LookupError(f"Unsupported repository format: {project_url}")
