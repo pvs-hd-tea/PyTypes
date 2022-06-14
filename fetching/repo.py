@@ -53,12 +53,14 @@ class GitRepository(Repository):
         td = tempfile.TemporaryDirectory()
         git.Repo.clone_from(self.project_url, td.name)
         return td
-        
+
+
 class ArchiveRepository(Repository):
     def __init__(self, project_url: str):
         super().__init__(project_url)
 
     fmt = "Archive"
+
 
 def repository_factory(project_url: str, fmt: str | None) -> Repository:
     if fmt == GitRepository.fmt or project_url.endswith(".git"):

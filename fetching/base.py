@@ -14,7 +14,7 @@ class TestDetector(ABC):
     """
 
     def __init__(self, path2project: pathlib.Path):
-        # TODO: Should this take an instance of repository? 
+        # TODO: Should this take an instance of repository?
         # TODO: Perhaps a project class is needed, in order to interact better with the project structure
         self.path2project = path2project
 
