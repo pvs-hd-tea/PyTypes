@@ -14,7 +14,7 @@ class PyTestDetector(TestDetector):
     def __init__(self, path2project: pathlib.Path):
         super().__init__(path2project)
 
-    def matches(self):
+    def matches(self) -> bool:
         pytest_config = self.path2project / "pytest.ini"
         if pytest_config.is_file():
             return True
