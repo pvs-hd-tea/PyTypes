@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 import pathlib
 import tempfile
@@ -7,13 +7,21 @@ import shutil
 import git
 
 
-class Repository:
+class Repository(ABC):
     def __init__(self, project_url: str):
         self.project_url = project_url
 
     def fetch(self, output: pathlib.Path):
         td = self._fetch()
         self._write_to(td, output)
+
+    @property
+    @abstractmethod
+    def fmt(self) -> str:
+        """
+        Static attribute indicating format of repository
+        """
+        pass
 
     @abstractmethod
     def _fetch(self) -> tempfile.TemporaryDirectory:
@@ -39,14 +47,21 @@ class GitRepository(Repository):
     def __init__(self, project_url: str):
         super().__init__(project_url)
 
+    fmt = "Git"
+
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
         git.Repo.clone_from(self.project_url, td.name)
         return td
+        
+class ArchiveRepository(Repository):
+    def __init__(self, project_url: str):
+        super().__init__(project_url)
 
+    fmt = "Archive"
 
-def repository_factory(project_url: str) -> Repository:
-    if project_url.endswith(".git"):
+def repository_factory(project_url: str, fmt: str | None) -> Repository:
+    if fmt == GitRepository.fmt or project_url.endswith(".git"):
         return GitRepository(project_url)
 
     raise LookupError(f"Unsupported repository format: {project_url}")
