@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import pathlib
 import logging
 
 import toml
@@ -59,9 +58,10 @@ class PyTestDetector(TestDetector):
             return False
 
         pyproj_cfg = toml.load(pyproj.open())
-        return (
-            "tool" in pyproj_cfg
-            and "poetry" in pyproj_cfg["tool"]
-            and "dev-dependencies" in pyproj_cfg["tool"]["poetry"]
-            and "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]
-        )
+        if "tool" not in pyproj_cfg:
+            return False
+        elif "poetry" not in pyproj_cfg["tool"]:
+            return False
+        elif "dev-dependencies" not in pyproj_cfg["tool"]["poetry"]:
+            return False
+        return "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]
