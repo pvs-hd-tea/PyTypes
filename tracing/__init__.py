@@ -1,4 +1,5 @@
 from .decorator_appender import TracerDecoratorAppender
+from .test_file_trace_data_collector import TestFileTraceDataCollector
 from .trace_data_category import TraceDataCategory
 from .tracer import Tracer
 
@@ -10,4 +11,5 @@ __all__ = [
     entrypoint.__name__,
     register.__name__,
     TracerDecoratorAppender.__name__,
+    TestFileTraceDataCollector.__name__
 ]

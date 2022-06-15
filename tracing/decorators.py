@@ -13,7 +13,7 @@ import constants
 @dataclass
 class Config:
     project: str
-    output_template: str = field(default="{project}-{func_name}.pytype")
+    output_template: str = field(default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING)
 
 
 @dataclass
