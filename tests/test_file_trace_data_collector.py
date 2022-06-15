@@ -14,8 +14,6 @@ def test_if_argument_of_append_decorator_is_none_error_is_raised():
 
 
 def test_if_test_object_collects_generated_trace_data_it_returns_correct_trace_data():
-    return True
-
     expected_trace_data = pd.read_pickle(cwd / "test_file_trace_data_collector_expected_data1.pytype")
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
     expected_trace_data = expected_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
