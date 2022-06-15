@@ -1,4 +1,4 @@
-from tests.resource.sample_functions import sample_compare_integers
+from tests.resource.sample_functions import sample_compare_integers  # type: ignore
 
 
 def test_pass():

@@ -12,6 +12,9 @@ from tracing.trace_data_category import TraceDataCategory
 
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
+        if project_dir is None:
+            raise TypeError
+
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )

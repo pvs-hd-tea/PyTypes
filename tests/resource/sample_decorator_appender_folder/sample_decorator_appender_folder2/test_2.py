@@ -1,4 +1,4 @@
-from tests.resource.sample_functions import sample_convert_string_to_int, sample_compare_two_int_lists
+from tests.resource.sample_functions import sample_convert_string_to_int, sample_compare_two_int_lists  # type: ignore
 
 
 def test_pass   (      )  :
