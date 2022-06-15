@@ -27,6 +27,18 @@ class Repository(ABC):
 
         return Project(output)
 
+    @staticmethod
+    def factory(project_url: str, fmt: str | None) -> "Repository":
+        if fmt == GitRepository.fmt or project_url.endswith(".git"):
+            logging.info(f"Interpreted {project_url} as Git repository")
+            return GitRepository(project_url)
+
+        if fmt == ArchiveRepository.fmt or project_url.endswith((".tar.gz", ".zip")):
+            logging.info(f"Interpreted {project_url} as an URL to an archive")
+            return ArchiveRepository(project_url)
+
+        raise LookupError(f"Unsupported repository format: {project_url}")
+
     @property
     @abstractmethod
     def fmt(self) -> str:
@@ -99,15 +111,3 @@ class ArchiveRepository(Repository):
         td = tempfile.TemporaryDirectory()
         git.Repo.clone_from(self.project_url, td.name, depth=1)
         return td
-
-
-def repository_factory(project_url: str, fmt: str | None) -> Repository:
-    if fmt == GitRepository.fmt or project_url.endswith(".git"):
-        logging.info(f"Interpreted {project_url} as Git repository")
-        return GitRepository(project_url)
-
-    if fmt == ArchiveRepository.fmt or project_url.endswith((".tar.gz", ".zip")):
-        logging.info(f"Interpreted {project_url} as an URL to an archive")
-        return ArchiveRepository(project_url)
-
-    raise LookupError(f"Unsupported repository format: {project_url}")

@@ -20,6 +20,14 @@ class TestDetector(ABC):
         # TODO: Perhaps a project class is needed, in order to interact better with the project structure
         self.project = project
 
+    @staticmethod
+    def factory(proj: Project) -> "TestDetector":
+        if (d := PyTestDetector(proj)).matches():
+            logging.info(f"Detected pytest in {proj.root}")
+            return d
+
+        raise LookupError(f"Project at {proj.root} uses unknown testing suite")
+
     @abstractmethod
     def matches(self) -> bool:
         """Detect specific testing suite."""
@@ -57,11 +65,3 @@ class PyTestDetector(TestDetector):
             and "dev-dependencies" in pyproj_cfg["tool"]["poetry"]
             and "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]
         )
-
-
-def detector_factory(proj: Project) -> TestDetector:
-    if (d := PyTestDetector(proj)).matches():
-        logging.info(f"Detected pytest in {proj.root}")
-        return d
-
-    raise LookupError(f"Project at {proj.root} uses unknown testing suite")
