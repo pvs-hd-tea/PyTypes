@@ -109,5 +109,9 @@ class ArchiveRepository(Repository):
 
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
-        git.Repo.clone_from(self.project_url, td.name, depth=1)
+        if (r := requests.get(self.project_url, stream=True)).status_code == 200:
+            with open(td.name, "wb") as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+
         return td
