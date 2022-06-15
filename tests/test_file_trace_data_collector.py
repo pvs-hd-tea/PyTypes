@@ -32,5 +32,6 @@ def test_if_test_object_collects_generated_trace_data_it_returns_correct_trace_d
     # with pd.option_context("display.max_rows", None, "display.max_columns", None):
     #    print(actual_trace_data.shape[0])
     #    print(expected_trace_data.shape[0])
+
     assert actual_trace_data.shape[0] == 52
     assert expected_trace_data["Filename"].equals(actual_trace_data["Filename"])
