@@ -28,7 +28,7 @@ class Repository(ABC):
         return Project(output)
 
     @staticmethod
-    def factory(project_url: str, fmt: str | None) -> "Repository":
+    def factory(project_url: str, fmt: str | None = None) -> "Repository":
         if fmt == GitRepository.fmt or project_url.endswith(".git"):
             logging.info(f"Interpreted {project_url} as Git repository")
             return GitRepository(project_url)
