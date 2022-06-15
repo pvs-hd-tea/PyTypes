@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import pathlib
-import typing
 
 from .projio import Project
 
@@ -15,7 +14,7 @@ class ApplicationStrategy(ABC):
 
     def apply(self, project: Project):
         assert project.test_directory is not None
-        for path in filter(self._test_file_filter, project.test_directory.glob('**/*')):
+        for path in filter(self._test_file_filter, project.test_directory.glob("**/*")):
             self._apply(path)
 
     @abstractmethod
@@ -28,9 +27,10 @@ class ApplicationStrategy(ABC):
         """True iff path is a file / folder that will be executed by the framework"""
         pass
 
+
 class PyTestStrategy(ApplicationStrategy):
     def _apply(self, path: pathlib.Path) -> None:
-        pass 
+        pass
 
     def _test_file_filter(self, path: pathlib.Path) -> bool:
         pass
