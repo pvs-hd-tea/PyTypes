@@ -8,7 +8,7 @@ import typing
 import shutil
 
 import git
-import tqdm # type: ignore
+import tqdm  # type: ignore
 
 from .projio import Project
 
@@ -31,7 +31,8 @@ class Repository(ABC):
     @abstractmethod
     def fmt(self) -> str:
         """
-        Static attribute indicating format of repository
+        Attribute indicating format of repository.
+        Implement using `fmt = "THIS_REPOS_FORMAT"` in the derived class.
         """
         pass
 
