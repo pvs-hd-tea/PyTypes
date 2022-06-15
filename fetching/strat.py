@@ -14,17 +14,23 @@ class ApplicationStrategy(ABC):
     """
 
     def apply(self, project: Project):
-        for match in self.test_file_filter():
-            self._apply(match)
+        assert project.test_directory is not None
+        for path in filter(self._test_file_filter, project.test_directory.glob('**/*')):
+            self._apply(path)
 
     @abstractmethod
-    def _apply(self, test_file: pathlib.Path) -> None:
+    def _apply(self, path: pathlib.Path) -> None:
+        """Perform IO operation to modify the file pointed to by path"""
         pass
 
     @abstractmethod
-    def test_file_filter(self) -> typing.Iterator[pathlib.Path]:
+    def _test_file_filter(self, path: pathlib.Path) -> bool:
+        """True iff path is a file / folder that will be executed by the framework"""
         pass
 
 class PyTestStrategy(ApplicationStrategy):
-    def apply(self, project: Project):
+    def _apply(self, path: pathlib.Path) -> None:
+        pass 
+
+    def _test_file_filter(self, path: pathlib.Path) -> bool:
         pass
