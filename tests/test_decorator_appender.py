@@ -9,7 +9,8 @@ cwd = pathlib.Path.cwd() / 'resource'
 
 def test_if_argument_of_append_decorator_is_none_error_is_raised():
     test_object = TracerDecoratorAppender()
-    test_object.append_decorator_on_all_files_in(None)
+    with pytest.raises(TypeError):
+        test_object.append_decorator_on_all_files_in(None)
 
 
 def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_files():
