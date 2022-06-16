@@ -32,7 +32,7 @@ def test_if_argument_of_append_decorator_is_none_error_is_raised():
 def test_if_test_object_collects_generated_trace_data_and_keeps_files_it_returns_correct_trace_data_and_files_are_kept():
     delete_trace_data_files_in_tests()
 
-    expected_trace_data_file_path = [path for path in cwd.rglob("test_file_trace_data_collector_expected_data1.test_pytype")][0]
+    expected_trace_data_file_path = [path for path in cwd.parent.rglob("test_file_trace_data_collector_expected_data1.test_pytype")][0]
     expected_trace_data = pd.read_pickle(expected_trace_data_file_path)
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
     expected_trace_data = expected_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
@@ -61,7 +61,7 @@ def test_if_test_object_collects_generated_trace_data_and_keeps_files_it_returns
 def test_if_test_object_collects_generated_trace_data_and_deletes_files_it_returns_correct_trace_data_and_files_are_deleted():
     delete_trace_data_files_in_tests()
 
-    expected_trace_data_file_path = [path for path in cwd.rglob("test_file_trace_data_collector_expected_data1.test_pytype")][0]
+    expected_trace_data_file_path = [path for path in cwd.parent.rglob("test_file_trace_data_collector_expected_data1.test_pytype")][0]
     expected_trace_data = pd.read_pickle(expected_trace_data_file_path)
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
     expected_trace_data = expected_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
