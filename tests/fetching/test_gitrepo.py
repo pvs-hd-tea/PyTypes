@@ -6,7 +6,7 @@ import repoutils
 
 
 # TODO: Convert to setup / teardown
-def test_numpy():
+def test_numpy_repo_is_git():
     np_path = repoutils.create_repo("numpy")
 
     np_repo = fetching.Repository.factory(r"https://github.com/numpy/numpy.git")
@@ -20,7 +20,7 @@ def test_numpy():
     repoutils.delete_repo(np_path)
 
 
-def test_pandas():
+def test_pandas_repo_is_git():
     pandas_path = repoutils.create_repo("pandas")
 
     np_repo = fetching.Repository.factory(r"https://github.com/pandas-dev/pandas.git")
