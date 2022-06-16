@@ -17,6 +17,8 @@ class TracerDecoratorAppender:
                                          include_also_files_in_subdirectories: bool = False) -> None:
         """Finds all pytest files in the provided path argument and generates copies of these files with the
         decorators appended to the pytest functions. Stores the file paths of the new files."""
+        if path is None:
+            raise TypeError
         self.decorator_appended_file_paths.clear()
 
         if include_also_files_in_subdirectories:
