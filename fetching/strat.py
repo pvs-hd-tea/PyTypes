@@ -74,11 +74,14 @@ class PyTestStrategy(ApplicationStrategy):
         self.decorator_appended_file_paths.append(file_path_with_appended_decorators)
 
     def _test_file_filter(self, path: pathlib.Path) -> bool:
-        p = str(path)
+        if (
+            path.name.startswith("test_")
+            and path.name.endswith(".py")
+            and not path.name.endswith(PyTestStrategy.APPENDED_FILEPATH)
+        ):
+            return True
 
-        if not (p.startswith("test_") and p.endswith(".py")):
-            return False
-        return not p.endswith(PyTestStrategy.APPENDED_FILEPATH)
+        return path.name.endswith("_test.py")
 
     def execute_decorator_appended_files(self):
         """Executes the python files with the decorators appended to the pytest functions."""
