@@ -25,7 +25,7 @@ def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_fil
     project_folder,
 ):
     test_object = PyTestStrategy(False)
-    test_object.apply(Project(cwd))
+    test_object.apply(project_folder)
     test_file_paths = cwd.glob("test_*.py")
     new_test_file_paths = [
         pathlib.Path(str(file_path).replace(".py", test_object.file_ending))
@@ -40,7 +40,7 @@ def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_
     project_folder,
 ):
     test_object = PyTestStrategy(True)
-    test_object.apply(Project(cwd))
+    test_object.apply(project_folder)
     test_file_paths = cwd.rglob("test_*.py")
     new_test_file_paths = [
         pathlib.Path(str(file_path).replace(".py", test_object.file_ending))
