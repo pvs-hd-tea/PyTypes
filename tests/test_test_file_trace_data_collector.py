@@ -23,12 +23,6 @@ def delete_trace_data_files_in_tests():
             potential_trace_data_file_path.unlink()
 
 
-def test_if_argument_of_append_decorator_is_none_error_is_raised():
-    test_object = TestFileTraceDataCollector()
-    with pytest.raises(TypeError):
-        test_object.collect_trace_data(None)
-
-
 def test_if_test_object_collects_generated_trace_data_and_keeps_files_it_returns_correct_trace_data_and_files_are_kept():
     # Todo: Make the tests work in the CI pipeline.
     return

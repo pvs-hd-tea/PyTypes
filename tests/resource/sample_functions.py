@@ -1,4 +1,4 @@
-def sample_compare_two_int_lists(list1, list2):
+def sample_compare_two_int_lists(list1: list, list2: list) -> bool:
     if len(list1) != len(list2):
         return False
 
@@ -10,7 +10,7 @@ def sample_compare_two_int_lists(list1, list2):
     return True
 
 
-def sample_compare_integers(value1, value2) -> bool:
+def sample_compare_integers(value1: int, value2: int) -> bool:
     result = value1 == value2
     return result
 
@@ -20,7 +20,7 @@ def sample_get_two_variables_declared_in_one_line():
     return variable1, variable2
 
 
-def sample_convert_string_to_int(string_to_convert):
+def sample_convert_string_to_int(string_to_convert: str) -> [int | None]:
     try:
         integer = int(string_to_convert)
         return integer
