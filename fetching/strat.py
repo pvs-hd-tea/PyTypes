@@ -18,7 +18,9 @@ class ApplicationStrategy(ABC):
 
     def apply(self, project: Project):
         assert project.test_directory is not None
-        for path in filter(self._test_file_filter, self.globber(project.test_directory, "*")):
+        for path in filter(
+            self._test_file_filter, self.globber(project.test_directory, "*")
+        ):
             self._apply(path)
 
     @abstractmethod
@@ -77,7 +79,6 @@ class PyTestStrategy(ApplicationStrategy):
         if not (p.startswith("test_") and p.endswith(".py")):
             return False
         return not p.endswith(PyTestStrategy.APPENDED_FILEPATH)
-
 
     def execute_decorator_appended_files(self):
         """Executes the python files with the decorators appended to the pytest functions."""
