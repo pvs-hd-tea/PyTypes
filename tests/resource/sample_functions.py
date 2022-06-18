@@ -20,7 +20,7 @@ def sample_get_two_variables_declared_in_one_line():
     return variable1, variable2
 
 
-def sample_convert_string_to_int(string_to_convert: str) -> [int | None]:
+def sample_convert_string_to_int(string_to_convert: str) -> int | None:
     try:
         integer = int(string_to_convert)
         return integer
