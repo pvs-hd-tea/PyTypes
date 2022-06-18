@@ -1,3 +1,4 @@
+import functools
 import pathlib
 import logging
 
@@ -12,7 +13,7 @@ class Project:
         assert root.is_dir()
         self.root = root
 
-    @property
+    @functools.cached_property
     def test_directory(self) -> pathlib.Path | None:
         # tests folder in root of project?
         if (p := self.root / "tests").is_dir():
