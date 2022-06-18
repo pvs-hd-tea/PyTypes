@@ -54,17 +54,17 @@ class PyTestStrategy(ApplicationStrategy):
             if skip_line:
                 skip_line = False
                 continue
-            if FUNCTION_PATTERN.fullmatch(line):
-                lines.insert(i, REGISTER)
+            if PyTestStrategy.FUNCTION_PATTERN.fullmatch(line):
+                lines.insert(i, PyTestStrategy.REGISTER)
                 skip_line = True
                 contains_pytest_test_function = True
 
         if contains_pytest_test_function:
-            lines.insert(0, IMPORTS)
-            lines.append(ENTRYPOINT)
+            lines.insert(0, PyTestStrategy.IMPORTS)
+            lines.append(PyTestStrategy.ENTRYPOINT)
 
         file_path_with_appended_decorators = pathlib.Path(
-            str(path).replace(".py", APPENDED_FILEPATH)
+            str(path).replace(".py", PyTestStrategy.APPENDED_FILEPATH)
         )
         with file_path_with_appended_decorators.open("w") as file:
             file.writelines(lines)
@@ -76,7 +76,7 @@ class PyTestStrategy(ApplicationStrategy):
 
         if not (p.startswith("test_") and p.endswith(".py")):
             return False
-        return not p.endswith(APPENDED_FILEPATH)
+        return not p.endswith(PyTestStrategy.APPENDED_FILEPATH)
 
 
     def execute_decorator_appended_files(self):
