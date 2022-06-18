@@ -30,7 +30,7 @@ class ApplicationStrategy(ABC):
 
 
 class PyTestStrategy(ApplicationStrategy):
-    def __init__(self, include_also_files_in_subdirectories: bool = False):
+    def __init__(self, include_also_files_in_subdirectories: bool = True):
         self.include_also_files_in_subdirectories = include_also_files_in_subdirectories
 
         self.pytest_function_regex_pattern = re.compile(
