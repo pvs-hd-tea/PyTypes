@@ -85,7 +85,7 @@ class SpecialResource3(SpecialResource):
 class ResourceCollection:
     def __init__(self, resource_type: typing.Type):
         self.resource_type = resource_type
-        self.resources: list[typing.Type] = []
+        self.resources: list[Resource] = []
 
     def add_resource(self, resource: Resource) -> None:
         self.add_resources([resource])
