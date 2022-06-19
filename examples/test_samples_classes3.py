@@ -1,3 +1,4 @@
+import typing
 from abc import ABC
 
 import numpy as np
@@ -8,23 +9,23 @@ class ResourceUser:
     def __init__(self):
         self.resource = None
 
-    def request_resource(self, resource_collection, resource_id):
+    def request_resource(self, resource_collection, resource_id) -> bool:
         self.resource = resource_collection.get_resource_of_id(resource_id)
         if self.resource:
             self.resource.lock(self)
             return True
         return False
 
-    def get_resource_content(self):
+    def get_resource_content(self) -> typing.Any:
         if not self.resource:
             raise PermissionError
         return self.resource.get_content(self)
 
-    def update_resource(self, new_content):
+    def update_resource(self, new_content) -> None:
         if self.resource:
             self.resource.change_content(self, new_content)
 
-    def unlock_resource(self):
+    def unlock_resource(self) -> None:
         if not self.resource:
             raise PermissionError
         self.resource.unlock(self)
@@ -32,18 +33,18 @@ class ResourceUser:
 
 
 class Resource(ABC):
-    def __init__(self, id: any, content: any):
+    def __init__(self, id: typing.Any, content: typing.Any):
         self.id = id
         self._content = content
         self._user = None
 
-    def change_content(self, user: ResourceUser, new_content: any) -> None:
+    def change_content(self, user: ResourceUser, new_content: typing.Any) -> None:
         if self._user != user:
             raise ValueError
 
         self._content = new_content
 
-    def get_content_type(self) -> any:
+    def get_content_type(self) -> typing.Type:
         return type(self._content)
 
     def lock(self, user: ResourceUser):
@@ -51,12 +52,12 @@ class Resource(ABC):
             raise PermissionError
         self._user = user
 
-    def unlock(self, user: ResourceUser):
+    def unlock(self, user: ResourceUser) -> None:
         if self._user != user:
             raise ValueError
         self._user = None
 
-    def get_content(self, user: ResourceUser):
+    def get_content(self, user: ResourceUser) -> typing.Any:
         if self._user != user:
             raise ValueError
 
@@ -67,36 +68,36 @@ class Resource(ABC):
 
 
 class SpecialResource(Resource):
-    def __init__(self, id: any, content: any):
+    def __init__(self, id: typing.Any, content: typing.Any):
         super().__init__(id, content)
 
 
 class SpecialResource2(Resource):
-    def __init__(self, id: any, content: any):
+    def __init__(self, id: typing.Any, content: typing.Any):
         super().__init__(id, content)
 
 
 class SpecialResource3(SpecialResource):
-    def __init__(self, id: any, content: any):
+    def __init__(self, id: typing.Any, content: typing.Any):
         super().__init__(id, content)
 
 
 class ResourceCollection:
-    def __init__(self, resource_type: type):
+    def __init__(self, resource_type: typing.Type):
         self.resource_type = resource_type
         self.resources = []
 
-    def add_resource(self, resource: Resource):
+    def add_resource(self, resource: Resource) -> None:
         self.add_resources([resource])
 
-    def add_resources(self, resources):
+    def add_resources(self, resources) -> None:
         for resource in resources:
             if resource.get_content_type() != self.resource_type:
                 raise TypeError
 
             self.resources.append(resource)
 
-    def get_resource_of_id(self, id: any):
+    def get_resource_of_id(self, id: typing.Any) -> Resource | None:
         for resource in self.resources:
             if resource.id == id and resource.is_available():
                 return resource

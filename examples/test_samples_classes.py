@@ -5,7 +5,7 @@ class Bank:
     def __init__(self):
         pass
 
-    def create_new_account(self, starting_balance = 0):
+    def create_new_account(self, starting_balance: int = 0):
         return BankAccount(self, starting_balance)
 
 
@@ -17,7 +17,7 @@ class BankAccount:
     def get_balance(self):
         return self._balance
 
-    def deposit(self, additional_value):
+    def deposit(self, additional_value: int) -> None:
         if additional_value < 0:
             raise ValueError
         self._balance += additional_value
@@ -44,14 +44,14 @@ class Human:
 
 
 class Customer(Human):
-    def __init__(self, name, account: BankAccount = None):
+    def __init__(self, name: str, account: BankAccount = None):
         super().__init__(name)
         self._account = account
 
-    def has_positive_balance(self):
+    def has_positive_balance(self) -> bool:
         return self._account.get_balance() > 0
 
-    def update_balance_by(self, amount):
+    def update_balance_by(self, amount: int) -> None:
         if amount > 0:
             self._account.deposit(amount)
         else:
@@ -67,7 +67,7 @@ class Customer(Human):
 
 
 class Worker(Human):
-    def __init__(self, name, bank):
+    def __init__(self, name: str, bank: Bank):
         super().__init__(name)
 
         if bank is None:
@@ -82,8 +82,6 @@ class Worker(Human):
         return self.bank == worker2.bank
 
 
-# Since the sample files do not contain real unit tests and are only used to generate trace data files,
-# non-unit tests are implemented which do not cover every possible case.
 def test_all_potential_errors_in_this_file():
     with pytest.raises(ValueError):
         BankAccount(Bank()).deposit(-1)
@@ -97,7 +95,7 @@ def test_all_potential_errors_in_this_file():
         Worker("a").are_working_in_same_bank(None)
 
 
-def test_1():
+def test_main():
     bank1 = Bank()
     bank2 = Bank()
 
@@ -120,10 +118,3 @@ def test_1():
         count += 1
 
     assert count == 10
-
-
-
-
-
-
-

@@ -28,14 +28,14 @@ class Database:
     def __init__(self):
         self.data_tables = {}
 
-    def create_data_table(self, user: DataBaseUser, id: str, content=None):
+    def create_data_table(self, user: DataBaseUser, id: str, content=None) -> None:
         if not id or not user:
             raise TypeError
 
         data_table = DataTable(id, user.permission_level, content)
         self.data_tables[id] = data_table
 
-    def get_content_of(self, user: DataBaseUser, id: str):
+    def get_content_of(self, user: DataBaseUser, id: str) -> pd.DataFrame:
         if not id or not user:
             raise TypeError
 
@@ -45,7 +45,7 @@ class Database:
 
         return data_table.content
 
-    def update_content_of(self, user: DataBaseUser, id: str, new_content=None):
+    def update_content_of(self, user: DataBaseUser, id: str, new_content=None) -> None:
         if not id or not user:
             raise TypeError
 

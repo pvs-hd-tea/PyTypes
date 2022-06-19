@@ -2,20 +2,20 @@ from abc import ABC
 
 
 class Data(ABC):
-    def __init__(self, integer, string):
+    def __init__(self, integer: int, string: str):
         self.integer = integer
         self.string = string
 
-    def get_sum(self):
+    def get_sum(self) -> int:
         return self.integer + int(self.string)
 
 
 class SubClassData(Data):
-    def __init__(self, integer, string, second_integer):
+    def __init__(self, integer: int, string: str, second_integer: int):
         super().__init__(integer, string)
         self.second_integer = second_integer
 
-    def get_sum(self):
+    def get_sum(self) -> int:
         return super().get_sum() + self.second_integer
 
 
@@ -24,7 +24,7 @@ class SubClassData2(Data):
         super().__init__(integer, string)
         self.second_string = second_string
 
-    def get_sum(self):
+    def get_sum(self) -> int:
         return super().get_sum() + int(self.second_string)
 
 
@@ -32,7 +32,7 @@ class DataUser(ABC):
     def __init__(self, data: Data):
         self.data = data
 
-    def get_third_value(self, data: Data):
+    def get_third_value(self, data: Data) -> int | str:
         if isinstance(data, SubClassData):
             return data.second_integer
         elif isinstance(data, SubClassData2):
@@ -40,7 +40,7 @@ class DataUser(ABC):
         else:
             raise TypeError
 
-    def update_data(self, data):
+    def update_data(self, data: Data) -> None:
         self.data.string = data.string
         self.data.integer += data.integer
 
@@ -49,7 +49,7 @@ class SubClassDataUser(DataUser):
     def __init__(self, data: SubClassData):
         super().__init__(data)
 
-    def update_data(self, data):
+    def update_data(self, data: Data) -> None:
         super().update_data(data)
         third_value = self.get_third_value(data)
         self.data.second_integer = int(third_value)
@@ -59,7 +59,7 @@ class SubClassDataUser2(DataUser):
     def __init__(self, data: SubClassData2):
         super().__init__(data)
 
-    def update_data(self, data):
+    def update_data(self, data: Data) -> None:
         super().update_data(data)
         third_value = self.get_third_value(data)
         self.data.second_string = str(int(third_value))
@@ -79,8 +79,3 @@ def test_1():
         user2.update_data(user1.data)
     assert user1.data.get_sum() == 5790
     assert user2.data.get_sum() == 9361
-
-
-
-
-
