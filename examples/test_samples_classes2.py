@@ -32,7 +32,7 @@ class DataUser(ABC):
     def __init__(self, data: Data):
         self.data = data
 
-    def get_third_value(self, data: Data) -> int | str:
+    def get_third_value(self, data) -> int | str:
         if isinstance(data, SubClassData):
             return data.second_integer
         elif isinstance(data, SubClassData2):

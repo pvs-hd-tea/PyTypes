@@ -53,25 +53,6 @@ class TaskUser(ContentUser):
         return self.task.is_done()
 
 
-class StorageCluster:
-    def __init__(self, storages: list[ContentPackage]):
-        self._storages = storages
-
-    def give_content_package_and_remove(self, content_user: ContentUser,
-                                        content_request: ContentRequest) -> None:
-        for storage in self._storages:
-            if storage.give_content_package_and_remove(content_user, content_request):
-                return
-
-        raise RuntimeError
-
-    def is_empty(self):
-        for storage in self._storages:
-            if not storage.is_empty():
-                return False
-        return True
-
-
 class Storage:
     def __init__(self, contents: list[typing.Any]):
         self._contents: list[typing.Any] = contents
@@ -88,6 +69,25 @@ class Storage:
 
     def is_empty(self):
         return len(self._contents) == 0
+
+
+class StorageCluster:
+    def __init__(self, storages: list[Storage]):
+        self._storages = storages
+
+    def give_content_package_and_remove(self, content_user: ContentUser,
+                                        content_request: ContentRequest) -> None:
+        for storage in self._storages:
+            if storage.give_content_package_and_remove(content_user, content_request):
+                return
+
+        raise RuntimeError
+
+    def is_empty(self):
+        for storage in self._storages:
+            if not storage.is_empty():
+                return False
+        return True
 
 
 def test_main():

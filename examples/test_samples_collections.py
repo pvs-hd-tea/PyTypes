@@ -1,3 +1,6 @@
+import typing
+
+
 def compare_two_lists(list1, list2):
     if len(list1) != len(list2):
         return False
@@ -26,7 +29,7 @@ def does_list_contain_elements_of_one_type(list1: list):
     return True
 
 
-def check_and_get_index_and_element_if_element_in_collection(list1 : list, element_to_check: any):
+def check_and_get_index_and_element_if_element_in_collection(list1 : list, element_to_check: typing.Any):
     for i, element in enumerate(list1):
         if element == element_to_check:
             return True, i, element
@@ -98,17 +101,6 @@ def test_if_element_not_in_list_then_correct_values_are_returned():
     assert bool1 == bool2 == False
     assert index1 == index2 == -1
     assert element1 == element2 == None
-
-
-def test_if_element_in_list_then_correct_values_are_returned():
-    list1 = [None, 5, "a", "b"]
-    bool1, index1, element1 = check_and_get_index_and_element_if_element_in_collection(list1, None)
-    bool2, index2, element2 = check_and_get_index_and_element_if_element_in_collection(list1, 5)
-    bool3, index3, element3 = check_and_get_index_and_element_if_element_in_collection(list1, "a")
-
-    assert bool1 and bool2 and bool3
-    assert index1 == 0 and index2 == 1 and index3 == 2
-    assert element1 is None and element2 == 5 and element3 == "a"
 
 
 def test_if_set_is_created_then_it_contains_same_elements():

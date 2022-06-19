@@ -1,4 +1,5 @@
 import enum
+import typing
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,7 @@ class PERMISSION_LEVEL(enum.IntEnum):
 
 
 class DataTable:
-    def __init__(self, id: str, minimum_permissions: PERMISSION_LEVEL, content: any = None):
+    def __init__(self, id: str, minimum_permissions: PERMISSION_LEVEL, content: typing.Any = None):
         self.id = id
         self.minimum_permissions = minimum_permissions
         self.content = content

@@ -44,7 +44,7 @@ class Human:
 
 
 class Customer(Human):
-    def __init__(self, name: str, account: BankAccount = None):
+    def __init__(self, name: str, account: BankAccount | None = None):
         super().__init__(name)
         self._account = account
 

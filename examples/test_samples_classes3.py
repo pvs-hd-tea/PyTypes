@@ -36,7 +36,7 @@ class Resource(ABC):
     def __init__(self, id: typing.Any, content: typing.Any):
         self.id = id
         self._content = content
-        self._user = None
+        self._user: ResourceUser | None = None
 
     def change_content(self, user: ResourceUser, new_content: typing.Any) -> None:
         if self._user != user:
