@@ -29,7 +29,7 @@ class SubClassData2(Data):
 
 
 class DataUser(ABC):
-    def __init__(self, data: Data):
+    def __init__(self, data):
         self.data = data
 
     def get_third_value(self, data) -> int | str:
