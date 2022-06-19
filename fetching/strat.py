@@ -19,7 +19,7 @@ class ApplicationStrategy(ABC):
     def apply(self, project: Project):
         assert project.test_directory is not None
         for path in filter(
-            self._test_file_filter, self.globber(project.test_directory, "*")
+            self._is_test_file, self.globber(project.test_directory, "*")
         ):
             self._apply(path)
 
@@ -29,7 +29,7 @@ class ApplicationStrategy(ABC):
         pass
 
     @abstractmethod
-    def _test_file_filter(self, path: pathlib.Path) -> bool:
+    def _is_test_file(self, path: pathlib.Path) -> bool:
         """True iff path is a file / folder that will be executed by the framework"""
         pass
 
@@ -73,7 +73,7 @@ class PyTestStrategy(ApplicationStrategy):
 
         self.decorator_appended_file_paths.append(file_path_with_appended_decorators)
 
-    def _test_file_filter(self, path: pathlib.Path) -> bool:
+    def _is_test_file(self, path: pathlib.Path) -> bool:
         if (
             path.name.startswith("test_")
             and path.name.endswith(".py")
