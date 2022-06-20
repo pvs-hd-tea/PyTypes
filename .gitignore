@@ -135,3 +135,5 @@ dmypy.json
 
 # Others
 *_decorators_appended.py
+tests/fetching/repos/*
+!tests/fetching/repos/.gitkeep
