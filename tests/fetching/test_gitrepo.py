@@ -7,7 +7,7 @@ import repoutils
 
 # TODO: Convert to setup / teardown
 def test_numpy_repo_is_git():
-    np_path = repoutils.create_repo("numpy")
+    np_path = repoutils.create_repo("numpy-git")
 
     np_repo = fetching.Repository.factory(r"https://github.com/numpy/numpy.git")
     assert isinstance(np_repo, fetching.GitRepository), f"Failed to detect numpy GitHub URL as such"
@@ -21,7 +21,7 @@ def test_numpy_repo_is_git():
 
 
 def test_pandas_repo_is_git():
-    pandas_path = repoutils.create_repo("pandas")
+    pandas_path = repoutils.create_repo("pandas-git")
 
     np_repo = fetching.Repository.factory(r"https://github.com/pandas-dev/pandas.git")
     assert isinstance(np_repo, fetching.GitRepository), f"Failed to detect pandas GitHub URL as such"
