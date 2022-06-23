@@ -2,7 +2,7 @@ import pathlib
 import pandas as pd
 import pytest
 import constants
-from tracing import TracerDecoratorAppender, TestFileTraceDataCollector
+from tracing import TestFileTraceDataCollector
 
 cwd = pathlib.Path.cwd() / 'resource'
 
