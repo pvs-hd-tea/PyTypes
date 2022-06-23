@@ -3,7 +3,7 @@ import pandas as pd
 import constants
 
 
-class TestFileTraceDataCollector:
+class TraceDataFileCollector:
     """Appends the tracer decorators to pytest test functions in files in the specified path."""
 
     def __init__(self):

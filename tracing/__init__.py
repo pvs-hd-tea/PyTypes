@@ -1,4 +1,4 @@
-from .test_file_trace_data_collector import TestFileTraceDataCollector
+from .trace_data_file_collector import TraceDataFileCollector
 from .trace_data_category import TraceDataCategory
 from .tracer import Tracer
 
@@ -9,5 +9,5 @@ __all__ = [
     TraceDataCategory.__name__,
     entrypoint.__name__,
     register.__name__,
-    TestFileTraceDataCollector.__name__
+    TraceDataFileCollector.__name__
 ]
