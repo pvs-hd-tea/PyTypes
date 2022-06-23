@@ -133,6 +133,7 @@ dmypy.json
 # PyType artifacts
 *.pytype
 !tests/resource/sample_trace_data_files/*.pytype
+!tests/resource/sample_trace_data_files/*/*.pytype
 
 # Others
 *_decorators_appended.py
