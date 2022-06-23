@@ -15,8 +15,6 @@ class TestDetector(ABC):
     """
 
     def __init__(self, project: Project):
-        # TODO: Should this take an instance of repository?
-        # TODO: Perhaps a project class is needed, in order to interact better with the project structure
         self.project = project
 
     @staticmethod

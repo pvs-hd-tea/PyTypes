@@ -461,7 +461,7 @@ telegram = ["requests"]
 name = "types-requests"
 version = "2.27.30"
 description = "Typing stubs for requests"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -480,7 +480,7 @@ python-versions = "*"
 name = "types-urllib3"
 version = "1.26.15"
 description = "Typing stubs for urllib3"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -508,7 +508,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<4"
-content-hash = "c97bea50f4d1e124ef97bce6222f1dbcf9b0823066004a8067861cec1e1784f5"
+content-hash = "e9c18cc5918d2cc23dd8363f82239ce866d5779ac8477606da15017795ab8a9a"
 
 [metadata.files]
 atomicwrites = [

@@ -6,6 +6,7 @@ import pathlib
 import tempfile
 import typing
 import shutil
+import zipfile
 
 import git
 import tqdm  # type: ignore
@@ -110,8 +111,40 @@ class ArchiveRepository(Repository):
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
         if (r := requests.get(self.project_url, stream=True)).status_code == 200:
-            with open(td.name, "wb") as f:
+            output = pathlib.Path(td.name) / "repo.zip"
+            logging.debug(f"Storing in {output}")
+
+            with output.open("wb") as f:
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)
 
+            zf = zipfile.ZipFile(output)
+            zf.extractall(td.name)
+
+            paths = list(map(pathlib.Path, zf.namelist()))
+
+            logging.debug(f"Removing intermediary archive {output}")
+            output.unlink()
+
+            self._handle_singledir(td, paths)
+
+        else:
+            logging.error(f"Failed to download archive from {self.project_url}")
+            raise RuntimeError(r.content)
+
         return td
+
+    def _handle_singledir(self, temp_output: tempfile.TemporaryDirectory, paths: list[pathlib.Path]):
+        logging.debug("Extracted files from archive")
+        if paths and all(paths[0].parts[0] == path.parts[0] for path in paths):
+            logging.debug("Detected singular folder in archive; exploding archive")
+
+            # Skip moving the root folder into itself
+            output_path = pathlib.Path(temp_output.name)
+            in_path = output_path / paths[0].parts[0]
+            print(in_path, output_path)
+
+            for subdir in in_path.iterdir():
+                relpath = subdir.relative_to(in_path)
+                to_path = output_path / pathlib.Path(*relpath.parts[1:])
+                shutil.move(subdir, to_path)
