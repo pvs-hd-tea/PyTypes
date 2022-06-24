@@ -1,15 +1,3 @@
-def sample_compare_two_int_lists(list1, list2):
-    if len(list1) != len(list2):
-        return False
-
-    for i, element1 in enumerate(list1):
-        element2 = list2[i]
-        are_elements_equal = sample_compare_integers(element1, element2)
-        if not are_elements_equal:
-            return False
-    return True
-
-
 def sample_compare_integers(value1, value2) -> bool:
     result = value1 == value2
     return result
@@ -56,19 +44,3 @@ def test_if_string_is_converted_to_int_the_number_matches_with_expected():
     assert expected == actual
 
 
-def test_if_two_lists_contain_same_elements_true_is_returned():
-    list1 = [1, 2, 4, 4]
-    list2 = [1, 2, 4, 4]
-    expected = True
-
-    actual = sample_compare_two_int_lists(list1, list2)
-    assert expected == actual
-
-
-def test_if_two_lists_contain_different_elements_true_is_returned():
-    list1 = [1, 2, 4, 4]
-    list2 = [1, 2, 3, 4]
-    expected = False
-
-    actual = sample_compare_two_int_lists(list1, list2)
-    assert expected == actual
