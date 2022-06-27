@@ -14,29 +14,29 @@ class PERMISSION_LEVEL(enum.IntEnum):
 
 
 class DataTable:
-    def __init__(self, id: str, minimum_permissions: PERMISSION_LEVEL, content: typing.Any = None):
+    def __init__(self, id: str, minimum_permissions: PERMISSION_LEVEL, content: pd.DataFrame | None = None)-> None:
         self.id = id
         self.minimum_permissions = minimum_permissions
         self.content = content
 
 
 class DataBaseUser:
-    def __init__(self, permission_level: PERMISSION_LEVEL):
+    def __init__(self, permission_level: PERMISSION_LEVEL) -> None:
         self.permission_level = permission_level
 
 
 class Database:
-    def __init__(self):
-        self.data_tables = {}
+    def __init__(self) -> None:
+        self.data_tables: dict[str, DataTable] = {}
 
-    def create_data_table(self, user: DataBaseUser, id: str, content=None) -> None:
+    def create_data_table(self, user: DataBaseUser, id: str, content: pd.DataFrame | None = None) -> None:
         if not id or not user:
             raise TypeError
 
         data_table = DataTable(id, user.permission_level, content)
         self.data_tables[id] = data_table
 
-    def get_content_of(self, user: DataBaseUser, id: str) -> pd.DataFrame:
+    def get_content_of(self, user: DataBaseUser, id: str) -> pd.DataFrame | None:
         if not id or not user:
             raise TypeError
 

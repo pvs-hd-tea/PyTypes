@@ -1,14 +1,14 @@
-def sample_compare_integers(value1, value2) -> bool:
+def sample_compare_integers(value1: int, value2: int) -> bool:
     result = value1 == value2
     return result
 
 
-def sample_get_two_variables_declared_in_one_line():
+def sample_get_two_variables_declared_in_one_line() -> tuple[int, str]:
     variable1, variable2 = 1, "string"
     return variable1, variable2
 
 
-def sample_convert_string_to_int(string_to_convert):
+def sample_convert_string_to_int(string_to_convert: str) -> int | None:
     try:
         integer = int(string_to_convert)
         return integer

@@ -2,17 +2,17 @@ import pytest
 
 
 class BaseClass:
-    def __init__(self, integer):
+    def __init__(self, integer: int) -> None:
         self.integer = integer
 
 
 class SubClass1(BaseClass):
-    def __init__(self, integer):
+    def __init__(self, integer: int) -> None:
         super().__init__(integer)
 
 
 class SubClass2(BaseClass):
-    def __init__(self, integer):
+    def __init__(self, integer: int) -> None:
         super().__init__(integer)
 
 

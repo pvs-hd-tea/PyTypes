@@ -1,8 +1,9 @@
+import typing
 from abc import ABC
 
 
 class Data(ABC):
-    def __init__(self, integer: int, string: str):
+    def __init__(self, integer: int, string: str) -> None:
         self.integer = integer
         self.string = string
 
@@ -11,7 +12,7 @@ class Data(ABC):
 
 
 class SubClassData(Data):
-    def __init__(self, integer: int, string: str, second_integer: int):
+    def __init__(self, integer: int, string: str, second_integer: int) -> None:
         super().__init__(integer, string)
         self.second_integer = second_integer
 
@@ -20,7 +21,7 @@ class SubClassData(Data):
 
 
 class SubClassData2(Data):
-    def __init__(self, integer, string, second_string):
+    def __init__(self, integer: int, string: str, second_string: str) -> None:
         super().__init__(integer, string)
         self.second_string = second_string
 
@@ -29,10 +30,10 @@ class SubClassData2(Data):
 
 
 class DataUser(ABC):
-    def __init__(self, data):
+    def __init__(self, data: typing.Any) -> None:
         self.data = data
 
-    def get_third_value(self, data) -> int | str:
+    def get_third_value(self, data: typing.Any) -> int | str:
         if isinstance(data, SubClassData):
             return data.second_integer
         elif isinstance(data, SubClassData2):
@@ -40,7 +41,7 @@ class DataUser(ABC):
         else:
             raise TypeError
 
-    def update_data(self, data: Data) -> None:
+    def update_data(self, data: typing.Any) -> None:
         self.data.string = data.string
         self.data.integer += data.integer
 
@@ -49,17 +50,17 @@ class SubClassDataUser(DataUser):
     def __init__(self, data: SubClassData):
         super().__init__(data)
 
-    def update_data(self, data: Data) -> None:
+    def update_data(self, data: typing.Any) -> None:
         super().update_data(data)
         third_value = self.get_third_value(data)
         self.data.second_integer = int(third_value)
 
 
 class SubClassDataUser2(DataUser):
-    def __init__(self, data: SubClassData2):
+    def __init__(self, data: SubClassData2) -> None:
         super().__init__(data)
 
-    def update_data(self, data: Data) -> None:
+    def update_data(self, data: typing.Any) -> None:
         super().update_data(data)
         third_value = self.get_third_value(data)
         self.data.second_string = str(int(third_value))

@@ -9,7 +9,7 @@ class ResourceUser:
     def __init__(self):
         self.resource = None
 
-    def request_resource(self, resource_collection, resource_id) -> bool:
+    def request_resource(self, resource_collection, resource_id: typing.Any) -> bool:
         self.resource = resource_collection.get_resource_of_id(resource_id)
         if self.resource:
             self.resource.lock(self)
@@ -21,7 +21,7 @@ class ResourceUser:
             raise PermissionError
         return self.resource.get_content(self)
 
-    def update_resource(self, new_content) -> None:
+    def update_resource(self, new_content: typing.Any) -> None:
         if self.resource:
             self.resource.change_content(self, new_content)
 
@@ -47,7 +47,7 @@ class Resource(ABC):
     def get_content_type(self) -> typing.Type:
         return type(self._content)
 
-    def lock(self, user: ResourceUser):
+    def lock(self, user: ResourceUser) -> None:
         if self._user is not None:
             raise PermissionError
         self._user = user
@@ -63,27 +63,27 @@ class Resource(ABC):
 
         return self._content
 
-    def is_available(self):
+    def is_available(self) -> bool:
         return self._user is None
 
 
 class SpecialResource(Resource):
-    def __init__(self, id: typing.Any, content: typing.Any):
+    def __init__(self, id: typing.Any, content: typing.Any) -> None:
         super().__init__(id, content)
 
 
 class SpecialResource2(Resource):
-    def __init__(self, id: typing.Any, content: typing.Any):
+    def __init__(self, id: typing.Any, content: typing.Any) -> None:
         super().__init__(id, content)
 
 
 class SpecialResource3(SpecialResource):
-    def __init__(self, id: typing.Any, content: typing.Any):
+    def __init__(self, id: typing.Any, content: typing.Any) -> None:
         super().__init__(id, content)
 
 
 class ResourceCollection:
-    def __init__(self, resource_type: typing.Type):
+    def __init__(self, resource_type: typing.Type) -> None:
         self.resource_type = resource_type
         self.resources: list[Resource] = []
 
