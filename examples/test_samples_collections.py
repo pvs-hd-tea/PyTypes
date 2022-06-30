@@ -101,11 +101,3 @@ def test_if_element_not_in_list_then_correct_values_are_returned():
     assert bool1 == bool2 == False
     assert index1 == index2 == -1
     assert element1 == element2 == None
-
-
-def test_if_set_is_created_then_it_contains_same_elements():
-    list1 = [None, 6, "a"]
-    list2 = [10, 3, 8, -5.0, 2]
-    list4 = ["a", "b", "c", "d"]
-
-    assert(compare_two_lists(list1, create_set_from(list1)))
