@@ -88,6 +88,7 @@ class Tracer:
         """Is called during execution of a function which is traced. Collects trace data from the frame."""
         code = frame.f_code
         function_name = code.co_name
+        possible_class = _get_class_in_frame(frame)
 
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         full_path = pathlib.Path(code.co_filename)
@@ -107,10 +108,10 @@ class Tracer:
             category = TraceDataCategory.FUNCTION_RETURN
 
             # Adds tracing data of class members if the return is from a class function.
-            if _is_frame_within_class_function(frame):
+            if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(file_name, function_name, line_number, category2, names2types2)
+                self._update_trace_data_with(file_name, possible_class, function_name, line_number, category2, names2types2)
 
         elif event == "line":
             names2types = self._on_line(frame)
@@ -127,7 +128,7 @@ class Tracer:
 
         if names2types and category:
             self._update_trace_data_with(
-                file_name, function_name, line_number, category, names2types
+                file_name, possible_class, function_name, line_number, category, names2types
             )
 
         self.old_values_by_variable_by_function_name[
@@ -138,6 +139,7 @@ class Tracer:
     def _update_trace_data_with(
             self,
             file_name: pathlib.Path,
+            class_type: type | None,
             function_name: str,
             line_number: int,
             category: TraceDataCategory,
@@ -158,6 +160,7 @@ class Tracer:
 
         d = {
             constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
+            constants.TraceData.CLASS: [class_type] * len(varnames),
             constants.TraceData.FUNCNAME: [function_name] * len(varnames),
             constants.TraceData.VARNAME: varnames,
             constants.TraceData.VARTYPE: vartypes,
@@ -183,7 +186,7 @@ def _get_new_defined_local_variables_with_types(
     return names2types
 
 
-def _is_frame_within_class_function(frame) -> bool:
+def _get_class_in_frame(frame) -> type | None:
     code = frame.f_code
     function_name = code.co_name
     all_possible_classes = [value for value in frame.f_globals.values() if inspect.isclass(value)]
@@ -194,6 +197,7 @@ def _is_frame_within_class_function(frame) -> bool:
                 continue
 
             if member.__code__ == code:
-                return True
+                return possible_class
 
-    return False
+    return None
+
