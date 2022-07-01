@@ -6,9 +6,14 @@ CONFIG_FILE_NAME = "pytypes.toml"
 
 TRACER_ATTRIBUTE = "pytype_tracer"
 
+SAMPLE_CODE_FOLDER_NAME = "examples"
+
+TRACE_DATA_FILE_ENDING = ".pytype"
+
 
 class TraceData:
     FILENAME = "Filename"
+    CLASS = "Class"
     FUNCNAME = "Function Name"
     LINENO = "Line Number"
     CATEGORY = "Category"
@@ -17,6 +22,7 @@ class TraceData:
 
     SCHEMA = {
         FILENAME: pd.StringDtype(),
+        CLASS: object,
         FUNCNAME: pd.StringDtype(),
         LINENO: pd.UInt64Dtype(),
         # because of TraceDataCategory's inheritance from enum.Enum

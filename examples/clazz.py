@@ -11,6 +11,7 @@ class Clazz:
         self.x = x
         self.y = y
 
+
 @register()
 def f():
     clazz = Clazz(1, 2)

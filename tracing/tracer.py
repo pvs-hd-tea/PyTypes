@@ -21,6 +21,9 @@ from .optimisation import (
 
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
+        if project_dir is None:
+            raise TypeError
+
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
@@ -137,6 +140,7 @@ class Tracer:
 
         code = frame.f_code
         function_name = code.co_name
+        possible_class = _get_class_in_frame(frame)
 
         file_name = pathlib.Path(code.co_filename).relative_to(self.project_dir)
         line_number = frame.f_lineno
@@ -151,12 +155,10 @@ class Tracer:
             category = TraceDataCategory.FUNCTION_RETURN
 
             # Adds tracing data of class members if the return is from a class function.
-            if _is_frame_within_class_function(frame):
+            if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(
-                    file_name, function_name, line_number, category2, names2types2
-                )
+                self._update_trace_data_with(file_name, possible_class, function_name, line_number, category2, names2types2)
 
         elif event == "line":
             names2types = self._on_line(frame)
@@ -170,7 +172,7 @@ class Tracer:
 
         if names2types and category:
             self._update_trace_data_with(
-                file_name, function_name, line_number, category, names2types
+                file_name, possible_class, function_name, line_number, category, names2types
             )
 
         self.old_values_by_variable_by_function_name[
@@ -180,12 +182,13 @@ class Tracer:
         return self._on_trace_is_called
 
     def _update_trace_data_with(
-        self,
-        file_name: pathlib.Path,
-        function_name: str,
-        line_number: int,
-        category: TraceDataCategory,
-        names2types: dict[str, type],
+            self,
+            file_name: pathlib.Path,
+            class_type: type | None,
+            function_name: str,
+            line_number: int,
+            category: TraceDataCategory,
+            names2types: dict[str, type],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
@@ -202,6 +205,7 @@ class Tracer:
 
         d = {
             constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
+            constants.TraceData.CLASS: [class_type] * len(varnames),
             constants.TraceData.FUNCNAME: [function_name] * len(varnames),
             constants.TraceData.VARNAME: varnames,
             constants.TraceData.VARTYPE: vartypes,
@@ -227,7 +231,7 @@ def _get_new_defined_local_variables_with_types(
     return names2types
 
 
-def _is_frame_within_class_function(frame) -> bool:
+def _get_class_in_frame(frame) -> type | None:
     code = frame.f_code
     function_name = code.co_name
     all_possible_classes = [
@@ -240,6 +244,7 @@ def _is_frame_within_class_function(frame) -> bool:
                 continue
 
             if member.__code__ == code:
-                return True
+                return possible_class
 
-    return False
+    return None
+

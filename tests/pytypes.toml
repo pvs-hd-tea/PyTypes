@@ -1,1 +1,2 @@
-project = "TestingDummy"
+[pytypes]
+project = "PyTypes"
