@@ -1,5 +1,6 @@
 from . import Optimisation, TriggerStatus, utils
 import constants
+from .utils import FrameWithMetadata
 
 import pandas as pd
 
@@ -10,7 +11,7 @@ class TypeStableLoop(Optimisation):
     the given amount of iterations.
     """
 
-    def __init__(self, frame, iterations_until_entry: int = 5):
+    def __init__(self, frame: FrameWithMetadata, iterations_until_entry: int = 5):
         """
         @param frame Data about the very first line (e.g. `for x in xs:`) obtained from the `inspect` module
         @param iterations_until_entry The amount of iterations that shall pass until the optimisation starts firing
