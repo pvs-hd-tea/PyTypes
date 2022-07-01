@@ -1,5 +1,9 @@
-from . import Optimisation, TriggerStatus, utils
+import logging
+import inspect
+
 import pandas as pd
+
+from . import Optimisation, TriggerStatus, utils
 
 
 class Ignore(Optimisation):
@@ -13,11 +17,12 @@ class Ignore(Optimisation):
         # By default, this optimisation is constantly active, as long as the current scope is active
         self._status = TriggerStatus.ONGOING
 
-    def advance(
-        self, current_frame: utils.FrameWithMetadata, traced: pd.DataFrame
-    ) -> None:
-        # Anything that indicates leaving the scope
-        if current_frame.is_return():
+    def advance(self, current_frame: utils.FrameWithMetadata, _: pd.DataFrame) -> None:
+        # If we reach a stack frame that is under the earliest stack frame we want to ignore
+        if self.fwm.frame.f_back is not None and self.fwm.frame.f_back == current_frame.frame:
+            logging.debug(
+                f"Switched Ignore to EXITED with {inspect.getframeinfo(current_frame.frame)}"
+            )
             self._status = TriggerStatus.EXITED
 
     def status(self) -> TriggerStatus:
