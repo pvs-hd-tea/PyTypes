@@ -42,7 +42,12 @@ class Tracer:
         """Stops the trace."""
         logging.info("Stopping trace")
         sys.settrace(None)
-        self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
+        
+        # Drop all references to the tracer
+        self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
+        self.trace_data = self.trace_data[
+            self.trace_data[constants.TraceData.CLASS] != Tracer
+        ]
         # self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
