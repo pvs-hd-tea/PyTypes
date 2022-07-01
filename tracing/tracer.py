@@ -56,9 +56,10 @@ class Tracer:
     def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
         # Remove dead optimisations
         while self.optimisation_stack:
-            if self.optimisation_stack[-1].status() == TriggerStatus.EXITED:
+            top = self.optimisation_stack[-1]
+            if top.status() == TriggerStatus.EXITED:
                 logging.debug(
-                    f"Removing {self.optimisation_stack[-1].__name__} from optimisations"
+                    f"Removing {self.optimisation_stack[-1].__class__.__name__} from optimisations"
                 )
                 self.optimisation_stack.pop()
             else:
@@ -67,17 +68,22 @@ class Tracer:
         ## Appending; only one optimisation at a time
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
-        # NOTE: if the newest optimisation is not the same Ignore and we are in an unwanted path
+        # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path
         ignore = Ignore(fwm)
         frame_path = pathlib.Path(fwm.frame.f_code.co_filename)
         if (
-            not self.optimisation_stack or ignore != self.optimisation_stack[-1]
+            not self.optimisation_stack
+            or not isinstance(self.optimisation_stack[-1], Ignore)
         ) and not frame_path.is_relative_to(self.project_dir):
+            logging.debug(f"Applying Ignore for {inspect.getframeinfo(fwm.frame)}")
             self.optimisation_stack.append(ignore)
             return
 
         # Entering a loop for the first time
         if fwm.is_for_loop():
+            logging.debug(
+                f"Applying TypeStableLoop for {inspect.getframeinfo(fwm.frame)}"
+            )
             tsl = TypeStableLoop(fwm)
             if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
                 self.optimisation_stack.append(tsl)
@@ -130,8 +136,8 @@ class Tracer:
 
         fwm = FrameWithMetadata(frame)
 
-        self._update_optimisations(fwm)
         self._advance_optimisations(fwm)
+        self._update_optimisations(fwm)
         self._apply_optimisation(fwm)
 
         # Tracing has been toggled off for this line now, simply return
@@ -147,10 +153,12 @@ class Tracer:
 
         names2types, category = None, None
         if event == "call":
+            logging.info(f"Tracing call: {inspect.getframeinfo(frame)}")
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_ARGUMENT
 
         elif event == "return":
+            logging.info(f"Tracing return: {inspect.getframeinfo(frame)}")
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
 
@@ -158,13 +166,22 @@ class Tracer:
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(file_name, possible_class, function_name, line_number, category2, names2types2)
+                self._update_trace_data_with(
+                    file_name,
+                    possible_class,
+                    function_name,
+                    line_number,
+                    category2,
+                    names2types2,
+                )
 
         elif event == "line":
+            logging.info(f"Tracing line: {inspect.getframeinfo(frame)}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
         elif event == "exception":
+            logging.info(f"Skipping exception: {inspect.getframeinfo(frame)}")
             pass
 
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
@@ -172,7 +189,12 @@ class Tracer:
 
         if names2types and category:
             self._update_trace_data_with(
-                file_name, possible_class, function_name, line_number, category, names2types
+                file_name,
+                possible_class,
+                function_name,
+                line_number,
+                category,
+                names2types,
             )
 
         self.old_values_by_variable_by_function_name[
@@ -182,13 +204,13 @@ class Tracer:
         return self._on_trace_is_called
 
     def _update_trace_data_with(
-            self,
-            file_name: pathlib.Path,
-            class_type: type | None,
-            function_name: str,
-            line_number: int,
-            category: TraceDataCategory,
-            names2types: dict[str, type],
+        self,
+        file_name: pathlib.Path,
+        class_type: type | None,
+        function_name: str,
+        line_number: int,
+        category: TraceDataCategory,
+        names2types: dict[str, type],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
@@ -247,4 +269,3 @@ def _get_class_in_frame(frame) -> type | None:
                 return possible_class
 
     return None
-
