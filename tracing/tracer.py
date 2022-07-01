@@ -43,7 +43,7 @@ class Tracer:
         logging.info("Stopping trace")
         sys.settrace(None)
         self.trace_data.drop_duplicates(inplace=True, ignore_index=True)
-        self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
+        # self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -166,6 +166,7 @@ class Tracer:
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
+
                 self._update_trace_data_with(
                     file_name,
                     possible_class,
@@ -188,6 +189,7 @@ class Tracer:
         # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
 
         if names2types and category:
+            logging.debug(f"{event}: {names2types} {category}")
             self._update_trace_data_with(
                 file_name,
                 possible_class,

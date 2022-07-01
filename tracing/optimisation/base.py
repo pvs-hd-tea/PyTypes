@@ -46,7 +46,7 @@ class Optimisation:
     @abstractmethod
     def __eq__(self, o: object) -> bool:
         """
-        Overloaded equality in order to check for already 
+        Overloaded equality in order to check for already
         active / duplicate optimizations
         """
         pass

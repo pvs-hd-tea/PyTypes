@@ -13,5 +13,5 @@ __all__ = [
     Optimisation.__name__,
     Ignore.__name__,
     TypeStableLoop.__name__,
-    FrameWithMetadata.__name__
+    FrameWithMetadata.__name__,
 ]
