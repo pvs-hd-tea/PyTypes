@@ -1,5 +1,4 @@
 import operator
-import typing
 from abc import ABC, abstractmethod
 import pandas as pd
 from functools import reduce
@@ -15,7 +14,7 @@ class TraceDataFilter(ABC):
         pass
 
     @abstractmethod
-    def get_processed_data(self, trace_data: pd.DataFrame) -> typing.Tuple[pd.DataFrame, float]:
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Processes the provided trace data and returns the processed trace data and the difference between the old and new data.
 
@@ -30,7 +29,7 @@ class DropDuplicatesFilter(TraceDataFilter):
     def __init__(self):
         super().__init__()
 
-    def get_processed_data(self, trace_data: pd.DataFrame) -> typing.Tuple[pd.DataFrame, float]:
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Drops the duplicates in the provided trace data and returns the processed trace data.
 
@@ -58,7 +57,7 @@ class ReplaceSubTypesFilter(TypeUnificationFilter):
         super().__init__()
         self.only_replace_if_base_type_already_in_data = only_replace_if_base_type_already_in_data
 
-    def get_processed_data(self, trace_data: pd.DataFrame) -> typing.Tuple[pd.DataFrame, float]:
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Replaces the rows containing types with their common base type and returns the processed trace data. If
         only_replace_if_base_type_already_in_data is True, only rows of types whose base type is already in the data
