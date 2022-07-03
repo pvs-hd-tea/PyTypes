@@ -107,10 +107,6 @@ class Tracer:
         for optimisation in self.optimisation_stack:
             optimisation.advance(fwm, self.trace_data)
 
-    def _apply_optimisation(self, fwm) -> None:
-        for optimisation in self.optimisation_stack:
-            optimisation.apply(fwm)
-
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
             var_name: type(var_value) for var_name, var_value in frame.f_locals.items()
@@ -151,10 +147,13 @@ class Tracer:
 
         self._advance_optimisations(fwm)
         self._update_optimisations(fwm)
-        self._apply_optimisation(fwm)
 
         # Tracing has been toggled off for this line now, simply return
-        if self.optimisation_stack and self.optimisation_stack[-1].status() == TriggerStatus.ONGOING:
+        if any(opt.status() in Optimisation.OPTIMIZING_STATES for opt in self.optimisation_stack):
+            return self._on_trace_is_called
+
+        # Ignore out of project files
+        if not pathlib.Path(frame.f_code.co_filename).is_relative_to(self.project_dir):
             return self._on_trace_is_called
 
         code = frame.f_code

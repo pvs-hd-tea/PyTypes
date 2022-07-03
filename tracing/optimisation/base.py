@@ -11,20 +11,11 @@ import pandas as pd
 class Optimisation:
     """Base class for tracing-oriented optimisations"""
 
+    OPTIMIZING_STATES = (TriggerStatus.ENTRY, TriggerStatus.ONGOING)
+    PESSIMIZING_STATES = (TriggerStatus.ENTRY, TriggerStatus.EXITED)
+
     def __init__(self, fwm: FrameWithMetadata):
         self.fwm = fwm
-
-    def apply(self, fwm: FrameWithMetadata) -> bool:
-        """
-        Apply the derived optimization to the given frame.
-        Whether tracing is turned off for a given line depends on the
-        optimisation's status
-        """
-        if self.status() in (TriggerStatus.ENTRY, TriggerStatus.ONGOING):
-            fwm._frame.f_trace_lines = False
-        else:
-            fwm._frame.f_trace_lines = True
-        return fwm._frame.f_trace_lines
 
     @abstractmethod
     def status(self) -> TriggerStatus:
