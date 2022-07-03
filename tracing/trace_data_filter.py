@@ -2,8 +2,7 @@ import operator
 from abc import ABC, abstractmethod
 import pandas as pd
 from functools import reduce
-from collections import Counter
-
+from collections import Counter  # type: ignore
 import constants
 
 
