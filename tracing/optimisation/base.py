@@ -1,6 +1,4 @@
 from abc import abstractmethod
-import inspect
-import logging
 
 from .enums import TriggerStatus
 from .utils import FrameWithMetadata

@@ -1,5 +1,4 @@
 import contextlib
-import copy
 import logging
 import inspect
 import sys
@@ -76,7 +75,7 @@ class Tracer:
             else:
                 break
 
-        ## Appending; only one optimisation at a time
+        # Appending; only one optimisation at a time
         # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
         # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
         # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path

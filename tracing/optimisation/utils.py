@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from traceback import linecache
-import logging
 import functools
 import io
 import typing
-import re
 import tokenize
+
 
 # Start with characters or underscore, rest is the same plus numbers
 @dataclass
