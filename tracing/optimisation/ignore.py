@@ -20,11 +20,11 @@ class Ignore(Optimisation):
     def advance(self, current_frame: utils.FrameWithMetadata, _: pd.DataFrame) -> None:
         # If we reach a stack frame that is under the earliest stack frame we want to ignore
         if (
-            self.fwm.frame.f_back is not None
-            and self.fwm.frame.f_back == current_frame.frame
+            self.fwm._frame.f_back is not None
+            and self.fwm._frame.f_back == current_frame._frame
         ):
             logging.debug(
-                f"Switched Ignore to EXITED with {inspect.getframeinfo(current_frame.frame)}"
+                f"Switched Ignore to EXITED with {inspect.getframeinfo(current_frame._frame)}"
             )
             self._status = TriggerStatus.EXITED
 
@@ -33,4 +33,4 @@ class Ignore(Optimisation):
 
     def __eq__(self, o: object) -> bool:
         # Address comparison, no need to do more than shallow equality
-        return isinstance(o, Ignore) and self.fwm.frame.f_code == o.fwm.frame.f_code
+        return isinstance(o, Ignore) and self.fwm._frame.f_code == o.fwm._frame.f_code

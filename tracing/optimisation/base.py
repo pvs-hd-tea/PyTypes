@@ -21,10 +21,10 @@ class Optimisation:
         optimisation's status
         """
         if self.status() in (TriggerStatus.ENTRY, TriggerStatus.ONGOING):
-            fwm.frame.f_trace_lines = False
+            fwm._frame.f_trace_lines = False
         else:
-            fwm.frame.f_trace_lines = True
-        return fwm.frame.f_trace_lines
+            fwm._frame.f_trace_lines = True
+        return fwm._frame.f_trace_lines
 
     @abstractmethod
     def status(self) -> TriggerStatus:

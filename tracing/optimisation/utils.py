@@ -11,16 +11,24 @@ import tokenize
 @dataclass
 class FrameWithMetadata:
     # TODO: Discover typings for inspect's frames
-    frame: typing.Any
+    _frame: typing.Any
+
+    @functools.cached_property
+    def co_filename(self) -> str:
+        return self._frame.f_code.co_filename
+
+    @functools.cached_property
+    def f_lineno(self) -> int:
+        return self._frame.f_lineno
 
     @functools.cached_property
     def tokens(self) -> list[tokenize.TokenInfo] | str:
         # Adapted from https://stackoverflow.com/a/22363519 and
         # https://stackoverflow.com/a/62167093
-        filename = self.frame.f_code.co_filename
+        filename = self._frame.f_code.co_filename
         linecache.checkcache(filename)
 
-        line = linecache.getline(filename, self.frame.f_lineno, self.frame.f_globals)
+        line = linecache.getline(filename, self._frame.f_lineno, self._frame.f_globals)
         sio = io.StringIO(line)
 
         try:
