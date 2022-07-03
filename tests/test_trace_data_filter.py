@@ -5,7 +5,7 @@ from tracing import TraceDataCategory
 
 from abc import ABC
 
-from tracing.trace_data_filter import DropDuplicatesFilter
+from tracing.trace_data_filter import DropDuplicatesFilter, ReplaceSubTypesFilter
 
 
 class BaseClass(ABC):
@@ -30,8 +30,6 @@ class SubClass3(BaseClass):
 
 def get_sample_trace_data() -> pd.DataFrame:
     trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    subclass2_type = SubClass2
-    subclass3_type = SubClass3
 
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
@@ -39,7 +37,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        subclass2_type,
+        SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
@@ -47,7 +45,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        subclass2_type,
+        SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
@@ -55,20 +53,32 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        subclass3_type,
+        SubClass3,
+    ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass11,
+    ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
     ]
 
+    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
     return trace_data
 
 
 def test_drop_duplicates_filter_processes_and_returns_correct_data_and_difference():
-    trace_data = get_sample_trace_data()
-
-    expected_difference = 1 / float(3)
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-
-    subclass2_type = SubClass2
-    subclass3_type = SubClass3
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
@@ -76,7 +86,7 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        subclass2_type,
+        SubClass2,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
@@ -84,10 +94,136 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        subclass3_type,
+        SubClass3,
     ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass11,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
+    ]
+
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     test_object = DropDuplicatesFilter()
-    actual_trace_data, actual_difference = test_object.get_processed_data_and_difference(trace_data)
-    assert abs(actual_difference - expected_difference) < 1e-8
+
+    trace_data = get_sample_trace_data()
+    actual_trace_data = test_object.get_processed_data(trace_data)
+
+    assert expected_trace_data.equals(actual_trace_data)
+
+
+def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data_and_difference():
+    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        SubClass2,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        SubClass2,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        SubClass3,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
+    ]
+
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+
+    trace_data = get_sample_trace_data()
+    test_object = ReplaceSubTypesFilter(True)
+    actual_trace_data = test_object.get_processed_data(trace_data)
+
+    assert expected_trace_data.equals(actual_trace_data)
+
+
+def test_replace_subtypes_filter_processes_and_returns_correct_data_and_difference():
+    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        BaseClass,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        BaseClass,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        1,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "argument1",
+        BaseClass,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
+    ]
+    expected_trace_data.loc[len(expected_trace_data.index)] = [
+        str(pathlib.Path("tests", "filename.py")),
+        "function_name",
+        2,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable1",
+        SubClass1,
+    ]
+
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+
+    trace_data = get_sample_trace_data()
+    test_object = ReplaceSubTypesFilter(False)
+    actual_trace_data = test_object.get_processed_data(trace_data)
+
     assert expected_trace_data.equals(actual_trace_data)
