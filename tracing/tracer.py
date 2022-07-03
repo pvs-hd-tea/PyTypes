@@ -1,6 +1,7 @@
+import contextlib
+import copy
 import logging
 import inspect
-import contextlib
 import sys
 
 import pandas as pd
@@ -19,6 +20,9 @@ from .optimisation import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
         if project_dir is None:
@@ -34,21 +38,23 @@ class Tracer:
 
     def start_trace(self) -> None:
         """Starts the trace."""
-        logging.info("Starting trace")
+        logger.info("Starting trace")
         sys.settrace(self._on_trace_is_called)
         # sys.setprofile(self._on_trace_is_called)
 
     def stop_trace(self) -> None:
         """Stops the trace."""
-        logging.info("Stopping trace")
+        # Clear out all optimisations
+        self.optimisation_stack = list()
+
+        logger.info("Stopping trace")
         sys.settrace(None)
-        
+
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
         self.trace_data = self.trace_data[
             self.trace_data[constants.TraceData.CLASS] != Tracer
         ]
-        # self.trace_data.drop(self.trace_data.tail(1).index, inplace=True)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -63,7 +69,7 @@ class Tracer:
         while self.optimisation_stack:
             top = self.optimisation_stack[-1]
             if top.status() == TriggerStatus.EXITED:
-                logging.debug(
+                logger.debug(
                     f"Removing {self.optimisation_stack[-1].__class__.__name__} from optimisations"
                 )
                 self.optimisation_stack.pop()
@@ -75,19 +81,22 @@ class Tracer:
         # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
         # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path
         ignore = Ignore(fwm)
-        frame_path = pathlib.Path(fwm.frame.f_code.co_filename)
+        frame_path = pathlib.Path(fwm.co_filename)
         if (
             not self.optimisation_stack
             or not isinstance(self.optimisation_stack[-1], Ignore)
         ) and not frame_path.is_relative_to(self.project_dir):
-            logging.debug(f"Applying Ignore for {inspect.getframeinfo(fwm.frame)}")
+            logger.debug(f"Applying Ignore for {inspect.getframeinfo(fwm._frame)}")
             self.optimisation_stack.append(ignore)
             return
 
         # Entering a loop for the first time
-        if fwm.is_for_loop():
-            logging.debug(
-                f"Applying TypeStableLoop for {inspect.getframeinfo(fwm.frame)}"
+        if (
+            not self.optimisation_stack
+            or not isinstance(self.optimisation_stack[-1], TypeStableLoop)
+        ) and fwm.is_for_loop():
+            logger.debug(
+                f"Applying TypeStableLoop for {inspect.getframeinfo(fwm._frame)}"
             )
             tsl = TypeStableLoop(fwm)
             if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
@@ -99,8 +108,8 @@ class Tracer:
             optimisation.advance(fwm, self.trace_data)
 
     def _apply_optimisation(self, fwm) -> None:
-        if self.optimisation_stack:
-            self.optimisation_stack[-1].apply(fwm)
+        for optimisation in self.optimisation_stack:
+            optimisation.apply(fwm)
 
     def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
         names2types = {
@@ -138,7 +147,6 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Called during execution of a function which is traced. Collects trace data from the frame."""
-
         fwm = FrameWithMetadata(frame)
 
         self._advance_optimisations(fwm)
@@ -146,7 +154,7 @@ class Tracer:
         self._apply_optimisation(fwm)
 
         # Tracing has been toggled off for this line now, simply return
-        if self.optimisation_stack and isinstance(self.optimisation_stack[-1], Ignore):
+        if self.optimisation_stack and self.optimisation_stack[-1].status() == TriggerStatus.ONGOING:
             return self._on_trace_is_called
 
         code = frame.f_code
@@ -158,12 +166,12 @@ class Tracer:
 
         names2types, category = None, None
         if event == "call":
-            logging.info(f"Tracing call: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing call: {inspect.getframeinfo(frame)}")
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_ARGUMENT
 
         elif event == "return":
-            logging.info(f"Tracing return: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing return: {inspect.getframeinfo(frame)}")
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
 
@@ -182,19 +190,19 @@ class Tracer:
                 )
 
         elif event == "line":
-            logging.info(f"Tracing line: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing line: {inspect.getframeinfo(frame)}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
         elif event == "exception":
-            logging.info(f"Skipping exception: {inspect.getframeinfo(frame)}")
+            logger.info(f"Skipping exception: {inspect.getframeinfo(frame)}")
             pass
 
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
         # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
 
         if names2types and category:
-            logging.debug(f"{event}: {names2types} {category}")
+            logger.debug(f"{event}: {names2types} {category}")
             self._update_trace_data_with(
                 file_name,
                 possible_class,
