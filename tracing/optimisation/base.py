@@ -10,7 +10,7 @@ class Optimisation(ABC):
     """Base class for tracing-oriented optimisations"""
 
     OPTIMIZING_STATES = (TriggerStatus.ENTRY, TriggerStatus.ONGOING)
-    PESSIMIZING_STATES = (TriggerStatus.ENTRY, TriggerStatus.EXITED)
+    PESSIMIZING_STATES = (TriggerStatus.INACTIVE, TriggerStatus.EXITED)
 
     def __init__(self, fwm: FrameWithMetadata):
         self.fwm = fwm
