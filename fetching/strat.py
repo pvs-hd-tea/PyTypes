@@ -82,14 +82,3 @@ class PyTestStrategy(ApplicationStrategy):
             return True
 
         return path.name.endswith("_test.py")
-
-    def execute_decorator_appended_files(self):
-        """Executes the python files with the decorators appended to the pytest functions."""
-        for decorator_appended_file_path in self.decorator_appended_file_paths:
-            global_variables = {"__file__": decorator_appended_file_path}
-            with decorator_appended_file_path.open("r") as file:
-                exec(
-                    compile(file.read(), decorator_appended_file_path, "exec"),
-                    global_variables,
-                    None,
-                )
