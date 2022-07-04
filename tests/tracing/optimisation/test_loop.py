@@ -15,7 +15,19 @@ def skippable_looping():
     return r
 
 
-def test_pathlib_calls_are_not_traced():
+def skippable_looping_with_skipped_variable():
+    s = 0
+    for x in range(100):
+        if x % 2 == 0:
+            s += x
+
+        if x > 50:
+            forgetme = x
+    r = s + 10
+    return r
+
+
+def test_all_variables_exist():
     test_path = pathlib.Path.cwd() / "tests" / "tracing" / "optimisation"
     tracer = Tracer(test_path)
 
@@ -38,3 +50,20 @@ def test_pathlib_calls_are_not_traced():
 
     for (name, _) in vars:
         assert name in df[constants.TraceData.VARNAME].values
+
+
+
+def test_variable_is_not_traced():
+    test_path = pathlib.Path.cwd() / "tests" / "tracing" / "optimisation"
+    tracer = Tracer(test_path)
+
+    tracer.start_trace()
+    test_all_variables_exist()
+    tracer.stop_trace()
+
+    df = tracer.trace_data
+
+    with pd.option_context("display.max_rows", None, "display.max_columns", None):
+        print(df)
+
+    assert "forgetme" not in df[constants.TraceData.VARNAME].values
