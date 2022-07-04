@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 import pathlib
 
 import dacite
 import toml
 
 import constants
+
 
 @dataclass
 class Config:
@@ -25,6 +26,7 @@ def _load_config(config_path: pathlib.Path) -> PyTypesToml:
         data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
     )
 
+
 def _write_config(config_path: pathlib.Path, pttoml: PyTypesToml):
-    config_path.mkdir(parents=True, exist_ok=True)
-    toml.dump(pttoml, config_path.open("w"))
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    toml.dump(asdict(pttoml), config_path.open("w"))
