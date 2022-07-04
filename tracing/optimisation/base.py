@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 from .enums import TriggerStatus
 from .utils import FrameWithMetadata
@@ -6,7 +6,7 @@ from .utils import FrameWithMetadata
 import pandas as pd
 
 
-class Optimisation:
+class Optimisation(ABC):
     """Base class for tracing-oriented optimisations"""
 
     OPTIMIZING_STATES = (TriggerStatus.ENTRY, TriggerStatus.ONGOING)
