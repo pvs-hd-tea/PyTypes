@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from traceback import linecache
+from traceback import linecache # type: ignore
 import functools
 import io
 import typing

@@ -104,7 +104,7 @@ class TypeStableLoop(Optimisation):
             if self._is_loop_head(current_frame):
                 new_loop_traced_count = (
                     traced[constants.TraceData.LINENO]
-                    .between(*self._relevant_lines, inclusive="both")
+                    .between(*self._relevant_lines, inclusive="both") # type: ignore
                     .shape[0]
                 )
                 logger.debug(f"{new_loop_traced_count=} vs {self._loop_traced_count=}")
