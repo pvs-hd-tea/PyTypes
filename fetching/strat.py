@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import logging
 import pathlib
 import re
 
@@ -83,6 +84,7 @@ class PyTestStrategy(ApplicationStrategy):
             if not self.overwrite_tests
             else path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
         )
+        logging.debug(f"{path} -> {output}")
 
         with output.open("w") as file:
             file.writelines(lines)
@@ -91,6 +93,6 @@ class PyTestStrategy(ApplicationStrategy):
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
         if path.name.startswith("test_") and path.name.endswith(".py"):
-            return True
+            return not path.name.endswith(PyTestStrategy.SUFFIX)
 
         return path.name.endswith("_test.py")
