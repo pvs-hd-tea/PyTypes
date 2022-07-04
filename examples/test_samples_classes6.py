@@ -3,19 +3,19 @@ from abc import ABC, abstractmethod
 
 
 class ContentRequest:
-    def __init__(self, requested_type: typing.Type):
+    def __init__(self, requested_type: typing.Type) -> None:
         self.requested_type = requested_type
 
 
 class ContentPackage:
-    def __init__(self, content: typing.Any):
+    def __init__(self, content: typing.Any) -> None:
         self.content = content
 
 
 class Task:
-    def __init__(self, requests):
+    def __init__(self, requests) -> None:
         self.requests = requests
-        self.packages = []
+        self.packages: list[ContentPackage] = []
 
     def next_request(self) -> ContentRequest | None:
         if not self.is_done():
@@ -25,7 +25,7 @@ class Task:
     def add_package(self, content_package: ContentPackage) -> None:
         self.packages.append(content_package)
 
-    def is_done(self):
+    def is_done(self) -> bool:
         return len(self.packages) == len(self.requests)
 
 
@@ -40,7 +40,7 @@ class ContentUser(ABC):
 
 
 class TaskUser(ContentUser):
-    def __init__(self, task: Task):
+    def __init__(self, task: Task) -> None:
         self.task = task
 
     def get_next_request(self) -> ContentRequest | None:
@@ -49,12 +49,12 @@ class TaskUser(ContentUser):
     def on_get_content_package(self, content_package: ContentPackage) -> None:
         self.task.add_package(content_package)
 
-    def is_task_done(self):
+    def is_task_done(self) -> bool:
         return self.task.is_done()
 
 
 class Storage:
-    def __init__(self, contents: list[typing.Any]):
+    def __init__(self, contents: list[typing.Any]) -> None:
         self._contents: list[typing.Any] = contents
 
     def give_content_package_and_remove(self, content_user: ContentUser, content_request: ContentRequest) -> bool:
@@ -67,12 +67,12 @@ class Storage:
                 return True
         return False
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return len(self._contents) == 0
 
 
 class StorageCluster:
-    def __init__(self, storages: list[Storage]):
+    def __init__(self, storages: list[Storage]) -> None:
         self._storages = storages
 
     def give_content_package_and_remove(self, content_user: ContentUser,
@@ -83,7 +83,7 @@ class StorageCluster:
 
         raise RuntimeError
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         for storage in self._storages:
             if not storage.is_empty():
                 return False

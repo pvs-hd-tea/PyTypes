@@ -4,13 +4,13 @@ import numpy as np
 
 
 class Data:
-    def __init__(self, array1, array2):
+    def __init__(self, array1: np.ndarray, array2: np.ndarray) -> None:
         self.array1 = array1
         self.array2 = array2
 
 
 class DataProcessor(ABC):
-    def __init__(self, integer1: int = 0, integer2: int = 0):
+    def __init__(self, integer1: int = 0, integer2: int = 0) -> None:
         self.integer1 = integer1
         self.integer2 = integer2
 

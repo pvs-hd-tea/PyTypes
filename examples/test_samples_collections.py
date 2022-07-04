@@ -1,7 +1,7 @@
 import typing
 
 
-def compare_two_lists(list1, list2):
+def compare_two_lists(list1: list[typing.Any], list2: list[typing.Any]) -> bool:
     if len(list1) != len(list2):
         return False
 
@@ -13,7 +13,7 @@ def compare_two_lists(list1, list2):
     return True
 
 
-def does_list_contain_elements_of_one_type(list1: list):
+def does_list_contain_elements_of_one_type(list1: list[typing.Any]) -> bool:
     if len(list1) == 0:
         return True
 
@@ -29,7 +29,7 @@ def does_list_contain_elements_of_one_type(list1: list):
     return True
 
 
-def check_and_get_index_and_element_if_element_in_collection(list1 : list, element_to_check: typing.Any):
+def check_and_get_index_and_element_if_element_in_collection(list1 : list[typing.Any], element_to_check: typing.Any) -> typing.Tuple[bool, int, typing.Any]:
     for i, element in enumerate(list1):
         if element == element_to_check:
             return True, i, element
