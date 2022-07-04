@@ -143,6 +143,10 @@ class Tracer:
 
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Called during execution of a function which is traced. Collects trace data from the frame."""
+        # Ignore out of project files
+        if not pathlib.Path(frame.f_code.co_filename).is_relative_to(self.project_dir):
+            return self._on_trace_is_called
+
         fwm = FrameWithMetadata(frame)
 
         self._advance_optimisations(fwm)
@@ -150,10 +154,6 @@ class Tracer:
 
         # Tracing has been toggled off for this line now, simply return
         if any(opt.status() in Optimisation.OPTIMIZING_STATES for opt in self.optimisation_stack):
-            return self._on_trace_is_called
-
-        # Ignore out of project files
-        if not pathlib.Path(frame.f_code.co_filename).is_relative_to(self.project_dir):
             return self._on_trace_is_called
 
         code = frame.f_code
