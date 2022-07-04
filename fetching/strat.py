@@ -79,12 +79,10 @@ class PyTestStrategy(ApplicationStrategy):
             lines.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
             lines.append(PyTestStrategy.ENTRYPOINT)
 
-        output = (
-            path
-            if not self.overwrite_tests
-            else path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
-        )
-        logging.debug(f"{path} -> {output}")
+        if self.overwrite_tests:
+            output = path
+        else:
+            output = path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
 
         with output.open("w") as file:
             file.writelines(lines)
