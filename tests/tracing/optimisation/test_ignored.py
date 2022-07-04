@@ -47,4 +47,3 @@ def test_pathlib_calls_are_not_traced():
 
     for (name, _) in vars:
         assert name in df[constants.TraceData.VARNAME].values
-    
