@@ -24,10 +24,18 @@ def project_folder():
 def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_files(
     project_folder,
 ):
-    test_object = PyTestStrategy(pathlib.Path.cwd(), False)
+    test_object = PyTestStrategy(
+        pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=True
+    )
     test_object.apply(project_folder)
-    test_file_paths = list(cwd.glob("test_*.py"))
-    new_test_file_paths = test_file_paths
+    test_file_paths = list(
+        filter(
+            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.glob("test_*.py")
+        )
+    )
+    new_test_file_paths = list(map(
+        lambda p: p.parent / f"{p.stem}{PyTestStrategy.SUFFIX}", test_file_paths
+    ))
     assert len(new_test_file_paths) != 0
 
     for new_test_file_path in new_test_file_paths:
@@ -37,10 +45,16 @@ def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_fil
 def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_generates_test_files(
     project_folder,
 ):
-    test_object = PyTestStrategy(pathlib.Path.cwd(), True)
+    test_object = PyTestStrategy(pathlib.Path.cwd(), overwrite_tests=True)
     test_object.apply(project_folder)
-    test_file_paths = list(cwd.rglob("test_*.py"))
-    new_test_file_paths = test_file_paths
+    test_file_paths = list(
+        filter(
+            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.glob("test_*.py")
+        )
+    )
+    new_test_file_paths = list(map(
+        lambda p: p.parent / f"{p.stem}{PyTestStrategy.SUFFIX}", test_file_paths
+    ))
     assert len(new_test_file_paths) != 0
 
     for new_test_file_path in new_test_file_paths:
