@@ -64,6 +64,7 @@ class Tracer:
             self.stop_trace()
 
     def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
+        """Remove optimisations that are marked as TriggerStatus.EXITED, and insert new ones as needed."""
         # Remove dead optimisations
         while self.optimisation_stack:
             top = self.optimisation_stack[-1]
