@@ -3,6 +3,8 @@ import pathlib
 import re
 
 from .projio import Project
+import constants
+from tracing.ptconfig import _write_config, PyTypesToml, Config
 
 
 class ApplicationStrategy(ABC):
@@ -23,6 +25,10 @@ class ApplicationStrategy(ABC):
             self._is_test_file, self.globber(project.test_directory, "*")
         ):
             self._apply(path)
+
+        cfg_path = project.root / constants.CONFIG_FILE_NAME
+        toml = PyTypesToml(pytypes=Config(project=project.root.name))
+        _write_config(cfg_path, toml)
 
     @abstractmethod
     def _apply(self, path: pathlib.Path) -> None:
