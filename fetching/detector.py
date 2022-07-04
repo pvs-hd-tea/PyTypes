@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
+import pathlib
 
 import toml
 
@@ -44,7 +45,7 @@ class PyTestDetector(TestDetector):
         return self._has_pytest_ini() or self._has_pytest_in_pyproject()
 
     def create_strategy(self) -> ApplicationStrategy:
-        return PyTestStrategy()
+        return PyTestStrategy(pytest_root=pathlib.Path.cwd())
 
     def _has_pytest_ini(self) -> bool:
         pytest_config = self.project.root / "pytest.ini"

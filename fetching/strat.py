@@ -36,7 +36,8 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = re.compile(r"[\w\s]*test_[\w\s]*\([\w\s]*\)[\w\s]*:[\w\s]*")
-    IMPORTS = "import sys; from tracing import register, entrypoint\n"
+    SYS_IMPORT = "import sys\n"
+    PYTYPE_IMPORTS = "from tracing import register, entrypoint\n"
     REGISTER = "@register()\n"
     ENTRYPOINT = "\n@entrypoint()\ndef main():\n  ...\n"
 
@@ -64,8 +65,9 @@ class PyTestStrategy(ApplicationStrategy):
                 contains_pytest_test_function = True
 
         if contains_pytest_test_function:
-            lines.insert(0, PyTestStrategy.IMPORTS)
-            lines.insert(0, self.sys_path_ext)
+            lines.insert(0, PyTestStrategy.SYS_IMPORT)
+            lines.insert(1, self.sys_path_ext)
+            lines.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
             lines.append(PyTestStrategy.ENTRYPOINT)
 
         with path.open("w") as file:
