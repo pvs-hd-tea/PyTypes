@@ -71,10 +71,7 @@ class TypeStableLoop(Optimisation):
             self._when_ongoing(current_frame, traced)
             self._status = TriggerStatus.ONGOING
 
-        if (
-            self._relevant_lines[1] is not None
-            and current_frame.f_lineno > self._relevant_lines[1]
-        ):
+        if self._relevant_lines[1] and current_frame.f_lineno > self._relevant_lines[1]:
             logger.debug(
                 f"{TypeStableLoop.__name__}: {self._status} -> EXITED due to leaving loop"
             )
@@ -104,7 +101,7 @@ class TypeStableLoop(Optimisation):
             if self._is_loop_head(current_frame):
                 new_loop_traced_count = (
                     traced[constants.TraceData.LINENO]
-                    .between(*self._relevant_lines, inclusive="both") # type: ignore
+                    .between(*self._relevant_lines, inclusive="both")  # type: ignore
                     .shape[0]
                 )
                 logger.debug(f"{new_loop_traced_count=} vs {self._loop_traced_count=}")
