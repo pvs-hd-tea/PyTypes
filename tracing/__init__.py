@@ -9,5 +9,5 @@ __all__ = [
     TraceDataCategory.__name__,
     entrypoint.__name__,
     register.__name__,
-    TraceDataFileCollector.__name__
+    TraceDataFileCollector.__name__,
 ]

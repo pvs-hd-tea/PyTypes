@@ -13,7 +13,9 @@ import constants
 @dataclass
 class Config:
     project: str
-    output_template: str = field(default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING)
+    output_template: str = field(
+        default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING
+    )
 
 
 @dataclass
@@ -60,7 +62,9 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         prev_frame = current_frame.f_back
         if prev_frame is None:
-            raise RuntimeError("The current stack frame has no predecessor, unable to trace execution!")
+            raise RuntimeError(
+                "The current stack frame has no predecessor, unable to trace execution!"
+            )
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(

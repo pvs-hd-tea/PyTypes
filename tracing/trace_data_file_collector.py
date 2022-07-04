@@ -10,8 +10,9 @@ class TraceDataFileCollector:
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
         self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
 
-    def collect_trace_data(self, path: pathlib.Path,
-                           include_also_files_in_subdirectories: bool = False) -> None:
+    def collect_trace_data(
+        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
+    ) -> None:
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
         self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
 
@@ -31,4 +32,3 @@ class TraceDataFileCollector:
 
         if len(trace_datas) > 0:
             self.trace_data = pd.concat(trace_datas, ignore_index=True, sort=False)
-
