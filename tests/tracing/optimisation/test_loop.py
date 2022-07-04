@@ -31,8 +31,10 @@ def test_pathlib_calls_are_not_traced():
     vars = [
         ("s", int),
         ("x", int),
+        ("r", int),
         (skippable_looping.__name__, int),
     ]
+    assert df.shape[0] == len(vars)
 
     for (name, _) in vars:
         assert name in df[constants.TraceData.VARNAME].values
