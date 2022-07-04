@@ -1,7 +1,7 @@
 import enum
 
 
-class TriggerStatus(enum.Enum):
+class TriggerStatus(enum.IntEnum):
     """
     INACTIVE: Non-optimising, usually for gathering information during execution
     ENTRY: Optimising, first time the tracer will be turned off
