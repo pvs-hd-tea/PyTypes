@@ -490,11 +490,6 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     test_object.stop_trace()
 
     actual_trace_data = test_object.trace_data
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-       print(actual_trace_data.head(n=20))
-       print(actual_trace_data.dtypes)
-       print(expected_trace_data.dtypes)
-
     _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
