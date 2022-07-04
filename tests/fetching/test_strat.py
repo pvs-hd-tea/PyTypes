@@ -24,14 +24,10 @@ def project_folder():
 def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_files(
     project_folder,
 ):
-    test_object = PyTestStrategy(False)
+    test_object = PyTestStrategy(pathlib.Path.cwd(), False)
     test_object.apply(project_folder)
-    test_file_paths = cwd.glob("test_*.py")
-    new_test_file_paths = [
-        pathlib.Path(str(file_path).replace(".py", test_object.APPENDED_FILEPATH))
-        for file_path in test_file_paths
-        if not str(file_path).endswith(test_object.APPENDED_FILEPATH)
-    ]
+    test_file_paths = list(cwd.glob("test_*.py"))
+    new_test_file_paths = test_file_paths
     assert len(new_test_file_paths) != 0
 
     for new_test_file_path in new_test_file_paths:
@@ -41,14 +37,10 @@ def test_if_test_object_searches_for_test_files_in_folders_it_generates_test_fil
 def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_generates_test_files(
     project_folder,
 ):
-    test_object = PyTestStrategy(True)
+    test_object = PyTestStrategy(pathlib.Path.cwd(), True)
     test_object.apply(project_folder)
-    test_file_paths = cwd.rglob("test_*.py")
-    new_test_file_paths = [
-        pathlib.Path(str(file_path).replace(".py", test_object.APPENDED_FILEPATH))
-        for file_path in test_file_paths
-        if not str(file_path).endswith(test_object.APPENDED_FILEPATH)
-    ]
+    test_file_paths = list(cwd.rglob("test_*.py"))
+    new_test_file_paths = test_file_paths
     assert len(new_test_file_paths) != 0
 
     for new_test_file_path in new_test_file_paths:

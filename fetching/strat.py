@@ -36,18 +36,21 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = re.compile(r"[\w\s]*test_[\w\s]*\([\w\s]*\)[\w\s]*:[\w\s]*")
-    IMPORTS = "from tracing import register, entrypoint\n"
+    IMPORTS = "import sys; from tracing import register, entrypoint\n"
     REGISTER = "@register()\n"
     ENTRYPOINT = "\n@entrypoint()\ndef main():\n  ...\n"
     APPENDED_FILEPATH = "_decorators_appended.py"
 
-    def __init__(self, recurse_into_subdirs: bool = True):
+    def __init__(self, pytest_root: pathlib.Path, recurse_into_subdirs: bool = True):
         super().__init__(recurse_into_subdirs)
 
+        self.pytest_root = pytest_root
         self.decorator_appended_file_paths: list[pathlib.Path] = []
 
+        self.sys_path_ext = f"sys.path.append({self.pytest_root}"
+
     def _apply(self, path: pathlib.Path) -> None:
-        with path.open("r") as file:
+        with path.open() as file:
             lines = file.readlines()
 
         skip_line = False
@@ -63,15 +66,13 @@ class PyTestStrategy(ApplicationStrategy):
 
         if contains_pytest_test_function:
             lines.insert(0, PyTestStrategy.IMPORTS)
+            lines.insert(1, self.sys_path_ext)
             lines.append(PyTestStrategy.ENTRYPOINT)
 
-        file_path_with_appended_decorators = pathlib.Path(
-            str(path).replace(".py", PyTestStrategy.APPENDED_FILEPATH)
-        )
-        with file_path_with_appended_decorators.open("w") as file:
+        with path.open("w") as file:
             file.writelines(lines)
 
-        self.decorator_appended_file_paths.append(file_path_with_appended_decorators)
+        self.decorator_appended_file_paths.append(path)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
         if (
