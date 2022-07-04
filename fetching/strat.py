@@ -13,7 +13,8 @@ class ApplicationStrategy(ABC):
     functions to be traced upon execution.
     """
 
-    def __init__(self, recurse_into_subdirs: bool = True):
+    def __init__(self, overwrite_tests: bool = True, recurse_into_subdirs: bool = True):
+        self.overwrite_tests = overwrite_tests
         self.globber = pathlib.Path.rglob if recurse_into_subdirs else pathlib.Path.glob
 
     def apply(self, project: Project):
@@ -41,8 +42,13 @@ class PyTestStrategy(ApplicationStrategy):
     REGISTER = "@register()\n"
     ENTRYPOINT = "\n@entrypoint()\ndef main():\n  ...\n"
 
-    def __init__(self, pytest_root: pathlib.Path, recurse_into_subdirs: bool = True):
-        super().__init__(recurse_into_subdirs)
+    def __init__(
+        self,
+        pytest_root: pathlib.Path,
+        overwrite_tests: bool = True,
+        recurse_into_subdirs: bool = True,
+    ):
+        super().__init__(overwrite_tests, recurse_into_subdirs)
 
         self.pytest_root = pytest_root
         self.decorator_appended_file_paths: list[pathlib.Path] = []
@@ -76,10 +82,7 @@ class PyTestStrategy(ApplicationStrategy):
         self.decorator_appended_file_paths.append(path)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
-        if (
-            path.name.startswith("test_")
-            and path.name.endswith(".py")
-        ):
+        if path.name.startswith("test_") and path.name.endswith(".py"):
             return True
 
         return path.name.endswith("_test.py")
