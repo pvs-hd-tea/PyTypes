@@ -42,6 +42,8 @@ class PyTestStrategy(ApplicationStrategy):
     REGISTER = "@register()\n"
     ENTRYPOINT = "\n@entrypoint()\ndef main():\n  ...\n"
 
+    SUFFIX = "_decorator_appended.py"
+
     def __init__(
         self,
         pytest_root: pathlib.Path,
@@ -76,10 +78,16 @@ class PyTestStrategy(ApplicationStrategy):
             lines.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
             lines.append(PyTestStrategy.ENTRYPOINT)
 
-        with path.open("w") as file:
+        output = (
+            path
+            if not self.overwrite_tests
+            else path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
+        )
+
+        with output.open("w") as file:
             file.writelines(lines)
 
-        self.decorator_appended_file_paths.append(path)
+        self.decorator_appended_file_paths.append(output)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
         if path.name.startswith("test_") and path.name.endswith(".py"):
