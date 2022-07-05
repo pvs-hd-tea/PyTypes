@@ -12,9 +12,7 @@ from tracing.trace_data_category import TraceDataCategory
 
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
-        if project_dir is None:
-            raise TypeError
-
+        self.VARIABLE_NAME_PREFIX = "class."
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
@@ -80,7 +78,7 @@ class Tracer:
     def _evaluate_object(self, class_object: typing.Any) -> dict[str, type]:
         object_dict = class_object.__dict__
         names2types = {
-            var_name: type(var_value) for var_name, var_value in object_dict.items()
+            self.VARIABLE_NAME_PREFIX + var_name: type(var_value) for var_name, var_value in object_dict.items()
         }
         return names2types
 
@@ -110,7 +108,8 @@ class Tracer:
             if _is_frame_within_class_function(frame):
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(file_name, function_name, line_number, category2, names2types2)
+                self._update_trace_data_with(file_name, "", 0, category2, names2types2)
+                # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
             names2types = self._on_line(frame)

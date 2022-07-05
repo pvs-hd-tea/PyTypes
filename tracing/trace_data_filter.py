@@ -38,16 +38,7 @@ class DropDuplicatesFilter(TraceDataFilter):
         return processed_trace_data
 
 
-class TypeUnificationFilter(TraceDataFilter):
-    """Base Class for all filters regarding type unification."""
-    def _get_common_base_type(self, types: list[type]) -> type:
-        common_base_type_counters_of_subtypes = [Counter(subtype.mro()) for subtype in types]
-        common_base_types_in_order = reduce(operator.and_, common_base_type_counters_of_subtypes).keys()
-        first_common_base_type = next(iter(common_base_types_in_order))
-        return first_common_base_type
-
-
-class ReplaceSubTypesFilter(TypeUnificationFilter):
+class ReplaceSubTypesFilter(TraceDataFilter):
     """Replaces rows containing types in the data with their common base type."""
     def __init__(self, only_replace_if_base_type_already_in_data: bool = True):
         """
@@ -76,3 +67,33 @@ class ReplaceSubTypesFilter(TypeUnificationFilter):
         if not self.only_replace_if_base_type_already_in_data or common_base_type in types_in_group:
             group[constants.TraceData.VARTYPE] = common_base_type
         return group
+
+    def _get_common_base_type(self, types: list[type]) -> type:
+        common_base_type_counters_of_subtypes = [Counter(subtype.mro()) for subtype in types]
+        common_base_types_in_order = reduce(operator.and_, common_base_type_counters_of_subtypes).keys()
+        first_common_base_type = next(iter(common_base_types_in_order))
+        return first_common_base_type
+
+
+class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
+    """Drops rows containing variables of multiple types."""
+    def __init__(self, min_amount_types_to_drop: int = 2):
+        super().__init__()
+        self.min_amount_types_to_drop = min_amount_types_to_drop
+
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Drops rows containing variables if the amount of inferred types is higher than self.min_amount_types_to_drop
+        and returns the processed data.
+
+        @param trace_data The provided trace data to process.
+        """
+        subset = list(constants.TraceData.SCHEMA.keys())
+        subset.remove(constants.TraceData.VARTYPE)
+        grouped_trace_data_with_unique_count = trace_data.groupby(subset)[constants.TraceData.VARTYPE].nunique()\
+            .reset_index(name="amount_types")
+        joined_trace_data = pd.merge(trace_data, grouped_trace_data_with_unique_count, on=subset, how='inner')
+        trace_data_with_dropped_variables = joined_trace_data[
+            joined_trace_data["amount_types"] < self.min_amount_types_to_drop]
+        processed_data = trace_data_with_dropped_variables.drop(["amount_types"], axis=1)
+        return processed_data
