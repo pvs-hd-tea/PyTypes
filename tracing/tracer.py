@@ -134,7 +134,7 @@ class Tracer:
     def _evaluate_object(self, class_object: typing.Any) -> dict[str, type]:
         object_dict = class_object.__dict__
         names2types = {
-            constants.CLASS_MEMBER_NAME_PREFIX + var_name: type(var_value) for var_name, var_value in object_dict.items()
+            var_name: type(var_value) for var_name, var_value in object_dict.items()
         }
         return names2types
 

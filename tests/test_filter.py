@@ -5,7 +5,7 @@ from tracing import TraceDataCategory
 
 from abc import ABC
 
-from tracing.trace_data_filter import DropDuplicatesFilter, ReplaceSubTypesFilter, DropVariablesOfMultipleTypesFilter, \
+from tracing.filter import DropDuplicatesFilter, ReplaceSubTypesFilter, DropVariablesOfMultipleTypesFilter, \
     TraceDataFilterList
 
 
@@ -101,7 +101,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        constants.CLASS_MEMBER_NAME_PREFIX + "class_member1",
+        "class_member1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -110,7 +110,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        constants.CLASS_MEMBER_NAME_PREFIX + "class_member1",
+        "class_member1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -119,7 +119,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        constants.CLASS_MEMBER_NAME_PREFIX + "class_member1",
+        "class_member1",
         SubClass11,
     ]
 
