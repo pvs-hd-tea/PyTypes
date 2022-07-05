@@ -89,6 +89,8 @@ class PyTestStrategy(ApplicationStrategy):
         else:
             output = path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
 
+        # logging.debug(f"{path} -> {output}")
+
         with output.open("w") as file:
             file.writelines(lines)
 
