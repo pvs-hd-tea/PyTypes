@@ -82,26 +82,26 @@ class Tracer:
         # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path
         ignore = Ignore(fwm)
         frame_path = pathlib.Path(fwm.co_filename)
-        if (
-            not self.optimisation_stack
-            or not isinstance(self.optimisation_stack[-1], Ignore)
-        ) and not frame_path.is_relative_to(self.project_dir):
-            logger.debug(f"Applying Ignore for {inspect.getframeinfo(fwm._frame)}")
-            self.optimisation_stack.append(ignore)
-            return
+        if not self.optimisation_stack or not isinstance(
+            self.optimisation_stack[-1], Ignore
+        ):
+            if not frame_path.is_relative_to(self.project_dir):
+                logger.debug(f"Applying Ignore for {inspect.getframeinfo(fwm._frame)}")
+                self.optimisation_stack.append(ignore)
+                return
 
         # Entering a loop for the first time
-        if (
-            not self.optimisation_stack
-            or not isinstance(self.optimisation_stack[-1], TypeStableLoop)
-        ) and fwm.is_for_loop():
-            logger.debug(
-                f"Applying TypeStableLoop for {inspect.getframeinfo(fwm._frame)}"
-            )
-            tsl = TypeStableLoop(fwm)
-            if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
-                self.optimisation_stack.append(tsl)
-                return
+        if not self.optimisation_stack or not isinstance(
+            self.optimisation_stack[-1], TypeStableLoop
+        ):
+            if fwm.is_for_loop():
+                logger.debug(
+                    f"Applying TypeStableLoop for {inspect.getframeinfo(fwm._frame)}"
+                )
+                tsl = TypeStableLoop(fwm)
+                if not self.optimisation_stack or tsl != self.optimisation_stack[-1]:
+                    self.optimisation_stack.append(tsl)
+                    return
 
     def _advance_optimisations(self, fwm: FrameWithMetadata) -> None:
         for optimisation in self.optimisation_stack:
@@ -153,7 +153,10 @@ class Tracer:
         self._update_optimisations(fwm)
 
         # Tracing has been toggled off for this line now, simply return
-        if any(opt.status() in Optimisation.OPTIMIZING_STATES for opt in self.optimisation_stack):
+        if any(
+            opt.status() in Optimisation.OPTIMIZING_STATES
+            for opt in self.optimisation_stack
+        ):
             return self._on_trace_is_called
 
         code = frame.f_code

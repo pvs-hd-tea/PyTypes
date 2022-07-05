@@ -18,6 +18,13 @@ __all__ = [Repository.__name__]
     required=True,
 )
 @click.option(
+    "-o",
+    "--output",
+    type=click.Path(exists=False, dir_okay=True, writable=True, path_type=pathlib.Path),
+    help="Download output path",
+    required=True,
+)
+@click.option(
     "-f",
     "--format",
     type=click.Choice([GitRepository.fmt, ArchiveRepository.fmt], case_sensitive=False),
@@ -26,33 +33,48 @@ __all__ = [Repository.__name__]
     default=None,
 )
 @click.option(
-    "-o",
-    "--output",
-    type=click.Path(exists=False, dir_okay=True, writable=True, path_type=pathlib.Path),
-    help="Download output path",
-    required=True,
+    "-n",
+    "--nooverwrite",
+    help="Instead of overwriting tests, create new ones with a new suffix",
+    is_flag=True,
+    required=False,
+    default=False,
+)
+@click.option(
+    "-s",
+    "--subdirs",
+    help="Go down the directory tree of the tests, instead of staying in the first level",
+    is_flag=True,
+    required=False,
+    default=True,
 )
 @click.option(
     "-v",
     "--verbose",
-    help="Each occurrence increases the logging level from NOTSET to CRITICAL",
+    help="INFO if not given, else CRITICAL",
     is_flag=True,
     callback=lambda ctx, _, val: logging.INFO if val else logging.CRITICAL,
     required=False,
     default=False,
 )
 def main(**params):
-    url, fmt, out, verb = (
+    url, fmt, out, verb, overwrite, subdirs = (
         params["url"],
         params["format"],
         params["output"],
         params["verbose"],
+        not params["nooverwrite"],
+        params["subdirs"],
     )
     logging.basicConfig(level=verb)
+
+    logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {overwrite=}, {subdirs=}")
 
     repo = Repository.factory(project_url=url, fmt=fmt)
     project = repo.fetch(out)
 
     detector = TestDetector.factory(proj=project)
-    strategy = detector.create_strategy()
+    strategy = detector.create_strategy(
+        overwrite_tests=overwrite, recurse_into_subdirs=subdirs
+    )
     strategy.apply(project)

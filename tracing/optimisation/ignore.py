@@ -19,10 +19,7 @@ class Ignore(Optimisation):
 
     def advance(self, current_frame: utils.FrameWithMetadata, _: pd.DataFrame) -> None:
         # If we reach a stack frame that is under the earliest stack frame we want to ignore
-        if (
-            self.fwm._frame.f_back is not None
-            and self.fwm._frame.f_back == current_frame._frame
-        ):
+        if self.fwm._frame.f_back and self.fwm._frame.f_back == current_frame._frame:
             logging.debug(
                 f"Switched Ignore to EXITED with {inspect.getframeinfo(current_frame._frame)}"
             )

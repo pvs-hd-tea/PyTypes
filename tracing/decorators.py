@@ -1,33 +1,11 @@
-from dataclasses import dataclass, field
 import inspect
 import pathlib
 from typing import Callable
 
-import dacite
-import toml
 
 from .tracer import Tracer
+from .ptconfig import _load_config
 import constants
-
-
-@dataclass
-class Config:
-    project: str
-    output_template: str = field(
-        default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING
-    )
-
-
-@dataclass
-class PyTypesToml:
-    pytypes: Config
-
-
-def _load_config(config_path: pathlib.Path) -> PyTypesToml:
-    cfg = toml.load(config_path.open())
-    return dacite.from_dict(
-        data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
-    )
 
 
 def register(proj_root: pathlib.Path | None = None):
