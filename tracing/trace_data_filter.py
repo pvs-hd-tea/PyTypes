@@ -35,7 +35,7 @@ class DropDuplicatesFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
         processed_trace_data = trace_data.drop_duplicates(ignore_index=True)
-        return processed_trace_data
+        return processed_trace_data.reset_index(drop=True)
 
 
 class ReplaceSubTypesFilter(TraceDataFilter):
@@ -59,7 +59,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         subset.remove(constants.TraceData.VARTYPE)
         grouped_trace_data = trace_data.groupby(subset)
         processed_trace_data = grouped_trace_data.apply(lambda group: self._update_group(group))
-        return processed_trace_data
+        return processed_trace_data.reset_index(drop=True)
 
     def _update_group(self, group):
         types_in_group = group[constants.TraceData.VARTYPE].tolist()
@@ -78,6 +78,9 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
     """Drops rows containing variables of multiple types."""
     def __init__(self, min_amount_types_to_drop: int = 2):
+        """
+        @param min_amount_types_to_drop The minimum amount of types to drop the data of the corresponding variable.
+        """
         super().__init__()
         self.min_amount_types_to_drop = min_amount_types_to_drop
 
@@ -96,4 +99,28 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         trace_data_with_dropped_variables = joined_trace_data[
             joined_trace_data["amount_types"] < self.min_amount_types_to_drop]
         processed_data = trace_data_with_dropped_variables.drop(["amount_types"], axis=1)
-        return processed_data
+        return processed_data.reset_index(drop=True)
+
+
+class TraceDataFilterList(TraceDataFilter):
+    """Applies the filters in this list on the trace data."""
+
+    def __init__(self):
+        self.filters: list[TraceDataFilter] = []
+
+    def append(self, trace_data_filter: TraceDataFilter) -> None:
+        """Appends a filter to the list."""
+        self.filters.append(trace_data_filter)
+
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Applies the filters on the provided trace data and returns the processed trace data.
+
+        @param trace_data The provided trace data to process.
+        """
+        for trace_data_filter in self.filters:
+            trace_data = trace_data_filter.get_processed_data(trace_data)
+
+        return trace_data.copy().reset_index(drop=True)
+
+
