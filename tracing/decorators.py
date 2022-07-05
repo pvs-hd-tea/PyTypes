@@ -1,31 +1,11 @@
-from dataclasses import dataclass, field
 import inspect
 import pathlib
 from typing import Callable
 
-import dacite
-import toml
 
 from .tracer import Tracer
+from .ptconfig import _load_config
 import constants
-
-
-@dataclass
-class Config:
-    project: str
-    output_template: str = field(default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING)
-
-
-@dataclass
-class PyTypesToml:
-    pytypes: Config
-
-
-def _load_config(config_path: pathlib.Path) -> PyTypesToml:
-    cfg = toml.load(config_path.open())
-    return dacite.from_dict(
-        data_class=PyTypesToml, data=cfg, config=dacite.Config(strict=True)
-    )
 
 
 def register(proj_root: pathlib.Path | None = None):
@@ -60,7 +40,9 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         prev_frame = current_frame.f_back
         if prev_frame is None:
-            raise RuntimeError("The current stack frame has no predecessor, unable to trace execution!")
+            raise RuntimeError(
+                "The current stack frame has no predecessor, unable to trace execution!"
+            )
 
         for fname, function in prev_frame.f_globals.items():
             if not inspect.isfunction(function) or not hasattr(

@@ -139,3 +139,4 @@ dmypy.json
 *_decorators_appended.py
 tests/fetching/repos/*
 !tests/fetching/repos/.gitkeep
+.vscode

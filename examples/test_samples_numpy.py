@@ -2,11 +2,11 @@ import numpy as np
 import pytest
 
 
-def get_determinant(matrix) -> int:
+def get_determinant(matrix: np.ndarray) -> int:
     return np.linalg.det(matrix)
 
 
-def multiply_two_matrices(matrix1, matrix2):
+def multiply_two_matrices(matrix1: np.ndarray, matrix2: np.ndarray)-> np.ndarray:
     return matrix1 * matrix2
 
 

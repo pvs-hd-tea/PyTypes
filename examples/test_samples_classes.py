@@ -2,7 +2,7 @@ import pytest
 
 
 class Bank:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def create_new_account(self, starting_balance: int = 0):
@@ -10,11 +10,11 @@ class Bank:
 
 
 class BankAccount:
-    def __init__(self, bank: Bank, base_balance: int = 0):
+    def __init__(self, bank: Bank, base_balance: int = 0) -> None:
         self._balance = base_balance
         self.bank = bank
 
-    def get_balance(self):
+    def get_balance(self) -> int:
         return self._balance
 
     def deposit(self, additional_value: int) -> None:
@@ -36,7 +36,7 @@ class BankAccount:
 
 
 class Human:
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         if not isinstance(name, str):
             raise TypeError
 
@@ -44,7 +44,7 @@ class Human:
 
 
 class Customer(Human):
-    def __init__(self, name: str, account: BankAccount):
+    def __init__(self, name: str, account: BankAccount) -> None:
         super().__init__(name)
         self._account = account
 
@@ -67,7 +67,7 @@ class Customer(Human):
 
 
 class Worker(Human):
-    def __init__(self, name: str, bank: Bank):
+    def __init__(self, name: str, bank: Bank)-> None:
         super().__init__(name)
 
         if bank is None:
