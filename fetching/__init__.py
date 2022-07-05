@@ -58,21 +58,23 @@ __all__ = [Repository.__name__]
     default=False,
 )
 def main(**params):
-    url, fmt, out, verb, no, subdirs = (
+    url, fmt, out, verb, overwrite, subdirs = (
         params["url"],
         params["format"],
         params["output"],
         params["verbose"],
-        params["nooverwrite"],
+        not params["nooverwrite"],
         params["subdirs"],
     )
     logging.basicConfig(level=verb)
+
+    logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {overwrite=}, {subdirs=}")
 
     repo = Repository.factory(project_url=url, fmt=fmt)
     project = repo.fetch(out)
 
     detector = TestDetector.factory(proj=project)
     strategy = detector.create_strategy(
-        overwrite_tests=no, recurse_into_subdirs=subdirs
+        overwrite_tests=overwrite, recurse_into_subdirs=subdirs
     )
     strategy.apply(project)
