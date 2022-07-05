@@ -34,6 +34,7 @@ def get_sample_trace_data() -> pd.DataFrame:
 
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -42,6 +43,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -50,6 +52,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
@@ -58,6 +61,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         2,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -66,6 +70,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         2,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -74,6 +79,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         3,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -82,6 +88,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "function_name",
         3,
         TraceDataCategory.LOCAL_VARIABLE,
@@ -90,6 +97,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
@@ -98,6 +106,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
@@ -106,6 +115,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(pathlib.Path("tests", "filename.py")),
+        BaseClass,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
