@@ -74,7 +74,8 @@ class PyTestStrategy(ApplicationStrategy):
                 skip_line = False
                 continue
             if PyTestStrategy.FUNCTION_PATTERN.fullmatch(line):
-                lines.insert(i, PyTestStrategy.REGISTER)
+                indentation = line.split("def")[0]
+                lines.insert(i, indentation + PyTestStrategy.REGISTER)
                 skip_line = True
                 contains_pytest_test_function = True
 
