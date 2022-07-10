@@ -1,6 +1,9 @@
 import pathlib
 import pandas as pd
 import constants
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TraceDataFileCollector:
@@ -26,9 +29,15 @@ class TraceDataFileCollector:
             potential_trace_data_file_paths = path.glob(file_pattern)
 
         for potential_trace_data_file_path in potential_trace_data_file_paths:
-            potential_trace_data = pd.read_pickle(potential_trace_data_file_path)
-            if (self.trace_data.dtypes == potential_trace_data.dtypes).all():
-                trace_datas.append(potential_trace_data)
+            print(str(potential_trace_data_file_path))
+            try:
+                potential_trace_data = pd.read_pickle(potential_trace_data_file_path)
+                if (self.trace_data.dtypes == potential_trace_data.dtypes).all():
+                    trace_datas.append(potential_trace_data)
+                else:
+                    logger.info(f"Invalid column types for file: {str(potential_trace_data_file_path)}")
+            except EOFError:
+                logger.info(f"EOFError encountered for file: {str(potential_trace_data_file_path)}")
 
         if len(trace_datas) > 0:
             self.trace_data = pd.concat(trace_datas, ignore_index=True, sort=False)
