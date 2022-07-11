@@ -5,7 +5,7 @@ from tracing import TraceDataCategory
 
 from abc import ABC
 
-from tracing.filter import DropDuplicatesFilter, ReplaceSubTypesFilter, DropVariablesOfMultipleTypesFilter, \
+from typegen.unification import DropDuplicatesFilter, ReplaceSubTypesFilter, DropVariablesOfMultipleTypesFilter, \
     TraceDataFilterList
 
 
