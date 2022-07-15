@@ -94,8 +94,8 @@ class AppendDecoratorsTransformer(ast.NodeTransformer):
     REGISTER = "register()"
     ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
-    def __init__(self, test_function_name_pattern: Pattern[typing.AnyStr], sys_path: pathlib.Path):
-        self.test_function_name_pattern = test_function_name_pattern
+    def __init__(self, test_function_name_pattern: Pattern[str], sys_path: pathlib.Path):
+        self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
         sys_path_ext = f"sys.path.append('{sys_path}')\n"
 
         self.import_node = ast.parse(AppendDecoratorsTransformer.IMPORTS)
@@ -112,6 +112,6 @@ class AppendDecoratorsTransformer(ast.NodeTransformer):
 
     def append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
         """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
-        abstract_syntax_tree.body.insert(0, self.import_node)
-        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)
-        abstract_syntax_tree.body.append(self.entrypoint_node)
+        abstract_syntax_tree.body.insert(0, self.import_node)  # type: ignore
+        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
+        abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
