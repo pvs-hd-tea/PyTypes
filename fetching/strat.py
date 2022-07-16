@@ -46,7 +46,9 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = re.compile(r"test_")
+    IMPORTS = "import sys\nfrom tracing import register, entrypoint\n"
     SUFFIX = "_decorator_appended.py"
+    ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
     def __init__(
         self,
@@ -58,15 +60,20 @@ class PyTestStrategy(ApplicationStrategy):
 
         self.pytest_root = pytest_root
         self.decorator_appended_file_paths: list[pathlib.Path] = []
+        sys_path_ext = f"sys.path.append('{self.pytest_root}')\n"
+
+        self.import_node = ast.parse(PyTestStrategy.IMPORTS)
+        self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
+        self.sys_path_ext_node = ast.parse(sys_path_ext)
+        self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(PyTestStrategy.FUNCTION_PATTERN)
 
     def _apply(self, path: pathlib.Path) -> None:
         with path.open() as file:
             file_content = file.read()
 
-        append_decorators_transformer = AppendDecoratorsTransformer(PyTestStrategy.FUNCTION_PATTERN, self.pytest_root)
         file_ast = ast.parse(file_content)
-        file_ast = append_decorators_transformer.visit(file_ast)
-        append_decorators_transformer.append_nodes_necessary_for_tracing(file_ast)
+        file_ast = self.append_register_decorator_transformer.visit(file_ast)
+        self._append_nodes_necessary_for_tracing(file_ast)
         file_content = ast.unparse(file_ast)
 
         if self.overwrite_tests:
@@ -87,22 +94,20 @@ class PyTestStrategy(ApplicationStrategy):
 
         return path.name.endswith("_test.py")
 
+    def _append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
+        """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
+        abstract_syntax_tree.body.insert(0, self.import_node)  # type: ignore
+        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
+        abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
 
-class AppendDecoratorsTransformer(ast.NodeTransformer):
-    """Transforms an AST such that the tracing decorators with its imports and the sys path extension are appended."""
-    IMPORTS = "import sys\nfrom tracing import register, entrypoint\n"
+
+class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
+    """Transforms an AST such that the register decorator is appended on each test function."""
     REGISTER = "register()"
-    ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
-    def __init__(self, test_function_name_pattern: Pattern[str], sys_path: pathlib.Path):
+    def __init__(self, test_function_name_pattern: Pattern[str]):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
-        sys_path_ext = f"sys.path.append('{sys_path}')\n"
-
-        self.import_node = ast.parse(AppendDecoratorsTransformer.IMPORTS)
-        self.entrypoint_node = ast.parse(AppendDecoratorsTransformer.ENTRYPOINT)
-        self.sys_path_ext_node = ast.parse(sys_path_ext)
-
-        self.register_decorator_node = ast.Name(AppendDecoratorsTransformer.REGISTER)
+        self.register_decorator_node = ast.Name(AppendRegisterDecoratorTransformer.REGISTER)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """Called on visiting a function definition node. Adds the register decorator to the decorator list if function name matches test function name pattern."""
@@ -110,8 +115,3 @@ class AppendDecoratorsTransformer(ast.NodeTransformer):
             node.decorator_list.append(self.register_decorator_node)
         return node
 
-    def append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
-        """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
-        abstract_syntax_tree.body.insert(0, self.import_node)  # type: ignore
-        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
-        abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
