@@ -24,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 class Tracer:
     def __init__(self, project_dir: pathlib.Path):
-        if project_dir is None:
-            raise TypeError
-
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
@@ -181,15 +178,8 @@ class Tracer:
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-
-                self._update_trace_data_with(
-                    file_name,
-                    possible_class,
-                    function_name,
-                    line_number,
-                    category2,
-                    names2types2,
-                )
+                self._update_trace_data_with(file_name, possible_class, "", 0, category2, names2types2)
+                # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
             logger.info(f"Tracing line: {inspect.getframeinfo(frame)}")
