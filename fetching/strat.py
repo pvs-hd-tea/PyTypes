@@ -46,7 +46,8 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = re.compile(r"test_")
-    IMPORTS = "import sys\nfrom tracing import register, entrypoint\n"
+    SYS_IMPORT = "import sys"
+    PYTYPE_IMPORTS = "from tracing import register, entrypoint"
     SUFFIX = "_decorator_appended.py"
     ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
@@ -62,7 +63,8 @@ class PyTestStrategy(ApplicationStrategy):
         self.decorator_appended_file_paths: list[pathlib.Path] = []
         sys_path_ext = f"sys.path.append('{self.pytest_root}')\n"
 
-        self.import_node = ast.parse(PyTestStrategy.IMPORTS)
+        self.sys_import_node = ast.parse(PyTestStrategy.SYS_IMPORT)
+        self.pytype_imports_node = ast.parse(PyTestStrategy.PYTYPE_IMPORTS)
         self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
         self.sys_path_ext_node = ast.parse(sys_path_ext)
         self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(PyTestStrategy.FUNCTION_PATTERN)
@@ -96,8 +98,9 @@ class PyTestStrategy(ApplicationStrategy):
 
     def _append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
         """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
-        abstract_syntax_tree.body.insert(0, self.import_node)  # type: ignore
+        abstract_syntax_tree.body.insert(0, self.sys_import_node)  # type: ignore
         abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
+        abstract_syntax_tree.body.insert(2, self.pytype_imports_node)  # type: ignore
         abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
 
 
