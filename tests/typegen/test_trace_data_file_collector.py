@@ -1,8 +1,7 @@
 import pathlib
 import pandas as pd
-import pytest
 import constants
-from tracing import TraceDataFileCollector
+from typegen import TraceDataFileCollector
 
 cwd = pathlib.Path.cwd() / "tests" / "resource" / "external" / "PyTypes_BinaryFiles" / "sample_trace_data_files"
 
