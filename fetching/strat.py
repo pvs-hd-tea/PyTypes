@@ -1,6 +1,9 @@
+import ast
 from abc import ABC, abstractmethod
 import pathlib
 import re
+import typing
+from re import Pattern
 
 from .projio import Project
 import constants
@@ -42,13 +45,10 @@ class ApplicationStrategy(ABC):
 
 
 class PyTestStrategy(ApplicationStrategy):
-    FUNCTION_PATTERN = re.compile(r"[\w\s]*test_[\w\s]*\([\w\s]*\)[\w\s]*:[\w\s]*")
-    SYS_IMPORT = "import sys\n"
-    PYTYPE_IMPORTS = "from tracing import register, entrypoint\n"
-    REGISTER = "@register()\n"
-    ENTRYPOINT = "\n@entrypoint()\ndef main():\n  ...\n"
-
+    FUNCTION_PATTERN = re.compile(r"test_")
+    IMPORTS = "import sys\nfrom tracing import register, entrypoint\n"
     SUFFIX = "_decorator_appended.py"
+    ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
     def __init__(
         self,
@@ -60,29 +60,21 @@ class PyTestStrategy(ApplicationStrategy):
 
         self.pytest_root = pytest_root
         self.decorator_appended_file_paths: list[pathlib.Path] = []
+        sys_path_ext = f"sys.path.append('{self.pytest_root}')\n"
 
-        self.sys_path_ext = f"sys.path.append('{self.pytest_root}')\n"
+        self.import_node = ast.parse(PyTestStrategy.IMPORTS)
+        self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
+        self.sys_path_ext_node = ast.parse(sys_path_ext)
+        self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(PyTestStrategy.FUNCTION_PATTERN)
 
     def _apply(self, path: pathlib.Path) -> None:
         with path.open() as file:
-            lines = file.readlines()
+            file_content = file.read()
 
-        skip_line = False
-        contains_pytest_test_function = False
-        for i, line in enumerate(lines):
-            if skip_line:
-                skip_line = False
-                continue
-            if PyTestStrategy.FUNCTION_PATTERN.fullmatch(line):
-                lines.insert(i, PyTestStrategy.REGISTER)
-                skip_line = True
-                contains_pytest_test_function = True
-
-        if contains_pytest_test_function:
-            lines.insert(0, PyTestStrategy.SYS_IMPORT)
-            lines.insert(1, self.sys_path_ext)
-            lines.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
-            lines.append(PyTestStrategy.ENTRYPOINT)
+        file_ast = ast.parse(file_content)
+        file_ast = self.append_register_decorator_transformer.visit(file_ast)
+        self._append_nodes_necessary_for_tracing(file_ast)
+        file_content = ast.unparse(file_ast)
 
         if self.overwrite_tests:
             output = path
@@ -92,7 +84,7 @@ class PyTestStrategy(ApplicationStrategy):
         # logging.debug(f"{path} -> {output}")
 
         with output.open("w") as file:
-            file.writelines(lines)
+            file.write(file_content)
 
         self.decorator_appended_file_paths.append(output)
 
@@ -101,3 +93,25 @@ class PyTestStrategy(ApplicationStrategy):
             return not path.name.endswith(PyTestStrategy.SUFFIX)
 
         return path.name.endswith("_test.py")
+
+    def _append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
+        """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
+        abstract_syntax_tree.body.insert(0, self.import_node)  # type: ignore
+        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
+        abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
+
+
+class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
+    """Transforms an AST such that the register decorator is appended on each test function."""
+    REGISTER = "register()"
+
+    def __init__(self, test_function_name_pattern: Pattern[str]):
+        self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
+        self.register_decorator_node = ast.Name(AppendRegisterDecoratorTransformer.REGISTER)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        """Called on visiting a function definition node. Adds the register decorator to the decorator list if function name matches test function name pattern."""
+        if re.match(self.test_function_name_pattern, node.name):
+            node.decorator_list.append(self.register_decorator_node)
+        return node
+
