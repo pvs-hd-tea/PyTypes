@@ -1,7 +1,7 @@
 import enum
 
 
-class TraceDataCategory(enum.Enum):
+class TraceDataCategory(enum.IntEnum):
     INVALID = 0
     LOCAL_VARIABLE = 1
     FUNCTION_ARGUMENT = 2

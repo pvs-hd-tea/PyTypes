@@ -108,8 +108,8 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
-        "__init__",
-        52,
+        "",
+        0,
         TraceDataCategory.CLASS_MEMBER,
         "integer",
         integer_type,
@@ -117,8 +117,8 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
-        "__init__",
-        52,
+        "",
+        0,
         TraceDataCategory.CLASS_MEMBER,
         "string",
         string_type,
@@ -203,8 +203,8 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
-        "sample_check_if_arguments_match_members",
-        57,
+        "",
+        0,
         TraceDataCategory.CLASS_MEMBER,
         "integer",
         integer_type,
@@ -212,8 +212,8 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
-        "sample_check_if_arguments_match_members",
-        57,
+        "",
+        0,
         TraceDataCategory.CLASS_MEMBER,
         "string",
         string_type,
