@@ -27,7 +27,6 @@ class TraceDataFileCollector:
 
         for potential_trace_data_file_path in potential_trace_data_file_paths:
             potential_trace_data = pd.read_pickle(potential_trace_data_file_path)
-            print(potential_trace_data_file_path)
             if (self.trace_data.dtypes == potential_trace_data.dtypes).all():
                 trace_datas.append(potential_trace_data)
 

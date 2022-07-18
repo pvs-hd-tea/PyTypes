@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 
-@click.command(name="collect", help="Collects trace data files in directories")
+@click.command(name="typegen", help="Collects trace data files in directories")
 @click.option(
     "-p",
     "--path",
