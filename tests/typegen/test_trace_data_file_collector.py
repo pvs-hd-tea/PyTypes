@@ -20,7 +20,7 @@ def test_if_test_object_collects_generated_trace_data_in_folder_and_subfolders_a
     #   print(actual_trace_data.shape[0])
     #   print(expected_trace_data.shape[0])
 
-    assert actual_trace_data.shape[0] == 5
+    assert actual_trace_data.shape[0] == 20
     assert expected_trace_data.equals(actual_trace_data)
 
 
@@ -35,5 +35,5 @@ def test_if_test_object_collects_generated_trace_data_in_folder_it_returns_corre
     actual_trace_data = actual_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
                                                       ignore_index=True)
 
-    assert actual_trace_data.shape[0] == 3
+    assert actual_trace_data.shape[0] == 14
     assert expected_trace_data.equals(actual_trace_data)
