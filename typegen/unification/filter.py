@@ -1,5 +1,7 @@
 import operator
 from abc import ABC, abstractmethod
+from re import Pattern
+
 import pandas as pd
 from functools import reduce
 from collections import Counter  # type: ignore
@@ -123,4 +125,14 @@ class TraceDataFilterList(TraceDataFilter):
 
         return trace_data.copy().reset_index(drop=True)
 
+
+class DropTestFunctionDataFilter(TraceDataFilter):
+    """Drops all data about test functions."""
+    def __init__(self, test_function_name_pattern: Pattern[str]):
+        self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
+
+    def get_processed_data(self, trace_data: pd.DataFrame) -> pd.DataFrame:
+        """Drops the data about test functions in the provided trace data and returns the processed trace data."""
+        processed_trace_data = trace_data[~trace_data[constants.TraceData.FUNCNAME].str.match(self.test_function_name_pattern)]
+        return processed_trace_data
 
