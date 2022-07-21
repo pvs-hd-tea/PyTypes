@@ -40,8 +40,8 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
 
         # return type
         rettypes = self.df[
-            (self.df[TraceData.CATEGORY == TraceDataCategory.FUNCTION_RETURN])
-            & (self.df[TraceData.VARNAME == fdef.name])
+            (self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN)
+            & (self.df[TraceData.VARNAME] == fdef.name)
             & (self.df[TraceData.LINENO] == arg.lineno)
         ]
 
