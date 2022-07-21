@@ -1,4 +1,4 @@
-import abc
+import abc, ast
 import pathlib
 import typing
 
@@ -6,8 +6,10 @@ import pandas as pd
 
 from fetching.projio import Project
 
+
 class Generator(abc.ABC):
     """Base class for different generation styles of type hints"""
+
     _REGISTRY: dict[str, typing.Type["Generator"]] = {}
     _PATH_GLOB = "*.py"
 
@@ -19,19 +21,13 @@ class Generator(abc.ABC):
         super().__init_subclass__(**kwargs)
         Generator._REGISTRY[cls.ident] = cls
 
-    def __new__(cls: type["Generator"], /, types: pd.DataFrame) -> "Generator":
-        if (subcls := Generator._REGISTRY.get(cls.ident, None)) is not None:
+    def __new__(
+        cls: typing.Type["Generator"], /, ident: str, types: pd.DataFrame
+    ) -> "Generator":
+        if (subcls := Generator._REGISTRY.get(ident, None)) is not None:
             return object.__new__(subcls, types=types)
 
-        raise LookupError(f"Unsupported typegen strategy format: {cls.ident}")
-        
-
-    def apply(self, project: Project):
-        assert project.source_dir is not None
-        paths = project.source_dir.rglob(Generator._PATH_GLOB)
-
-        for path in filter(self._is_hintable_file, paths):
-            self._apply(path)
+        raise LookupError(f"Unsupported typegen strategy format: {ident}")
 
     def _is_hintable_file(self, path: pathlib.Path) -> bool:
         if path.name.endswith("__init__.py"):
@@ -39,10 +35,23 @@ class Generator(abc.ABC):
 
         return True
 
+    def apply(self, project: Project):
+        assert project.source_dir is not None
+        paths = project.source_dir.rglob(Generator._PATH_GLOB)
+
+        for path in filter(self._is_hintable_file, paths):
+            self._gen_hints(path)
+
     @abc.abstractmethod
-    def _apply(self, path: pathlib.Path) -> None:
+    def _gen_hints(self, source_file: pathlib.Path) -> ast.AST:
         """
-        Perform IO operation to generate types for the given file 
-        according to the derived strategy
+        Perform operations to generate types for the given file
+        """
+        pass
+
+    @abc.abstractmethod
+    def _store_hints(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
+        """
+        Perform operations to generate types for the given file
         """
         pass
