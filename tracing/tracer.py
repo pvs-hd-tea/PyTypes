@@ -49,7 +49,7 @@ class Tracer:
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
         self.trace_data = self.trace_data[
-            self.trace_data[constants.TraceData.CLASS] != Tracer
+            self.trace_data[constants.TraceData.CLASS] != Tracer.__name__
         ]
 
     @contextlib.contextmanager
@@ -104,20 +104,20 @@ class Tracer:
         for optimisation in self.optimisation_stack:
             optimisation.advance(fwm, self.trace_data)
 
-    def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
+    def _on_call(self, frame, arg: typing.Any) -> dict[str, str]:
         names2types = {
-            var_name: type(var_value) for var_name, var_value in frame.f_locals.items()
+            var_name: type(var_value).__name__ for var_name, var_value in frame.f_locals.items()
         }
 
         return names2types
 
-    def _on_return(self, frame, arg: typing.Any) -> dict[str, type]:
+    def _on_return(self, frame, arg: typing.Any) -> dict[str, str]:
         code = frame.f_code
         function_name = code.co_name
-        names2types = {function_name: type(arg)}
+        names2types = {function_name: type(arg).__name__}
         return names2types
 
-    def _on_line(self, frame) -> dict[str, type]:
+    def _on_line(self, frame) -> dict[str, str]:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
@@ -125,16 +125,16 @@ class Tracer:
         )
         return names2types
 
-    def _on_class_function_return(self, frame) -> dict[str, type]:
+    def _on_class_function_return(self, frame) -> dict[str, str]:
         """Updates the trace data with the members of the class object."""
         first_element_name = next(iter(frame.f_locals))
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
 
-    def _evaluate_object(self, class_object: typing.Any) -> dict[str, type]:
+    def _evaluate_object(self, class_object: typing.Any) -> dict[str, str]:
         object_dict = class_object.__dict__
         names2types = {
-            var_name: type(var_value) for var_name, var_value in object_dict.items()
+            var_name: type(var_value).__name__ for var_name, var_value in object_dict.items()
         }
         return names2types
 
@@ -218,11 +218,11 @@ class Tracer:
     def _update_trace_data_with(
         self,
         file_name: pathlib.Path,
-        class_type: type | None,
+        class_type: str | None,
         function_name: str,
         line_number: int,
         category: TraceDataCategory,
-        names2types: dict[str, type],
+        names2types: dict[str, str],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
@@ -253,19 +253,19 @@ class Tracer:
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, typing.Any],
-    new_values_by_variable: dict[str, typing.Any],
+    old_values_by_variable: dict[str, str],
+    new_values_by_variable: dict[str, str],
 ) -> dict[str, typing.Any]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
     for item in new_values_by_variable.items():
         variable_name, variable_value = item[0], item[1]
         if variable_name not in old_values_by_variable:
-            names2types[variable_name] = type(variable_value)
+            names2types[variable_name] = type(variable_value).__name__
     return names2types
 
 
-def _get_class_in_frame(frame) -> type | None:
+def _get_class_in_frame(frame) -> str | None:
     code = frame.f_code
     function_name = code.co_name
     all_possible_classes = [
@@ -278,6 +278,6 @@ def _get_class_in_frame(frame) -> type | None:
                 continue
 
             if member.__code__ == code:
-                return possible_class
+                return possible_class.__name__
 
     return None
