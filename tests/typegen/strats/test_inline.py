@@ -3,6 +3,7 @@ import logging
 import pathlib
 
 import constants
+import typing
 
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import Generator
@@ -94,7 +95,8 @@ def test_callables():
     logging.debug(f"\n{ast.unparse(hinted)}")
 
     class HintTest(ast.NodeVisitor):
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
+        @typing.no_type_check
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
             if node.name == "add":
                 for arg in node.args.args:
                     assert arg.annotation.id == "int", f"{ast.dump(arg)}"

@@ -64,7 +64,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         if hasattr(fdef, "parent"):
             rettype_masks = [
                 self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-                self.df[TraceData.CLASS] == fdef.parent.name,
+                self.df[TraceData.CLASS] == fdef.parent.name, # type: ignore
                 self.df[TraceData.VARNAME] == fdef.name,
                 self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
             ]
