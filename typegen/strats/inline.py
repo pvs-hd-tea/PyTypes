@@ -56,20 +56,28 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
                 logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            arg_hint = str(arg_hints[TraceData.VARTYPE].values[0])
+            arg_hint = arg_hints[TraceData.VARTYPE].values[0]
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
         # disambiguate methods from functions
-        class_name = fdef.parent.name if hasattr(fdef, "parent") else None # type: ignore
+        if hasattr(fdef, "parent"):
+            rettype_masks = [
+                self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
+                self.df[TraceData.CLASS] == fdef.parent.name,
+                self.df[TraceData.VARNAME] == fdef.name,
+                self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
+            ]
+        
+        else:
+            rettype_masks = [
+                self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
+                self.df[TraceData.CLASS].isnull(),
+                self.df[TraceData.VARNAME] == fdef.name,
+                self.df[TraceData.LINENO] == 0,
+            ]
 
-        # return type, always stored at line 0
-        rettype_masks = [
-            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-            self.df[TraceData.CLASS] == class_name,
-            self.df[TraceData.VARNAME] == fdef.name,
-            self.df[TraceData.LINENO] == 0,
-        ]
+        
         rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
 
         assert (
@@ -81,7 +89,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
             logger.debug(f"No hint found for return for '{fdef.name}'")
 
         if rettypes.shape[0] == 1:
-            ret_hint = str(rettypes[TraceData.VARTYPE].values[0].__name__)
+            ret_hint = rettypes[TraceData.VARTYPE].values[0]
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 

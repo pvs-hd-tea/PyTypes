@@ -7,5 +7,5 @@ class C:
 
 
 # Do not type hint, as it is not in the class C
-def method(a, n, s):
+def method(b, n, s):
     return bytes(f"{n} + {s}")
