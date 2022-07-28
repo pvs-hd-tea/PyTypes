@@ -4,7 +4,7 @@ import typing
 
 import pandas as pd
 
-from fetching.projio import Project
+import constants
 
 
 class Generator(abc.ABC):
@@ -13,8 +13,7 @@ class Generator(abc.ABC):
     _REGISTRY: dict[str, typing.Type["Generator"]] = {}
     _PATH_GLOB = "*.py"
 
-    def __init__(self, types: pd.DataFrame) -> None:
-        self.types = types
+    types: pd.DataFrame
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -25,7 +24,10 @@ class Generator(abc.ABC):
         cls: typing.Type["Generator"], /, ident: str, types: pd.DataFrame
     ) -> "Generator":
         if (subcls := Generator._REGISTRY.get(ident, None)) is not None:
-            return object.__new__(subcls, types=types)
+            subinst = object.__new__(subcls)
+            subinst.types = types
+
+            return subinst
 
         raise LookupError(f"Unsupported typegen strategy format: {ident}")
 
@@ -35,15 +37,20 @@ class Generator(abc.ABC):
 
         return True
 
-    def apply(self, project: Project):
-        assert project.source_dir is not None
-        paths = project.source_dir.rglob(Generator._PATH_GLOB)
-
-        for path in filter(self._is_hintable_file, paths):
-            self._gen_hints(path)
+    def apply(self):
+        files = self.types[constants.TraceData.FILENAME].unique()
+        for path in filter(self._is_hintable_file, files):
+            # Get type hints relevant to this file
+            applicable = self.types[
+                self.types[constants.TraceData.FILENAME] == str(path)
+            ]
+            if not applicable.empty:
+                nodes = ast.parse(source=path.open().read())
+                typed = self._gen_hints(df=applicable, nodes=nodes)
+                self._store_hints(source_file=path, hinting=typed)
 
     @abc.abstractmethod
-    def _gen_hints(self, source_file: pathlib.Path) -> ast.AST:
+    def _gen_hints(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
         """
         Perform operations to generate types for the given file
         """

@@ -1,4 +1,7 @@
 import ast
+import functools
+import logging
+import operator
 import pathlib
 import itertools
 
@@ -8,6 +11,7 @@ from typegen.strats.gen import Generator
 
 import pandas as pd
 
+logger = logging.getLogger(__name__)
 
 # It is important to handle sub-nodes from their parent node, as line numbering may differ across multi line statements
 class TypeHintApplierVisitor(ast.NodeTransformer):
@@ -15,56 +19,82 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         super().__init__()
         self.df = relevant
 
+
+    def generic_visit(self, node: ast.AST) -> ast.AST:
+        # Track ClassDefs and FunctionDefs to disambiguate
+        # functions from methods
+        if isinstance(node, ast.ClassDef):
+            for child in filter(lambda c: isinstance(c, ast.FunctionDef), node.body):
+                child.parent = node # type: ignore
+
+        return super().generic_visit(node)
+
     def visit_FunctionDef(self, fdef: ast.FunctionDef):
+        logger.debug(f"Applying hints to '{fdef.name}'")
         # NOTE: disregards *args (fdef.vararg) and **kwargs (fdef.kwarg)
 
         # parameters
-        params = self.df[
-            (self.df[TraceData.CATEGORY == TraceDataCategory.FUNCTION_ARGUMENT])
-            & (self.df[TraceData.FUNCNAME == fdef.name])
+        param_masks = [
+            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_ARGUMENT,
+            self.df[TraceData.FUNCNAME] == fdef.name,
         ]
+        params = self.df[functools.reduce(operator.and_, param_masks)]
 
         for arg in itertools.chain(fdef.args.posonlyargs, fdef.args.args):
             # Narrow by line number and identifier
-            arg_hint = params[
-                (params[TraceData.LINENO] == arg.lineno)
-                & (params[TraceData.VARNAME] == arg.arg)
+            arg_hint_mask = [
+                params[TraceData.LINENO] == arg.lineno,
+                params[TraceData.VARNAME] == arg.arg,
             ]
+            arg_hints = params[functools.reduce(operator.and_, arg_hint_mask)]
+            assert (
+                arg_hints.shape[0] <= 1
+            ), f"Found multiple hints for the parameter type: {arg_hints}"
 
             # no type hint, skip
-            if arg_hint.shape[0] == 0:
+            if arg_hints.shape[0] == 0:
+                logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            assert arg_hint.shape[0] == 1
-            arg.type_comment = arg_hint[TraceData.VARTYPE].values[0]
+            arg_hint = str(arg_hints[TraceData.VARTYPE].values[0])
+            logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
+            arg.annotation = ast.Name(arg_hint)
 
-        # return type
-        rettypes = self.df[
-            (self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN)
-            & (self.df[TraceData.VARNAME] == fdef.name)
-            & (self.df[TraceData.LINENO] == arg.lineno)
+        # disambiguate methods from functions
+        class_name = fdef.parent.name if hasattr(fdef, "parent") else None # type: ignore
+
+        # return type, always stored at line 0
+        rettype_masks = [
+            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
+            self.df[TraceData.CLASS] == class_name,
+            self.df[TraceData.VARNAME] == fdef.name,
+            self.df[TraceData.LINENO] == 0,
         ]
+        rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
+
+        assert (
+            rettypes.shape[0] <= 1
+        ), f"Found multiple hints for the return type: {arg_hint}"
 
         # no type hint, skip
-        if arg_hint.shape[0] == 0:
-            return
-        assert arg_hint.shape[0] == 1
-        fdef.returns.type_comment = rettypes[TraceData.VARTYPE].values[0]
+        if rettypes.shape[0] == 0:
+            logger.debug(f"No hint found for return for '{fdef.name}'")
+
+        if rettypes.shape[0] == 1:
+            ret_hint = str(rettypes[TraceData.VARTYPE].values[0].__name__)
+            logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
+            fdef.returns = ast.Name(ret_hint)
+
+        return fdef
 
 
 class InlineGenerator(Generator):
     ident = "inline"
 
-    def _gen_hints(self, path: pathlib.Path) -> ast.AST:
-        # Get type hints relevant to this file
-        applicable = self.types[self.types[TraceData.FILENAME] == str(path)]
-
-        nodes = ast.parse(path.open().read())
+    def _gen_hints(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
         visitor = TypeHintApplierVisitor(applicable)
+        visitor.visit(nodes)
 
-        # Out of order traversal, non recursive
-        for node in ast.walk(nodes):
-            visitor.visit(node)
         return nodes
 
     def _store_hints(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
