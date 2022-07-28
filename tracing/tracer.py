@@ -164,15 +164,20 @@ class Tracer:
         line_number = frame.f_lineno
 
         names2types, category = None, None
+        frameinfo = inspect.getframeinfo(frame)
+
         if event == "call":
-            logger.info(f"Tracing call: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing call: {frameinfo}")
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_ARGUMENT
 
         elif event == "return":
-            logger.info(f"Tracing return: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing return: {frameinfo}")
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
+
+            # Special case
+            line_number = 0
 
             # Adds tracing data of class members if the return is from a class function.
             if possible_class is not None:
@@ -182,12 +187,12 @@ class Tracer:
                 # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
-            logger.info(f"Tracing line: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing line: {frameinfo}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
         elif event == "exception":
-            logger.info(f"Skipping exception: {inspect.getframeinfo(frame)}")
+            logger.info(f"Skipping exception: {frameinfo}")
             pass
 
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
