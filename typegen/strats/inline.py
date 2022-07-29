@@ -5,6 +5,8 @@ import operator
 import pathlib
 import itertools
 
+from numpy import isin, var
+
 from constants import TraceData
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import Generator
@@ -19,13 +21,20 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         super().__init__()
         self.df = relevant
 
-
     def generic_visit(self, node: ast.AST) -> ast.AST:
         # Track ClassDefs and FunctionDefs to disambiguate
         # functions from methods
         if isinstance(node, ast.ClassDef):
             for child in filter(lambda c: isinstance(c, ast.FunctionDef), node.body):
-                child.parent = node # type: ignore
+                child.parent = node  # type: ignore
+
+        # Track assignments from Functions
+        if isinstance(node, ast.FunctionDef):
+            for child in filter(
+                lambda c: isinstance(c, ast.AugAssign | ast.AnnAssign | ast.Assign),
+                node.body,
+            ):
+                child.parent = node  # type: ignore
 
         return super().generic_visit(node)
 
@@ -64,11 +73,11 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         if hasattr(fdef, "parent"):
             rettype_masks = [
                 self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-                self.df[TraceData.CLASS] == fdef.parent.name, # type: ignore
+                self.df[TraceData.CLASS] == fdef.parent.name,  # type: ignore
                 self.df[TraceData.VARNAME] == fdef.name,
                 self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
             ]
-        
+
         else:
             rettype_masks = [
                 self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
@@ -77,7 +86,6 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
                 self.df[TraceData.LINENO] == 0,
             ]
 
-        
         rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
 
         assert (
@@ -94,6 +102,48 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
             fdef.returns = ast.Name(ret_hint)
 
         return fdef
+
+    def visit_Assign(self, node: ast.Assign) -> list[ast.AST]:
+        logger.debug(f"Applying hints to '{ast.dump(node)}'")
+
+        newhints = list()
+
+        target_names = list()
+        for target in node.targets:
+            tgt_names = self._extract_assign_ids(target)
+            target_names.extend(tgt_names)
+        logger.debug(target_names)
+
+        var_mask = [
+            self.df[TraceData.CATEGORY].isin(
+                [TraceDataCategory.LOCAL_VARIABLE, TraceDataCategory.CLASS_MEMBER]
+            ),
+            self.df[TraceData.VARNAME].isin(target_names),
+            self.df[TraceData.LINENO] == node.lineno,
+        ]
+
+        node_vars = self.df[functools.reduce(operator.and_, var_mask)]
+
+        prehints = list(
+            node_vars[[TraceData.VARNAME, TraceData.VARTYPE]].itertuples(
+                index=False, name=None
+            )
+        )
+
+        logger.debug(f"Applying type hints for '{prehints}'")
+
+        assigns = [
+            ast.AnnAssign(target=ast.Name(name), annotation=ast.Name(hint), simple=True)
+            for name, hint in prehints
+        ]
+        newhints.extend(assigns)
+        newhints.append(node)
+
+        return newhints
+
+    def _extract_assign_ids(self, node: ast.Assign) -> list[str]:
+        # https://stackoverflow.com/a/72231602
+        return [i.id for i in ast.walk(node) if isinstance(i, ast.Name)]
 
 
 class InlineGenerator(Generator):

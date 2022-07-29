@@ -45,7 +45,7 @@ class Generator(abc.ABC):
                 self.types[constants.TraceData.FILENAME] == str(path)
             ]
             if not applicable.empty:
-                nodes = ast.parse(source=path.open().read())
+                nodes = ast.parse(source=path.open().read(), type_comments=True)
                 typed = self._gen_hints(df=applicable, nodes=nodes)
                 self._store_hints(source_file=path, hinting=typed)
 
