@@ -103,7 +103,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
 
         return fdef
 
-    def visit_Assign(self, node: ast.Assign) -> list[ast.AST]:
+    def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
         if not node.value:
             return node
 
@@ -153,13 +153,13 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
                 for name, hint in prehints
             ]
 
-            newhints = list()
+            newhints: list[ast.AST] = list()
             newhints.extend(assigns)
             newhints.append(node)
 
             return newhints
 
-    def _extract_assign_ids(self, node: ast.Assign) -> list[str]:
+    def _extract_assign_ids(self, node: ast.AST) -> list[str]:
         # https://stackoverflow.com/a/72231602
         return [i.id for i in ast.walk(node) if isinstance(i, ast.Name)]
 
