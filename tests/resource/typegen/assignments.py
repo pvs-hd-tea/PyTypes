@@ -15,7 +15,7 @@ l = list(range(10))
 # b: int
 # i: float
 # j: int
-(a, b), (i, j) = y, z, y, z
+(a, b), (i, j) = (y, z), (y, z)
 
 f = y = 10
 f += y - 20
