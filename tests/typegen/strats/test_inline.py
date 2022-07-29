@@ -39,6 +39,9 @@ class HintTest(ast.NodeVisitor):
             assert False, f"Unhandled target: {ast.dump(node)}"
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+         # narrow type for mypy
+        assert isinstance(node.target, ast.Name) 
+
         if node.value is not None:
             if node.target.id == "z":
                 assert node.annotation.id == "int"
