@@ -44,7 +44,8 @@ class HintTest(ast.NodeVisitor):
                 assert node.annotation.id == "int"
             if node.target.id == "y":
                 assert node.annotation.id == "float"
-            assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+            else:
+                assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
         else:
             if node.target.id == "b":
                 assert node.annotation.id == "int"
@@ -198,7 +199,7 @@ def test_assignments():
         str(resource_path),
         None,
         None,
-        16,
+        18,
         TraceDataCategory.LOCAL_VARIABLE,
         "a",
         "float",
@@ -207,7 +208,7 @@ def test_assignments():
         str(resource_path),
         None,
         None,
-        16,
+        18,
         TraceDataCategory.LOCAL_VARIABLE,
         "b",
         "int",
@@ -216,7 +217,7 @@ def test_assignments():
         str(resource_path),
         None,
         None,
-        16,
+        18,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
         "float",
@@ -225,7 +226,7 @@ def test_assignments():
         str(resource_path),
         None,
         None,
-        16,
+        18,
         TraceDataCategory.LOCAL_VARIABLE,
         "j",
         "int",

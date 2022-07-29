@@ -104,9 +104,11 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         return fdef
 
     def visit_Assign(self, node: ast.Assign) -> list[ast.AST]:
+        if not node.value:
+            return node
+
         logger.debug(f"Applying hints to '{ast.dump(node)}'")
 
-        newhints = list()
 
         target_names = list()
         for target in node.targets:
@@ -124,22 +126,38 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
 
         node_vars = self.df[functools.reduce(operator.and_, var_mask)]
 
-        prehints = list(
-            node_vars[[TraceData.VARNAME, TraceData.VARTYPE]].itertuples(
-                index=False, name=None
+        # Attach hint directly to assignment and promote to AnnAssign
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            logger.debug(
+                f"Applying type hints for simple assignment '{node.targets[0].id}'"
             )
-        )
+            return ast.AnnAssign(
+                target=node.targets[0],
+                value=node.value,
+                annotation=ast.Name(node_vars[TraceData.VARTYPE].values[0]),
+                simple=True,
+            )
 
-        logger.debug(f"Applying type hints for '{prehints}'")
+        else:
+            prehints = list(
+                node_vars[[TraceData.VARNAME, TraceData.VARTYPE]].itertuples(
+                    index=False, name=None
+                )
+            )
+            logger.debug(f"Applying type hints for multi-assignments '{prehints}'")
 
-        assigns = [
-            ast.AnnAssign(target=ast.Name(name), annotation=ast.Name(hint), simple=True)
-            for name, hint in prehints
-        ]
-        newhints.extend(assigns)
-        newhints.append(node)
+            assigns = [
+                ast.AnnAssign(
+                    target=ast.Name(name), annotation=ast.Name(hint), simple=True
+                )
+                for name, hint in prehints
+            ]
 
-        return newhints
+            newhints = list()
+            newhints.extend(assigns)
+            newhints.append(node)
+
+            return newhints
 
     def _extract_assign_ids(self, node: ast.Assign) -> list[str]:
         # https://stackoverflow.com/a/72231602
