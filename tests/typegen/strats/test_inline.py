@@ -42,15 +42,33 @@ class HintTest(ast.NodeVisitor):
         if node.value is not None:
             if node.target.id == "z":
                 assert node.annotation.id == "int"
-            if node.target.id == "y":
+            elif node.target.id == "y":
                 assert node.annotation.id == "float"
+            elif node.target.id == "d":
+                assert node.annotation.id == "dict"
+            elif node.target.id == "s":
+                assert node.annotation.id == "set"
+            elif node.target.id == "l":
+                assert node.annotation.id == "list"
             else:
                 assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
         else:
             if node.target.id == "b":
                 assert node.annotation.id == "int"
-            if node.target.id == "a":
+            elif node.target.id == "a":
                 assert node.annotation.id == "float"
+            elif node.target.id == "a":
+                assert node.annotation.id == "float"
+            elif node.target.id == "b":
+                assert node.annotation.id == "int"
+            elif node.target.id == "i":
+                assert node.annotation.id == "float"
+            elif node.target.id == "j":
+                assert node.annotation.id == "int"
+            elif node.target.id == "f":
+                assert node.annotation.id == "int"
+            elif node.target.id == "y":
+                assert node.annotation.id == "int"
             else:
                 assert False, f"Unhandled ann-assign without target: {ast.dump(node)}"
 
