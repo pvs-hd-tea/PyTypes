@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 
 PROJECT_NAME = "PyTypes"
@@ -9,6 +10,8 @@ TRACER_ATTRIBUTE = "pytype_tracer"
 SAMPLE_CODE_FOLDER_NAME = "examples"
 
 TRACE_DATA_FILE_ENDING = ".pytype"
+
+PYTEST_FUNCTION_PATTERN = re.compile(r"test_")
 
 
 class TraceData:
