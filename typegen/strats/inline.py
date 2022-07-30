@@ -7,15 +7,13 @@ import itertools
 
 from constants import TraceData
 from tracing.trace_data_category import TraceDataCategory
-from typegen.strats.gen import Generator
+from typegen.strats.gen import TypeHintGenerator
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-
-# It is important to handle sub-nodes from their parent node, as line numbering may differ across multi line statements
-class TypeHintApplierVisitor(ast.NodeTransformer):
+class TypeHintTransformer(ast.NodeTransformer):
     def __init__(self, relevant: pd.DataFrame) -> None:
         super().__init__()
         self.df = relevant
@@ -204,11 +202,11 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         return target_names_with_nodes
 
 
-class InlineGenerator(Generator):
+class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
     def _gen_hints(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
-        visitor = TypeHintApplierVisitor(applicable)
+        visitor = TypeHintTransformer(applicable)
         visitor.visit(nodes)
 
         return nodes

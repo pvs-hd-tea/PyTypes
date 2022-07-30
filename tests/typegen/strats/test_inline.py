@@ -6,7 +6,7 @@ import constants
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
-from typegen.strats.gen import Generator
+from typegen.strats.gen import TypeHintGenerator
 from typegen.strats.inline import InlineGenerator
 
 
@@ -98,7 +98,7 @@ class HintTest(ast.NodeVisitor):
                     assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
 
 def test_factory():
-    gen = Generator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
     assert isinstance(
         gen, InlineGenerator
     ), f"{type(gen)} should be {InlineGenerator.__name__}"
@@ -221,7 +221,7 @@ def test_callables():
         "bytes",
     ]
 
-    gen = Generator(ident=InlineGenerator.ident, types=traced)
+    gen = InlineGenerator(types=traced)
     hinted = gen._gen_hints(
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
@@ -237,7 +237,7 @@ def test_assignments():
     resource_path = pathlib.Path("tests", "resource", "typegen", "assignments.py")
     assert resource_path.is_file()
 
-    gen = Generator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 

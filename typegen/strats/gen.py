@@ -7,10 +7,10 @@ import pandas as pd
 import constants
 
 
-class Generator(abc.ABC):
+class TypeHintGenerator(abc.ABC):
     """Base class for different generation styles of type hints"""
 
-    _REGISTRY: dict[str, typing.Type["Generator"]] = {}
+    _REGISTRY: dict[str, typing.Type["TypeHintGenerator"]] = {}
     _PATH_GLOB = "*.py"
 
     types: pd.DataFrame
@@ -18,12 +18,12 @@ class Generator(abc.ABC):
     @classmethod
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        Generator._REGISTRY[cls.ident] = cls
+        TypeHintGenerator._REGISTRY[cls.ident] = cls
 
     def __new__(
-        cls: typing.Type["Generator"], /, ident: str, types: pd.DataFrame
-    ) -> "Generator":
-        if (subcls := Generator._REGISTRY.get(ident, None)) is not None:
+        cls: typing.Type["TypeHintGenerator"], /, ident: str, types: pd.DataFrame
+    ) -> "TypeHintGenerator":
+        if (subcls := TypeHintGenerator._REGISTRY.get(ident, None)) is not None:
             subinst = object.__new__(subcls)
             subinst.types = types
 

@@ -1,5 +1,5 @@
-from typegen.strats.gen import Generator
+from typegen.strats.gen import TypeHintGenerator
 
 
-class StubFileGenerator(Generator):
+class StubFileGenerator(TypeHintGenerator):
     ident = "stub"
