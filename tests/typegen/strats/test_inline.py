@@ -221,7 +221,7 @@ def test_callables():
         "bytes",
     ]
 
-    gen = TypeHintGenerator.__init__(ident=InlineGenerator.ident, types=traced)
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
