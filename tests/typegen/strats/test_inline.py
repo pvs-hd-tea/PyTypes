@@ -35,47 +35,67 @@ class HintTest(ast.NodeVisitor):
                 for arg in node.args.args:
                     assert arg.annotation is None, f"{ast.dump(arg)}"
 
+        elif node.name == "__init__":
+            pass
+
         else:
             assert False, f"Unhandled target: {ast.dump(node)}"
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         # narrow type for mypy
-        assert isinstance(node.target, ast.Name)
+        assert isinstance(node.target, ast.Name) or isinstance(node.target, ast.Attribute)
         assert isinstance(node.annotation, ast.Name)
 
         if node.value is not None:
-            if node.target.id == "z":
-                assert node.annotation.id == "int"
-            elif node.target.id == "y":
-                assert node.annotation.id == "float"
-            elif node.target.id == "d":
-                assert node.annotation.id == "dict"
-            elif node.target.id == "s":
-                assert node.annotation.id == "set"
-            elif node.target.id == "l":
-                assert node.annotation.id == "list"
-            else:
-                assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+            if isinstance(node.target, ast.Name):
+                if node.target.id == "z":
+                    assert node.annotation.id == "int"
+                elif node.target.id == "y":
+                    assert node.annotation.id == "float"
+                elif node.target.id == "d":
+                    assert node.annotation.id == "dict"
+                elif node.target.id == "s":
+                    assert node.annotation.id == "set"
+                elif node.target.id == "l":
+                    assert node.annotation.id == "list"
+                else:
+                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+            elif isinstance(node.target, ast.Attribute):
+                if node.target.attr == "a":
+                    assert node.annotation.id == "int"
+                elif node.target.attr == "b":
+                    assert node.annotation.id == "str"
+                else:
+                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
         else:
-            if node.target.id == "b":
-                assert node.annotation.id == "int"
-            elif node.target.id == "a":
-                assert node.annotation.id == "float"
-            elif node.target.id == "a":
-                assert node.annotation.id == "float"
-            elif node.target.id == "b":
-                assert node.annotation.id == "int"
-            elif node.target.id == "i":
-                assert node.annotation.id == "float"
-            elif node.target.id == "j":
-                assert node.annotation.id == "int"
-            elif node.target.id == "f":
-                assert node.annotation.id == "int"
-            elif node.target.id == "y":
-                assert node.annotation.id == "int"
-            else:
-                assert False, f"Unhandled ann-assign without target: {ast.dump(node)}"
-
+            if isinstance(node.target, ast.Name):
+                if node.target.id == "a":
+                    assert node.annotation.id == "float"
+                elif node.target.id == "b":
+                    assert node.annotation.id == "int"
+                elif node.target.id == "i":
+                    assert node.annotation.id == "float"
+                elif node.target.id == "j":
+                    assert node.annotation.id == "int"
+                elif node.target.id == "f":
+                    assert node.annotation.id == "int"
+                elif node.target.id == "y":
+                    assert node.annotation.id == "int"
+                elif node.target.id == "d":
+                    assert node.annotation.id == "float"
+                elif node.target.id == "e":
+                    assert node.annotation.id == "NoneType"
+                else:
+                    assert False, f"Unhandled ann-assign without target: {ast.dump(node)}"
+            elif isinstance(node.target, ast.Attribute):
+                if node.target.attr == "a":
+                    assert node.annotation.id == "int"
+                elif node.target.attr == "b":
+                    assert node.annotation.id == "str"
+                elif node.target.attr == "c":
+                    assert node.annotation.id == "bool"
+                else:
+                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
 
 def test_factory():
     gen = Generator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -124,8 +144,38 @@ def test_callables():
     traced.loc[len(traced.index)] = [
         str(resource_path),
         c_clazz,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "a",
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "b",
+        "str",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "c",
+        "bool",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
         "method",
-        5,
+        8,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "n",
         "str",
@@ -135,10 +185,30 @@ def test_callables():
         str(resource_path),
         c_clazz,
         "method",
-        5,
+        8,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "s",
         "str",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "",
+        10,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "d",
+        "float",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "",
+        11,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "e",
+        "NoneType",
     ]
 
     traced.loc[len(traced.index)] = [
@@ -156,6 +226,7 @@ def test_callables():
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
 
+    result = ast.unparse(hinted)
     logging.debug(f"\n{ast.unparse(hinted)}")
 
     for node in ast.walk(hinted):
