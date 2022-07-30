@@ -107,9 +107,19 @@ class TypeHintTransformer(ast.NodeTransformer):
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
+    def _find_class(self, node: ast.AST) -> str | None:
+        class_name = None
+        while hasattr(node, "parent"):
+            node = node.parent  # type: ignore
+            if isinstance(node, ast.ClassDef):
+                class_name = node.name
+                break
+
+        return class_name
+
     def visit_Assign(
         self, node: ast.Assign
-    ) -> ast.Assign | ast.AnnAssign | list[ast.AST]:
+    ) -> ast.Assign | ast.AnnAssign | list[ast.Assign | ast.AnnAssign]:
         if not node.value:
             return node
 
@@ -126,33 +136,30 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         logger.debug(f"Applying hints to '{target_names}'")
 
-        class_name = None
-        node_to_check = node
-        while hasattr(node_to_check, "parent"):
-            node_to_check = node_to_check.parent  # type: ignore
-            if isinstance(node_to_check, ast.ClassDef):
-                class_name = node_to_check.name
-                break
+        class_name = self._find_class(node)
+
+        if class_name is not None:
+            class_check = self.df[TraceData.CLASS] == class_name
+        else:
+            class_check = self.df[TraceData.CLASS].isnull()
 
         var_mask_local_variables = [
             self.df[TraceData.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
             self.df[TraceData.VARNAME].isin(target_names),
             self.df[TraceData.LINENO] == node.lineno,
-            self.df[TraceData.CLASS] == class_name,
+            class_check,
         ]
 
         var_mask_class_members = [
             self.df[TraceData.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
             self.df[TraceData.VARNAME].isin(target_names),
-            self.df[TraceData.CLASS] == class_name,
+            class_check,
         ]
 
         local_traced_vars = self.df[
             functools.reduce(operator.and_, var_mask_local_variables)
         ]
-        class_members = self.df[
-            functools.reduce(operator.and_, var_mask_class_members)
-        ]
+        class_members = self.df[functools.reduce(operator.and_, var_mask_class_members)]
 
         # Attach hint directly to assignment and promote to AnnAssign
         new_nodes: list[ast.AST] = []
