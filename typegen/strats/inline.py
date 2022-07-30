@@ -5,9 +5,6 @@ import operator
 import pathlib
 import itertools
 
-import typing
-from numpy import isin, var
-
 from constants import TraceData
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import Generator
@@ -129,9 +126,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
                 break
 
         var_mask_local_variables = [
-            self.df[TraceData.CATEGORY].isin(
-                [TraceDataCategory.LOCAL_VARIABLE]
-            ),
+            self.df[TraceData.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
             self.df[TraceData.VARNAME].isin(target_names),
             self.df[TraceData.LINENO] == node.lineno,
             self.df[TraceData.CLASS] == class_name,
@@ -140,7 +135,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         var_mask_class_members = [
             self.df[TraceData.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
             self.df[TraceData.VARNAME].isin(target_names),
-            self.df[TraceData.CLASS] == class_name,  # type: ignore
+            self.df[TraceData.CLASS] == class_name,
         ]
 
         relevant_trace_data_local_variables = self.df[functools.reduce(operator.and_, var_mask_local_variables)]
@@ -190,8 +185,8 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         new_nodes.append(node)
         return new_nodes
 
-    def _extract_target_names_with_nodes(self, node: ast.AST) -> list[typing.Tuple[str, ast.Name | ast.Attribute]]:
-        target_names_with_nodes: list[typing.Tuple[str, ast.Name | ast.Attribute]] = []
+    def _extract_target_names_with_nodes(self, node: ast.AST) -> list[tuple[str, ast.Name | ast.Attribute]]:
+        target_names_with_nodes: list[tuple[str, ast.Name | ast.Attribute]] = []
         if isinstance(node, ast.Attribute):
             target_names_with_nodes.append((node.attr, node))
         elif isinstance(node, ast.Name):
