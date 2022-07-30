@@ -33,7 +33,7 @@ class TypeHintTransformer(ast.NodeTransformer):
         # NOTE: before we start generating hints for its children
         if isinstance(node, ast.FunctionDef):
             for direct in ast.iter_child_nodes(node):
-                for child in ast.walk(direct):
+                for child in ast.walk(direct):  # type: ignore
                     child.parent = node  # type: ignore
 
         return super().generic_visit(node)
@@ -79,7 +79,7 @@ class TypeHintTransformer(ast.NodeTransformer):
     def _add_return_hint(self, fdef: ast.FunctionDef) -> None:
         # disambiguate methods from functions
         clazz_name = self._find_class(fdef)
-        
+
         if clazz_name is not None:
             clazz_mask = self.df[TraceData.CLASS] == clazz_name
         else:
@@ -117,15 +117,15 @@ class TypeHintTransformer(ast.NodeTransformer):
         return class_name
 
     def _find_targets(self, node: ast.Assign | ast.AnnAssign | ast.AugAssign):
-        if hasattr(node, "target"):
-            return self._extract_target_names_with_nodes(node.target)
-        elif hasattr(node, "targets"):
+        if isinstance(node, ast.AnnAssign | ast.AugAssign):
+            target = node.target
+            return self._extract_target_names_with_nodes(target)
+        else:
+            targets = node.targets
             names = list()
-            for target in node.targets:
+            for target in targets:
                 names += self._extract_target_names_with_nodes(target)
             return names
-        else:
-            raise RuntimeError("Cannot find 'target' or 'targets' attributes")
 
     def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST | list[ast.AST]:
         assigns = self._visit_assigns(node)
@@ -134,7 +134,6 @@ class TypeHintTransformer(ast.NodeTransformer):
         assigns[-1] = node
 
         return assigns
-
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
         return self._visit_assigns(node)
