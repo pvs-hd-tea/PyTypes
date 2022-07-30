@@ -5,6 +5,7 @@ import operator
 import pathlib
 import itertools
 
+import typing
 from numpy import isin, var
 
 from constants import TraceData
@@ -14,6 +15,7 @@ from typegen.strats.gen import Generator
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
 
 # It is important to handle sub-nodes from their parent node, as line numbering may differ across multi line statements
 class TypeHintApplierVisitor(ast.NodeTransformer):
@@ -31,8 +33,8 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         # Track assignments from Functions
         if isinstance(node, ast.FunctionDef):
             for child in filter(
-                lambda c: isinstance(c, ast.AugAssign | ast.AnnAssign | ast.Assign),
-                node.body,
+                    lambda c: isinstance(c, ast.AugAssign | ast.AnnAssign | ast.Assign),
+                    node.body,
             ):
                 child.parent = node  # type: ignore
 
@@ -57,7 +59,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
             ]
             arg_hints = params[functools.reduce(operator.and_, arg_hint_mask)]
             assert (
-                arg_hints.shape[0] <= 1
+                    arg_hints.shape[0] <= 1
             ), f"Found multiple hints for the parameter type: {arg_hints}"
 
             # no type hint, skip
@@ -89,7 +91,7 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
 
         assert (
-            rettypes.shape[0] <= 1
+                rettypes.shape[0] <= 1
         ), f"Found multiple hints for the return type: {arg_hint}"
 
         # no type hint, skip
@@ -101,67 +103,104 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
+        self.generic_visit(fdef)
         return fdef
 
-    def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
+    def visit_Assign(self, node: ast.Assign) -> ast.Assign | ast.AnnAssign | list[ast.AST]:
         if not node.value:
             return node
 
-        logger.debug(f"Applying hints to '{ast.dump(node)}'")
-
-
-        target_names = list()
+        target_names_with_nodes = list()
         for target in node.targets:
-            tgt_names = self._extract_assign_ids(target)
-            target_names.extend(tgt_names)
-        logger.debug(target_names)
+            target_names_with_nodes += self._extract_target_names_with_nodes(target)
+        if len(target_names_with_nodes) == 0:
+            return node
 
-        var_mask = [
+        target_names = [target_name_with_node[0] for target_name_with_node in target_names_with_nodes]
+
+        logger.debug(f"Applying hints to '{target_names}'")
+
+        class_name = None
+        node_to_check = node
+        while hasattr(node_to_check, "parent"):
+            node_to_check = node_to_check.parent  # type: ignore
+            if isinstance(node_to_check, ast.ClassDef):
+                class_name = node_to_check.name
+                break
+
+        var_mask_local_variables = [
             self.df[TraceData.CATEGORY].isin(
-                [TraceDataCategory.LOCAL_VARIABLE, TraceDataCategory.CLASS_MEMBER]
+                [TraceDataCategory.LOCAL_VARIABLE]
             ),
             self.df[TraceData.VARNAME].isin(target_names),
             self.df[TraceData.LINENO] == node.lineno,
+            self.df[TraceData.CLASS] == class_name,
         ]
 
-        node_vars = self.df[functools.reduce(operator.and_, var_mask)]
+        var_mask_class_members = [
+            self.df[TraceData.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
+            self.df[TraceData.VARNAME].isin(target_names),
+            self.df[TraceData.CLASS] == class_name,  # type: ignore
+        ]
+
+        relevant_trace_data_local_variables = self.df[functools.reduce(operator.and_, var_mask_local_variables)]
+        relevant_trace_data_class_member = self.df[functools.reduce(operator.and_, var_mask_class_members)]
 
         # Attach hint directly to assignment and promote to AnnAssign
-        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        new_nodes: list[ast.AST] = []
+        contains_one_target = len(target_names_with_nodes) == 1
+        for target_name_with_node in target_names_with_nodes:
+            target_name = target_name_with_node[0]
+            target_node = target_name_with_node[1]
+            target_trace_data = None
+            if isinstance(target_node, ast.Attribute):
+                # Finds the class member type hint.
+                target_trace_data = relevant_trace_data_class_member[
+                    relevant_trace_data_class_member[TraceData.VARNAME] == target_name]
+            elif isinstance(target_node, ast.Name):
+                # Finds the local variable type hint.
+                target_trace_data = relevant_trace_data_local_variables[
+                    relevant_trace_data_local_variables[TraceData.VARNAME] == target_name]
+            if target_trace_data is None or len(target_trace_data) == 0:
+                logger.debug(
+                    f"No hint found for assign for '{target_name}'"
+                )
+                continue
+
             logger.debug(
-                f"Applying type hints for simple assignment '{node.targets[0].id}'"
+                f"Applying type hints for simple assignment '{target_name}'"
             )
-            return ast.AnnAssign(
-                target=node.targets[0],
-                value=node.value,
-                annotation=ast.Name(node_vars[TraceData.VARTYPE].values[0]),
-                simple=True,
-            )
+            if contains_one_target:
+                new_node = ast.AnnAssign(
+                    target_node,
+                    value=node.value,
+                    annotation=ast.Name(target_trace_data[TraceData.VARTYPE].values[0]),
+                    simple=True,
+                )
+                return new_node
+            else:
+                new_node = ast.AnnAssign(
+                    target_node,
+                    annotation=ast.Name(target_trace_data[TraceData.VARTYPE].values[0]),
+                    simple=True
+                )
 
+            new_nodes.append(new_node)
+
+        new_nodes.append(node)
+        return new_nodes
+
+    def _extract_target_names_with_nodes(self, node: ast.AST) -> list[typing.Tuple[str, ast.Name | ast.Attribute]]:
+        target_names_with_nodes: list[typing.Tuple[str, ast.Name | ast.Attribute]] = []
+        if isinstance(node, ast.Attribute):
+            target_names_with_nodes.append((node.attr, node))
+        elif isinstance(node, ast.Name):
+            target_names_with_nodes.append((node.id, node))
         else:
-            prehints = list(
-                node_vars[[TraceData.VARNAME, TraceData.VARTYPE]].itertuples(
-                    index=False, name=None
-                )
-            )
-            logger.debug(f"Applying type hints for multi-assignments '{prehints}'")
-
-            assigns = [
-                ast.AnnAssign(
-                    target=ast.Name(name), annotation=ast.Name(hint), simple=True
-                )
-                for name, hint in prehints
-            ]
-
-            newhints: list[ast.AST] = list()
-            newhints.extend(assigns)
-            newhints.append(node)
-
-            return newhints
-
-    def _extract_assign_ids(self, node: ast.AST) -> list[str]:
-        # https://stackoverflow.com/a/72231602
-        return [i.id for i in ast.walk(node) if isinstance(i, ast.Name)]
+            for child_node in ast.iter_child_nodes(node):
+                target_names_with_nodes_in_child_node = self._extract_target_names_with_nodes(child_node)
+                target_names_with_nodes += target_names_with_nodes_in_child_node
+        return target_names_with_nodes
 
 
 class InlineGenerator(Generator):
