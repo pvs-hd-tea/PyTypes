@@ -2,7 +2,6 @@ import ast
 from abc import ABC, abstractmethod
 import pathlib
 import re
-import typing
 from re import Pattern
 
 from .projio import Project
@@ -105,7 +104,9 @@ class PyTestStrategy(ApplicationStrategy):
 
 
 class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
-    """Transforms an AST such that the register decorator is appended on each test function."""
+    """
+    Transforms an AST such that the register decorator is appended on each test function.
+    """
     REGISTER = "register()"
 
     def __init__(self, test_function_name_pattern: Pattern[str]):
@@ -113,7 +114,9 @@ class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
         self.register_decorator_node = ast.Name(AppendRegisterDecoratorTransformer.REGISTER)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
-        """Called on visiting a function definition node. Adds the register decorator to the decorator list if function name matches test function name pattern."""
+        """
+        Called on visiting a function definition node. 
+        Adds the register decorator to the decorator list if function name matches test function name pattern."""
         if re.match(self.test_function_name_pattern, node.name):
             node.decorator_list.append(self.register_decorator_node)
         return node
