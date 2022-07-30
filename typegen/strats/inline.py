@@ -5,6 +5,8 @@ import operator
 import pathlib
 import itertools
 
+from numpy import isin
+
 from constants import TraceData
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
@@ -117,18 +119,36 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         return class_name
 
-    def visit_Assign(
-        self, node: ast.Assign
-    ) -> ast.Assign | ast.AnnAssign | list[ast.Assign | ast.AnnAssign]:
+    def _find_targets(self, node: ast.Assign | ast.AnnAssign | ast.AugAssign):
+        if hasattr(node, "target"):
+            return self._extract_target_names_with_nodes(node.target)
+        elif hasattr(node, "targets"):
+            names = list()
+            for target in node.targets:
+                names += self._extract_target_names_with_nodes(target)
+            return names
+        else:
+            raise RuntimeError("Cannot find 'target' or 'targets' attributes")
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST | list[ast.AST]:
+        assigns = self._visit_assigns(node)
+        # Overwrite with actual assignment
+        assert isinstance(assigns, list)
+        assigns[-1] = node
+
+        return assigns
+
+
+    def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
+        return self._visit_assigns(node)
+
+    def _visit_assigns(
+        self, node: ast.Assign | ast.AugAssign
+    ) -> ast.AST | list[ast.AST]:
         if not node.value:
             return node
 
-        target_names_with_nodes = list()
-        for target in node.targets:
-            target_names_with_nodes += self._extract_target_names_with_nodes(target)
-        if len(target_names_with_nodes) == 0:
-            return node
-
+        target_names_with_nodes = self._find_targets(node)
         target_names = [
             target_name_with_node[0]
             for target_name_with_node in target_names_with_nodes
@@ -137,7 +157,6 @@ class TypeHintTransformer(ast.NodeTransformer):
         logger.debug(f"Applying hints to '{target_names}'")
 
         class_name = self._find_class(node)
-
         if class_name is not None:
             class_check = self.df[TraceData.CLASS] == class_name
         else:
@@ -183,7 +202,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 continue
 
             logger.debug(f"Applying type hints for simple assignment '{target_name}'")
-            if contains_one_target:
+            if contains_one_target and not isinstance(node, ast.AugAssign):
                 new_node = ast.AnnAssign(
                     target_node,
                     value=node.value,
