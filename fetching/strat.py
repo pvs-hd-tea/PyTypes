@@ -66,7 +66,9 @@ class PyTestStrategy(ApplicationStrategy):
         self.pytype_imports_node = ast.parse(PyTestStrategy.PYTYPE_IMPORTS)
         self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
         self.sys_path_ext_node = ast.parse(sys_path_ext)
-        self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(PyTestStrategy.FUNCTION_PATTERN)
+        self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(
+            PyTestStrategy.FUNCTION_PATTERN
+        )
 
     def _apply(self, path: pathlib.Path) -> None:
         with path.open() as file:
@@ -95,7 +97,9 @@ class PyTestStrategy(ApplicationStrategy):
 
         return path.name.endswith("_test.py")
 
-    def _append_nodes_necessary_for_tracing(self, abstract_syntax_tree: ast.Module) -> None:
+    def _append_nodes_necessary_for_tracing(
+        self, abstract_syntax_tree: ast.Module
+    ) -> None:
         """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
         abstract_syntax_tree.body.insert(0, self.sys_import_node)  # type: ignore
         abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
@@ -107,17 +111,19 @@ class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
     """
     Transforms an AST such that the register decorator is appended on each test function.
     """
+
     REGISTER = "register()"
 
     def __init__(self, test_function_name_pattern: Pattern[str]):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
-        self.register_decorator_node = ast.Name(AppendRegisterDecoratorTransformer.REGISTER)
+        self.register_decorator_node = ast.Name(
+            AppendRegisterDecoratorTransformer.REGISTER
+        )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """
-        Called on visiting a function definition node. 
+        Called on visiting a function definition node.
         Adds the register decorator to the decorator list if function name matches test function name pattern."""
         if re.match(self.test_function_name_pattern, node.name):
             node.decorator_list.append(self.register_decorator_node)
         return node
-

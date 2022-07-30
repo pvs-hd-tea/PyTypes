@@ -10,6 +10,7 @@ SAMPLE_CODE_FOLDER_NAME = "examples"
 
 TRACE_DATA_FILE_ENDING = ".pytype"
 
+
 class TraceData:
     FILENAME = "Filename"
     CLASS = "Class"

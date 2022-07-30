@@ -222,7 +222,7 @@ def test_callables():
     ]
 
     gen = InlineGenerator(types=traced)
-    hinted = gen._gen_hints(
+    hinted = gen._gen_hinted_ast(
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
 
@@ -369,7 +369,7 @@ def test_assignments():
         "int",
     ]
 
-    hinted = gen._gen_hints(
+    hinted = gen._gen_hinted_ast(
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
     logging.debug(ast.unparse(hinted))
