@@ -38,8 +38,14 @@ class TypeHintTransformer(ast.NodeTransformer):
 
     def visit_FunctionDef(self, fdef: ast.FunctionDef):
         logger.debug(f"Applying hints to '{fdef.name}'")
-        # NOTE: disregards *args (fdef.vararg) and **kwargs (fdef.kwarg)
 
+        self._add_parameter_hints(fdef)
+        self._add_return_hint(fdef)
+
+        self.generic_visit(fdef)
+        return fdef
+
+    def _add_parameter_hints(self, fdef: ast.FunctionDef) -> None:
         # parameters
         param_masks = [
             self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_ARGUMENT,
@@ -47,6 +53,7 @@ class TypeHintTransformer(ast.NodeTransformer):
         ]
         params = self.df[functools.reduce(operator.and_, param_masks)]
 
+        # NOTE: disregards *args (fdef.vararg) and **kwargs (fdef.kwarg)
         for arg in itertools.chain(fdef.args.posonlyargs, fdef.args.args):
             # Narrow by line number and identifier
             arg_hint_mask = [
@@ -67,11 +74,12 @@ class TypeHintTransformer(ast.NodeTransformer):
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
+    def _add_return_hint(self, fdef: ast.FunctionDef) -> None:
         # disambiguate methods from functions
         if hasattr(fdef, "parent"):
             rettype_masks = [
                 self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-                self.df[TraceData.CLASS] == fdef.parent.name,  # type: ignore
+                self.df[TraceData.CLASS] == fdef.parent.name,
                 self.df[TraceData.VARNAME] == fdef.name,
                 self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
             ]
@@ -88,7 +96,7 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         assert (
             rettypes.shape[0] <= 1
-        ), f"Found multiple hints for the return type: {arg_hint}"
+        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPE].values}"
 
         # no type hint, skip
         if rettypes.shape[0] == 0:
@@ -98,9 +106,6 @@ class TypeHintTransformer(ast.NodeTransformer):
             ret_hint = rettypes[TraceData.VARTYPE].values[0]
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
-
-        self.generic_visit(fdef)
-        return fdef
 
     def visit_Assign(
         self, node: ast.Assign
