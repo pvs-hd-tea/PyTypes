@@ -60,6 +60,6 @@ class TypeHintGenerator(abc.ABC):
     @abc.abstractmethod
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
         """
-        Perform operations to generate types for the given file
+        Store the hinted AST at the correct location, based upon the `source_file` param
         """
         pass
