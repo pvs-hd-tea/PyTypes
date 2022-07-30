@@ -78,22 +78,19 @@ class TypeHintTransformer(ast.NodeTransformer):
 
     def _add_return_hint(self, fdef: ast.FunctionDef) -> None:
         # disambiguate methods from functions
-        if hasattr(fdef, "parent"):
-            rettype_masks = [
-                self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-                self.df[TraceData.CLASS] == fdef.parent.name,
-                self.df[TraceData.VARNAME] == fdef.name,
-                self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
-            ]
-
+        clazz_name = self._find_class(fdef)
+        
+        if clazz_name is not None:
+            clazz_mask = self.df[TraceData.CLASS] == clazz_name
         else:
-            rettype_masks = [
-                self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-                self.df[TraceData.CLASS].isnull(),
-                self.df[TraceData.VARNAME] == fdef.name,
-                self.df[TraceData.LINENO] == 0,
-            ]
+            clazz_mask = self.df[TraceData.CLASS].isnull()
 
+        rettype_masks = [
+            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
+            clazz_mask,
+            self.df[TraceData.VARNAME] == fdef.name,
+            self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
+        ]
         rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
 
         assert (

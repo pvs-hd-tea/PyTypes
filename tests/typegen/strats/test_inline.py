@@ -38,6 +38,16 @@ class HintTest(ast.NodeVisitor):
         elif node.name == "__init__":
             pass
 
+        elif node.name == "outer":
+            assert node.args.args[1].arg == "b"
+            assert node.args.args[1].annotation.id == "int"
+            assert node.returns.id == "int"
+
+        elif node.name == "inner":
+            assert node.args.args[0].arg == "i"
+            assert node.args.args[0].annotation.id == "int"
+            assert node.returns.id == "int"
+
         else:
             assert False, f"Unhandled target: {ast.dump(node)}"
 
