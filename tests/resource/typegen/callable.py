@@ -12,6 +12,12 @@ class C:
             None, "string2", 5
         return bytes(f"{n} + {s}")
 
+    def outer(self, b):
+        def inner(i):
+            self.a += self.a + i # Can access class members anyway!
+            return self.a
+        return inner(b)
+
 
 # Do not type hint, as it is not in the class C
 def method(b, n, s):

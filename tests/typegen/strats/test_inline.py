@@ -221,6 +221,56 @@ def test_callables():
         "bytes",
     ]
 
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "outer",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "outer",
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "inner",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "inner",
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "outer",
+        15,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "b",
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "inner",
+        16,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "i",
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        c_clazz,
+        "inner",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "a",
+        "int",
+    ]
+
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
