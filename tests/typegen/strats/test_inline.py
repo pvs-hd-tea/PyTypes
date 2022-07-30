@@ -43,7 +43,9 @@ class HintTest(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         # narrow type for mypy
-        assert isinstance(node.target, ast.Name) or isinstance(node.target, ast.Attribute)
+        assert isinstance(node.target, ast.Name) or isinstance(
+            node.target, ast.Attribute
+        )
         assert isinstance(node.annotation, ast.Name)
 
         if node.value is not None:
@@ -88,7 +90,9 @@ class HintTest(ast.NodeVisitor):
                 elif node.target.id == "e":
                     assert node.annotation.id == "NoneType"
                 else:
-                    assert False, f"Unhandled ann-assign without target: {ast.dump(node)}"
+                    assert (
+                        False
+                    ), f"Unhandled ann-assign without target: {ast.dump(node)}"
             elif isinstance(node.target, ast.Attribute):
                 if node.target.attr == "a":
                     assert node.annotation.id == "int"
@@ -98,6 +102,7 @@ class HintTest(ast.NodeVisitor):
                     assert node.annotation.id == "bool"
                 else:
                     assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+
 
 def test_factory():
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -236,20 +241,20 @@ def test_callables():
     traced.loc[len(traced.index)] = [
         str(resource_path),
         c_clazz,
-        "inner",
-        0,
-        TraceDataCategory.FUNCTION_RETURN,
-        "inner",
+        "outer",
+        15,
+        TraceDataCategory.FUNCTION_ARGUMENT,
+        "b",
         "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
         c_clazz,
-        "outer",
-        15,
-        TraceDataCategory.FUNCTION_ARGUMENT,
-        "b",
+        "inner",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "inner",
         "int",
     ]
 
