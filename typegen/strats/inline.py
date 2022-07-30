@@ -205,13 +205,13 @@ class TypeHintTransformer(ast.NodeTransformer):
 class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
-    def _gen_hints(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
+    def _gen_hinted_ast(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
         visitor = TypeHintTransformer(applicable)
         visitor.visit(nodes)
 
         return nodes
 
-    def _store_hints(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
+    def _store_hinted_ast(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
         # Inline means overwriting the original
         contents = ast.unparse(hinting)
         with source_file.open("w") as f:

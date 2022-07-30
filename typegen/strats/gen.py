@@ -46,18 +46,18 @@ class TypeHintGenerator(abc.ABC):
             ]
             if not applicable.empty:
                 nodes = ast.parse(source=path.open().read(), type_comments=True)
-                typed = self._gen_hints(df=applicable, nodes=nodes)
-                self._store_hints(source_file=path, hinting=typed)
+                typed = self._gen_hinted_ast(df=applicable, nodes=nodes)
+                self._store_hinted_ast(source_file=path, hinting=typed)
 
     @abc.abstractmethod
-    def _gen_hints(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
+    def _gen_hinted_ast(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
         """
         Perform operations to generate types for the given file
         """
         pass
 
     @abc.abstractmethod
-    def _store_hints(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
+    def _store_hinted_ast(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
         """
         Perform operations to generate types for the given file
         """
