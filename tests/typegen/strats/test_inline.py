@@ -58,6 +58,8 @@ class HintTest(ast.NodeVisitor):
                     assert node.annotation.id == "set"
                 elif node.target.id == "l":
                     assert node.annotation.id == "list"
+                elif node.target.id == "f":
+                    assert node.annotation.id == "int"
                 else:
                     assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
             elif isinstance(node.target, ast.Attribute):
