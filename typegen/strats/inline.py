@@ -27,12 +27,12 @@ class TypeHintTransformer(ast.NodeTransformer):
                 child.parent = node  # type: ignore
 
         # Track assignments from Functions
+        # NOTE: this handles nested functions too, because the parent reference gets overwritten
+        # NOTE: before we start generating hints for its children
         if isinstance(node, ast.FunctionDef):
-            for child in filter(
-                lambda c: isinstance(c, ast.AugAssign | ast.AnnAssign | ast.Assign),
-                node.body,
-            ):
-                child.parent = node  # type: ignore
+            for direct in ast.iter_child_nodes(node):
+                for child in ast.walk(direct):
+                    child.parent = node  # type: ignore
 
         return super().generic_visit(node)
 
