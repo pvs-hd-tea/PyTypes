@@ -186,6 +186,12 @@ class TypeHintApplierVisitor(ast.NodeTransformer):
         return new_nodes
 
     def _extract_target_names_with_nodes(self, node: ast.AST) -> list[tuple[str, ast.Name | ast.Attribute]]:
+        """Returns the target names with the corresponding nodes which have to be annotated."""
+
+        # If the node is a target node which has to be annotated, the children of the node are not checked.
+        # Otherwise, it will recursively check the children.
+        # In the case of class members, this prevents the corresponding object node
+        # to be considered as a node to be annotated.
         target_names_with_nodes: list[tuple[str, ast.Name | ast.Attribute]] = []
         if isinstance(node, ast.Attribute):
             target_names_with_nodes.append((node.attr, node))
