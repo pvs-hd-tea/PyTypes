@@ -226,7 +226,6 @@ def test_callables():
         applicable=traced, nodes=ast.parse(source=resource_path.open().read())
     )
 
-    result = ast.unparse(hinted)
     logging.debug(f"\n{ast.unparse(hinted)}")
 
     for node in ast.walk(hinted):
