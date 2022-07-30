@@ -31,5 +31,5 @@ class TraceData:
         # because of TraceDataCategory's inheritance from enum.Enum
         CATEGORY: pd.StringDtype(),
         VARNAME: pd.StringDtype(),
-        VARTYPE: object,
+        VARTYPE: pd.StringDtype(),
     }
