@@ -39,6 +39,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
+        "SubClass2",
         SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -48,6 +49,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
+        "SubClass2",
         SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -57,6 +59,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
+        "SubClass3",
         SubClass3,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -66,6 +69,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
+        "SubClass11",
         SubClass11,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -75,6 +79,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
+        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -84,6 +89,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         3,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
+        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -93,6 +99,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         3,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
+        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -102,6 +109,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
+        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -111,6 +119,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
+        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -120,6 +129,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
+        "SubClass11",
         SubClass11,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -129,6 +139,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         5,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
+        "SubClass1",
         SubClass1,
     ]
     trace_data = trace_data.astype(constants.TraceData.SCHEMA)
