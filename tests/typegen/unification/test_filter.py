@@ -5,8 +5,13 @@ from tracing import TraceDataCategory
 
 from abc import ABC
 
-from typegen.unification import DropDuplicatesFilter, ReplaceSubTypesFilter, DropVariablesOfMultipleTypesFilter, \
-    TraceDataFilterList, DropTestFunctionDataFilter
+from typegen.unification import (
+    DropDuplicatesFilter,
+    ReplaceSubTypesFilter,
+    DropVariablesOfMultipleTypesFilter,
+    TraceDataFilterList,
+    DropTestFunctionDataFilter,
+)
 
 
 class BaseClass(ABC):
@@ -39,7 +44,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        "SubClass2",
         SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -49,7 +53,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        "SubClass2",
         SubClass2,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -59,7 +62,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         1,
         TraceDataCategory.FUNCTION_ARGUMENT,
         "argument1",
-        "SubClass3",
         SubClass3,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -69,7 +71,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
-        "SubClass11",
         SubClass11,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -79,7 +80,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
-        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -89,7 +89,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         3,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
-        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -99,7 +98,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         3,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
-        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -109,7 +107,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
-        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -119,7 +116,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
-        "SubClass1",
         SubClass1,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -129,7 +125,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         0,
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
-        "SubClass11",
         SubClass11,
     ]
     trace_data.loc[len(trace_data.index)] = [
@@ -139,7 +134,6 @@ def get_sample_trace_data() -> pd.DataFrame:
         5,
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
-        "SubClass1",
         SubClass1,
     ]
     trace_data = trace_data.astype(constants.TraceData.SCHEMA)
@@ -148,7 +142,9 @@ def get_sample_trace_data() -> pd.DataFrame:
 
 def test_drop_duplicates_filter_processes_and_returns_correct_data_and_difference():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data = expected_trace_data.drop(index=[0, 5, 7]).reset_index(drop=True)
+    expected_trace_data = expected_trace_data.drop(index=[0, 5, 7]).reset_index(
+        drop=True
+    )
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     test_object = DropDuplicatesFilter()
@@ -161,8 +157,8 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[3, constants.TraceData.VARTYPENAME] = SubClass1
-    expected_trace_data.loc[9, constants.TraceData.VARTYPENAME] = SubClass1
+    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = SubClass1
+    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = SubClass1
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
@@ -174,8 +170,8 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
 
 def test_replace_subtypes_filter_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[:3, constants.TraceData.VARTYPENAME] = BaseClass
-    expected_trace_data.loc[3:, constants.TraceData.VARTYPENAME] = SubClass1
+    expected_trace_data.loc[:3, constants.TraceData.VARTYPE] = BaseClass
+    expected_trace_data.loc[3:, constants.TraceData.VARTYPE] = SubClass1
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
@@ -186,7 +182,9 @@ def test_replace_subtypes_filter_processes_and_returns_correct_data():
 
 
 def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().iloc[[5, 6, 10]].reset_index(drop=True)
+    expected_trace_data = (
+        get_sample_trace_data().iloc[[5, 6, 10]].reset_index(drop=True)
+    )
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
@@ -212,7 +210,9 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().iloc[[4, 5, 7]].reset_index(drop=True)
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    drop_test_function_data_filter = DropTestFunctionDataFilter(constants.PYTEST_FUNCTION_PATTERN)
+    drop_test_function_data_filter = DropTestFunctionDataFilter(
+        constants.PYTEST_FUNCTION_PATTERN
+    )
     drop_duplicates_filter = DropDuplicatesFilter()
     replace_subtypes_filter = ReplaceSubTypesFilter(True)
     drop_variables_of_multiple_types_filter = DropVariablesOfMultipleTypesFilter()

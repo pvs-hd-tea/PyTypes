@@ -72,7 +72,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            arg_hint = arg_hints[TraceData.VARTYPENAME].values[0]
+            arg_hint = arg_hints[TraceData.VARTYPE].values[0]
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
@@ -81,7 +81,7 @@ class TypeHintTransformer(ast.NodeTransformer):
         clazz_name = self._find_class(fdef)
 
         if clazz_name is not None:
-            clazz_mask = self.df[TraceData.CLASS] == clazz_name
+            clazz_mask = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None) == clazz_name
         else:
             clazz_mask = self.df[TraceData.CLASS].isnull()
 
@@ -95,14 +95,14 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         assert (
             rettypes.shape[0] <= 1
-        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPENAME].values}"
+        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPE].values}"
 
         # no type hint, skip
         if rettypes.shape[0] == 0:
             logger.debug(f"No hint found for return for '{fdef.name}'")
 
         if rettypes.shape[0] == 1:
-            ret_hint = rettypes[TraceData.VARTYPENAME].values[0]
+            ret_hint = rettypes[TraceData.VARTYPE].values[0]
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
@@ -198,18 +198,20 @@ class TypeHintTransformer(ast.NodeTransformer):
                 continue
 
             logger.debug(f"Applying type hints for simple assignment '{target_name}'")
+            ann = target_trace_data[TraceData.VARTYPE].values[0]
+
             if contains_one_target and not isinstance(node, ast.AugAssign):
                 new_node = ast.AnnAssign(
                     target_node,
                     value=node.value,
-                    annotation=ast.Name(target_trace_data[TraceData.VARTYPENAME].values[0]),
+                    annotation=ast.Name(ann),
                     simple=True,
                 )
                 return new_node
             else:
                 new_node = ast.AnnAssign(
                     target_node,
-                    annotation=ast.Name(target_trace_data[TraceData.VARTYPENAME].values[0]),
+                    annotation=ast.Name(ann),
                     simple=True,
                 )
 

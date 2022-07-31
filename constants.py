@@ -21,8 +21,7 @@ class TraceData:
     LINENO = "Line Number"
     CATEGORY = "Category"
     VARNAME = "Name"
-    VARTYPENAME = "TypeName"
-    VARTYPECLASS = "TypeClass"
+    VARTYPE = "Type"
 
     SCHEMA = {
         FILENAME: pd.StringDtype(),
@@ -32,6 +31,5 @@ class TraceData:
         # because of TraceDataCategory's inheritance from enum.Enum
         CATEGORY: pd.StringDtype(),
         VARNAME: pd.StringDtype(),
-        VARTYPENAME: pd.StringDtype(),
-        VARTYPECLASS: object,
+        VARTYPE: object,
     }

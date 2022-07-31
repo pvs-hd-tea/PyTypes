@@ -58,16 +58,16 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
         subset = list(constants.TraceData.SCHEMA.keys())
-        subset.remove(constants.TraceData.VARTYPENAME)
+        subset.remove(constants.TraceData.VARTYPE)
         grouped_trace_data = trace_data.groupby(subset)
         processed_trace_data = grouped_trace_data.apply(lambda group: self._update_group(group))
         return processed_trace_data.reset_index(drop=True)
 
     def _update_group(self, group):
-        types_in_group = group[constants.TraceData.VARTYPENAME].tolist()
+        types_in_group = group[constants.TraceData.VARTYPE].tolist()
         common_base_type = self._get_common_base_type(types_in_group)
         if not self.only_replace_if_base_type_already_in_data or common_base_type in types_in_group:
-            group[constants.TraceData.VARTYPENAME] = common_base_type
+            group[constants.TraceData.VARTYPE] = common_base_type
         return group
 
     def _get_common_base_type(self, types: list[type]) -> type:
@@ -94,8 +94,8 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
         subset = list(constants.TraceData.SCHEMA.keys())
-        subset.remove(constants.TraceData.VARTYPENAME)
-        grouped_trace_data_with_unique_count = trace_data.groupby(subset)[constants.TraceData.VARTYPENAME].nunique()\
+        subset.remove(constants.TraceData.VARTYPE)
+        grouped_trace_data_with_unique_count = trace_data.groupby(subset)[constants.TraceData.VARTYPE].nunique()\
             .reset_index(name="amount_types")
         joined_trace_data = pd.merge(trace_data, grouped_trace_data_with_unique_count, on=subset, how='inner')
         trace_data_with_dropped_variables = joined_trace_data[

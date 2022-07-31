@@ -125,7 +125,8 @@ def test_callables():
     resource_path = pathlib.Path("tests", "resource", "typegen", "callable.py")
     assert resource_path.is_file()
 
-    c_clazz = "C"
+    from tests.resource.typegen.callable import C
+    c_clazz = C
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
@@ -136,7 +137,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "x",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -147,7 +147,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "y",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -158,7 +157,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_RETURN,
         "add",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -169,7 +167,6 @@ def test_callables():
         TraceDataCategory.CLASS_MEMBER,
         "a",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -180,7 +177,6 @@ def test_callables():
         TraceDataCategory.CLASS_MEMBER,
         "b",
         "str",
-        str
     ]
 
     traced.loc[len(traced.index)] = [
@@ -191,7 +187,6 @@ def test_callables():
         TraceDataCategory.CLASS_MEMBER,
         "c",
         "bool",
-        bool
     ]
 
     traced.loc[len(traced.index)] = [
@@ -202,7 +197,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "n",
         "str",
-        str
     ]
 
     traced.loc[len(traced.index)] = [
@@ -213,7 +207,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "s",
         "str",
-        str
     ]
 
     traced.loc[len(traced.index)] = [
@@ -224,7 +217,6 @@ def test_callables():
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
         "float",
-        float
     ]
 
     traced.loc[len(traced.index)] = [
@@ -235,7 +227,6 @@ def test_callables():
         TraceDataCategory.LOCAL_VARIABLE,
         "e",
         "NoneType",
-        NoneType
     ]
 
     traced.loc[len(traced.index)] = [
@@ -246,7 +237,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_RETURN,
         "method",
         "bytes",
-        bytes
     ]
 
     traced.loc[len(traced.index)] = [
@@ -257,7 +247,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_RETURN,
         "outer",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -268,7 +257,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "b",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -279,7 +267,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_RETURN,
         "inner",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -290,7 +277,6 @@ def test_callables():
         TraceDataCategory.FUNCTION_ARGUMENT,
         "i",
         "int",
-        int
     ]
 
     traced.loc[len(traced.index)] = [
@@ -301,7 +287,6 @@ def test_callables():
         TraceDataCategory.CLASS_MEMBER,
         "a",
         "int",
-        int
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
@@ -331,7 +316,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "z",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -341,7 +325,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
         "float",
-        float
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -351,7 +334,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
         "dict",
-        dict
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -361,7 +343,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "s",
         "set",
-        set
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -371,7 +352,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "l",
         "list",
-        list
     ]
 
     traced.loc[len(traced.index)] = [
@@ -382,7 +362,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "a",
         "float",
-        float
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -392,7 +371,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "b",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -402,7 +380,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
         "float",
-        float
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -412,7 +389,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "j",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -422,7 +398,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -432,7 +407,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -442,7 +416,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -452,7 +425,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
         "int",
-        int
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -462,7 +434,6 @@ def test_assignments():
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
         "int",
-        int
     ]
 
     hinted = gen._gen_hinted_ast(
