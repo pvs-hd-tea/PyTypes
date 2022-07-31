@@ -72,7 +72,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            arg_hint = arg_hints[TraceData.VARTYPE].values[0]
+            arg_hint = arg_hints[TraceData.VARTYPENAME].values[0]
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
@@ -95,14 +95,14 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         assert (
             rettypes.shape[0] <= 1
-        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPE].values}"
+        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPENAME].values}"
 
         # no type hint, skip
         if rettypes.shape[0] == 0:
             logger.debug(f"No hint found for return for '{fdef.name}'")
 
         if rettypes.shape[0] == 1:
-            ret_hint = rettypes[TraceData.VARTYPE].values[0]
+            ret_hint = rettypes[TraceData.VARTYPENAME].values[0]
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
@@ -202,14 +202,14 @@ class TypeHintTransformer(ast.NodeTransformer):
                 new_node = ast.AnnAssign(
                     target_node,
                     value=node.value,
-                    annotation=ast.Name(target_trace_data[TraceData.VARTYPE].values[0]),
+                    annotation=ast.Name(target_trace_data[TraceData.VARTYPENAME].values[0]),
                     simple=True,
                 )
                 return new_node
             else:
                 new_node = ast.AnnAssign(
                     target_node,
-                    annotation=ast.Name(target_trace_data[TraceData.VARTYPE].values[0]),
+                    annotation=ast.Name(target_trace_data[TraceData.VARTYPENAME].values[0]),
                     simple=True,
                 )
 

@@ -242,7 +242,7 @@ class Tracer:
             constants.TraceData.CLASS: [class_type] * len(varnames),
             constants.TraceData.FUNCNAME: [function_name] * len(varnames),
             constants.TraceData.VARNAME: varnames,
-            constants.TraceData.VARTYPE: vartypes,
+            constants.TraceData.VARTYPENAME: vartypes,
             constants.TraceData.LINENO: [line_number] * len(varnames),
             constants.TraceData.CATEGORY: [category] * len(varnames),
         }

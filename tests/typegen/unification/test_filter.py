@@ -150,8 +150,8 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = SubClass1
-    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = SubClass1
+    expected_trace_data.loc[3, constants.TraceData.VARTYPENAME] = SubClass1
+    expected_trace_data.loc[9, constants.TraceData.VARTYPENAME] = SubClass1
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
@@ -163,8 +163,8 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
 
 def test_replace_subtypes_filter_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[:3, constants.TraceData.VARTYPE] = BaseClass
-    expected_trace_data.loc[3:, constants.TraceData.VARTYPE] = SubClass1
+    expected_trace_data.loc[:3, constants.TraceData.VARTYPENAME] = BaseClass
+    expected_trace_data.loc[3:, constants.TraceData.VARTYPENAME] = SubClass1
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
