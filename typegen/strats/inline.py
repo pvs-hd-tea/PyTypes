@@ -70,7 +70,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            arg_hint = arg_hints[TraceData.VARTYPE].values[0]
+            arg_hint = arg_hints[TraceData.VARTYPE].values[0].__name__
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
@@ -100,7 +100,7 @@ class TypeHintTransformer(ast.NodeTransformer):
             logger.debug(f"No hint found for return for '{fdef.name}'")
 
         if rettypes.shape[0] == 1:
-            ret_hint = rettypes[TraceData.VARTYPE].values[0]
+            ret_hint = rettypes[TraceData.VARTYPE].values[0].__name__
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
@@ -129,8 +129,6 @@ class TypeHintTransformer(ast.NodeTransformer):
         assigns = self._visit_assigns(node)
         # Overwrite with actual assignment
         assert isinstance(assigns, list)
-        assigns[-1] = node
-
         return assigns
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
@@ -196,7 +194,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 continue
 
             logger.debug(f"Applying type hints for simple assignment '{target_name}'")
-            ann = target_trace_data[TraceData.VARTYPE].values[0]
+            ann = target_trace_data[TraceData.VARTYPE].values[0].__name__
 
             if contains_one_target and not isinstance(node, ast.AugAssign):
                 new_node = ast.AnnAssign(
