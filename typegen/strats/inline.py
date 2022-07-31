@@ -181,8 +181,9 @@ class TypeHintTransformer(ast.NodeTransformer):
         class_members = self.df[functools.reduce(operator.and_, var_mask_class_members)]
 
         # Attach hint directly to assignment and promote to AnnAssign
-        new_nodes: list[ast.AST] = []
-        contains_one_target = len(target_names_with_nodes) == 1
+        new_nodes: list[ast.AST] = list()
+        only_update_node = len(target_names_with_nodes) == 1 and not isinstance(node, ast.AugAssign)
+
         for target_name_with_node in target_names_with_nodes:
             target_name = target_name_with_node[0]
             target_node = target_name_with_node[1]
@@ -204,7 +205,7 @@ class TypeHintTransformer(ast.NodeTransformer):
             logger.debug(f"Applying type hints for simple assignment '{target_name}'")
             ann = target_trace_data[TraceData.VARTYPE].values[0].__name__
 
-            if contains_one_target and not isinstance(node, ast.AugAssign):
+            if only_update_node:
                 new_node = ast.AnnAssign(
                     target_node,
                     value=node.value,
