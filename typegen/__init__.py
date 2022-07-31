@@ -3,6 +3,9 @@ import click
 import pathlib
 from typegen.trace_data_file_collector import TraceDataFileCollector
 
+from .strats.stub import StubFileGenerator
+from .strats.inline import InlineGenerator
+
 __all__ = [
     TraceDataFileCollector.__name__,
 ]
@@ -23,6 +26,13 @@ __all__ = [
     is_flag=True,
     required=False,
     default=True,
+)
+@click.option(
+    "-g",
+    "--gen-strat",
+    help="Select a strategy for generating type hints",
+    type=click.Choice([StubFileGenerator.ident, InlineGenerator.ident], case_sensitive=False),
+    required=True,
 )
 @click.option(
     "-v",

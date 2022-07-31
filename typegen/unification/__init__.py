@@ -1,4 +1,4 @@
-from .filter import DropVariablesOfMultipleTypesFilter, TraceDataFilterList, ReplaceSubTypesFilter, \
+from .filters import DropVariablesOfMultipleTypesFilter, TraceDataFilterList, ReplaceSubTypesFilter, \
     DropDuplicatesFilter, TraceDataFilter, DropTestFunctionDataFilter
 
 

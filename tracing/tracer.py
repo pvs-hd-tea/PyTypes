@@ -164,30 +164,37 @@ class Tracer:
         line_number = frame.f_lineno
 
         names2types, category = None, None
+        frameinfo = inspect.getframeinfo(frame)
+
         if event == "call":
-            logger.info(f"Tracing call: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing call: {frameinfo}")
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_ARGUMENT
 
         elif event == "return":
-            logger.info(f"Tracing return: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing return: {frameinfo}")
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
+
+            # Special case
+            line_number = 0
 
             # Adds tracing data of class members if the return is from a class function.
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
-                self._update_trace_data_with(file_name, possible_class, "", 0, category2, names2types2)
+                self._update_trace_data_with(
+                    file_name, possible_class, "", 0, category2, names2types2
+                )
                 # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
-            logger.info(f"Tracing line: {inspect.getframeinfo(frame)}")
+            logger.info(f"Tracing line: {frameinfo}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
         elif event == "exception":
-            logger.info(f"Skipping exception: {inspect.getframeinfo(frame)}")
+            logger.info(f"Skipping exception: {frameinfo}")
             pass
 
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
@@ -248,9 +255,9 @@ class Tracer:
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, typing.Any],
-    new_values_by_variable: dict[str, typing.Any],
-) -> dict[str, typing.Any]:
+    old_values_by_variable: dict[str, str],
+    new_values_by_variable: dict[str, str],
+) -> dict[str, type]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
     for item in new_values_by_variable.items():
@@ -263,9 +270,7 @@ def _get_new_defined_local_variables_with_types(
 def _get_class_in_frame(frame) -> type | None:
     code = frame.f_code
     function_name = code.co_name
-    all_possible_classes = [
-        value for value in frame.f_globals.values() if inspect.isclass(value)
-    ]
+    all_possible_classes = filter(inspect.isclass, frame.f_globals.values())
     for possible_class in all_possible_classes:
         if hasattr(possible_class, function_name):
             member = getattr(possible_class, function_name)

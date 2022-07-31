@@ -12,7 +12,7 @@ def _compare_dataframes(expected: pd.DataFrame, actual: pd.DataFrame):
         with pd.option_context("display.max_rows", None, "display.max_columns", None):
             print(f"expected:\n{expected}\n\n")
             print(f"actual:\n{actual}\n\n")
-            print(expected.compare(actual))
+            print(f"diff:\n{expected.compare(actual)}")
             assert False
 
 
@@ -58,7 +58,7 @@ class SampleClass:
 
 
 cwd = pathlib.Path.cwd()
-
+from types import NoneType
 
 def test_if_tracer_is_initialized_with_invalid_values_error_is_raised():
     with pytest.raises(TypeError):
@@ -73,10 +73,10 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     string = "sample"
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    sample_class_type = type(SampleClass(integer, string))
-    string_type = type(string)
-    integer_type = type(integer)
-    none_type = type(None)
+    sample_class_type = SampleClass
+    string_type = str
+    integer_type = int
+    none_type = NoneType
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -127,7 +127,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
         "__init__",
-        52,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "__init__",
         none_type,
@@ -150,10 +150,10 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     string = "sample"
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    sample_class_type = type(SampleClass(integer, string))
-    string_type = type(string)
-    integer_type = type(integer)
-    bool_type = type(True)
+    sample_class_type = SampleClass
+    string_type = str
+    integer_type = int
+    bool_type = bool
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -222,7 +222,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         str(pathlib.Path("tests", "test_tracer.py")),
         sample_class_type,
         "sample_check_if_arguments_match_members",
-        57,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_check_if_arguments_match_members",
         bool_type,
@@ -244,8 +244,8 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     test_object = Tracer(cwd)
     invalid_string = "invalid string"
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    string_type = type(invalid_string)
-    none_type = type(None)
+    string_type = str
+    none_type = NoneType
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -260,7 +260,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
         "sample_convert_string_to_int",
-        46,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_convert_string_to_int",
         none_type,
@@ -280,8 +280,8 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     value1 = 18
     value2 = 17
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    itype = type(5)
-    btype = type(False)
+    itype = int
+    btype = bool
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -314,7 +314,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
         "sample_compare_integers",
-        33,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_integers",
         btype,
@@ -332,9 +332,9 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
     test_object = Tracer(cwd)
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    int_type = type(1)
-    string_type = type("string")
-    tuple_type = type((int_type, string_type))
+    int_type = int
+    string_type = str
+    tuple_type = tuple
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -358,7 +358,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
         "sample_get_two_variables_declared_in_one_line",
-        38,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_get_two_variables_declared_in_one_line",
         tuple_type,
@@ -380,9 +380,9 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     list2 = [1, 2, 4, 4]
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
-    list_type = type(list1)
-    int_type = type(1)
-    bool_type = type(True)
+    list_type = list
+    int_type = int
+    bool_type = bool
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
@@ -460,7 +460,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
         "sample_compare_integers",
-        33,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_integers",
         bool_type,
@@ -478,7 +478,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
         "sample_compare_two_int_lists",
-        27,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_two_int_lists",
         bool_type,
