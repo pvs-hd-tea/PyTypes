@@ -70,7 +70,10 @@ class TypeHintTransformer(ast.NodeTransformer):
                 logger.debug(f"No hint found for '{arg.arg}'")
                 continue
 
-            arg_hint = arg_hints[TraceData.VARTYPE].values[0].__name__
+            argtype = arg_hints[TraceData.VARTYPE].values[0]
+            assert argtype is not None
+
+            arg_hint = argtype.__name__
             logger.debug(f"Applying hint '{arg_hint}' to '{arg.arg}'")
             arg.annotation = ast.Name(arg_hint)
 
@@ -79,7 +82,8 @@ class TypeHintTransformer(ast.NodeTransformer):
         clazz_name = self._find_class(fdef)
 
         if clazz_name is not None:
-            clazz_mask = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None) == clazz_name
+            names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
+            clazz_mask = names == clazz_name
         else:
             clazz_mask = self.df[TraceData.CLASS].isnull()
 
@@ -100,7 +104,10 @@ class TypeHintTransformer(ast.NodeTransformer):
             logger.debug(f"No hint found for return for '{fdef.name}'")
 
         if rettypes.shape[0] == 1:
-            ret_hint = rettypes[TraceData.VARTYPE].values[0].__name__
+            rettype = rettypes[TraceData.VARTYPE].values[0]
+            assert rettype is not None
+
+            ret_hint = rettype.__name__
             logger.debug(f"Applying return type hint '{ret_hint}' to '{fdef.name}'")
             fdef.returns = ast.Name(ret_hint)
 
@@ -126,10 +133,10 @@ class TypeHintTransformer(ast.NodeTransformer):
             return names
 
     def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST | list[ast.AST]:
-        assigns = self._visit_assigns(node)
-        # Overwrite with actual assignment
-        assert isinstance(assigns, list)
-        return assigns
+        replace = self._visit_assigns(node)
+        assert isinstance(replace, list)
+
+        return replace
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
         return self._visit_assigns(node)
@@ -150,7 +157,8 @@ class TypeHintTransformer(ast.NodeTransformer):
 
         class_name = self._find_class(node)
         if class_name is not None:
-            class_check = self.df[TraceData.CLASS] == class_name
+            names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
+            class_check = names == class_name
         else:
             class_check = self.df[TraceData.CLASS].isnull()
 
