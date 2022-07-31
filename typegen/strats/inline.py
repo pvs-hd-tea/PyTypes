@@ -5,8 +5,6 @@ import operator
 import pathlib
 import itertools
 
-from numpy import isin
-
 from constants import TraceData
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator

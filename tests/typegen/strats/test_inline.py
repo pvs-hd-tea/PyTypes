@@ -1,7 +1,6 @@
 import ast
 import logging
 import pathlib
-from types import NoneType
 
 import constants
 import typing
@@ -9,7 +8,6 @@ import typing
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
 from typegen.strats.inline import InlineGenerator
-
 
 import pandas as pd
 
@@ -125,7 +123,7 @@ def test_callables():
     resource_path = pathlib.Path("tests", "resource", "typegen", "callable.py")
     assert resource_path.is_file()
 
-    from tests.resource.typegen.callable import C
+    from tests.resource.typegen.callable import C # type: ignore
     c_clazz = C
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
