@@ -210,8 +210,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                     annotation=ast.Name(ann),
                     simple=True,
                 )
-
-            new_nodes.append(new_node)
+                new_nodes.append(new_node)
 
         new_nodes.append(node)
         return new_nodes
