@@ -132,7 +132,7 @@ class TypeHintTransformer(ast.NodeTransformer):
                 names += self._extract_target_names_with_nodes(target)
             return names
 
-    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST | list[ast.AST]:
+    def visit_AugAssign(self, node: ast.AugAssign) -> list[ast.AST]:
         replace = self._visit_assigns(node)
         assert isinstance(replace, list)
 
