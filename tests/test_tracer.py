@@ -83,7 +83,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         sample_class_type,
         "__init__",
         50,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "this",
         sample_class_type,
     ]
@@ -92,7 +92,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         sample_class_type,
         "__init__",
         50,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "integer",
         integer_type,
     ]
@@ -101,7 +101,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         sample_class_type,
         "__init__",
         50,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "string",
         string_type,
     ]
@@ -160,7 +160,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         sample_class_type,
         "sample_check_if_arguments_match_members",
         54,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "a",
         sample_class_type,
     ]
@@ -169,7 +169,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         sample_class_type,
         "sample_check_if_arguments_match_members",
         54,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "integer",
         integer_type,
     ]
@@ -178,7 +178,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         sample_class_type,
         "sample_check_if_arguments_match_members",
         54,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "string",
         string_type,
     ]
@@ -252,7 +252,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
         None,
         "sample_convert_string_to_int",
         41,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "string_to_convert",
         string_type,
     ]
@@ -288,7 +288,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         None,
         "sample_compare_integers",
         31,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "value1",
         itype,
     ]
@@ -297,7 +297,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         None,
         "sample_compare_integers",
         31,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "value2",
         itype,
     ]
@@ -389,7 +389,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         "sample_compare_two_int_lists",
         19,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "list1",
         list_type,
     ]
@@ -398,7 +398,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         "sample_compare_two_int_lists",
         19,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "list2",
         list_type,
     ]
@@ -434,7 +434,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         "sample_compare_integers",
         31,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "value1",
         int_type,
     ]
@@ -443,7 +443,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         "sample_compare_integers",
         31,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "value2",
         int_type,
     ]

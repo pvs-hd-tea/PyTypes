@@ -169,7 +169,7 @@ class Tracer:
         if event == "call":
             logger.info(f"Tracing call: {frameinfo}")
             names2types = self._on_call(frame, arg)
-            category = TraceDataCategory.FUNCTION_ARGUMENT
+            category = TraceDataCategory.FUNCTION_PARAMETER
 
         elif event == "return":
             logger.info(f"Tracing return: {frameinfo}")

@@ -42,7 +42,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         BaseClass,
         "function_name",
         1,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         SubClass2,
     ]
@@ -51,7 +51,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         BaseClass,
         "function_name",
         1,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         SubClass2,
     ]
@@ -60,7 +60,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         BaseClass,
         "function_name",
         1,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         SubClass3,
     ]

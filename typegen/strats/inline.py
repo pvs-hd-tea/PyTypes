@@ -48,7 +48,7 @@ class TypeHintTransformer(ast.NodeTransformer):
     def _add_parameter_hints(self, fdef: ast.FunctionDef) -> None:
         # parameters
         param_masks = [
-            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_ARGUMENT,
+            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_PARAMETER,
             self.df[TraceData.FUNCNAME] == fdef.name,
         ]
         params = self.df[functools.reduce(operator.and_, param_masks)]
