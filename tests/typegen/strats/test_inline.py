@@ -135,7 +135,7 @@ def test_callables():
         None,
         "add",
         1,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "x",
         int,
     ]
@@ -145,7 +145,7 @@ def test_callables():
         None,
         "add",
         1,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "y",
         int,
     ]
@@ -195,7 +195,7 @@ def test_callables():
         c_clazz,
         "method",
         8,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "n",
         str,
     ]
@@ -205,7 +205,7 @@ def test_callables():
         c_clazz,
         "method",
         8,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "s",
         str,
     ]
@@ -255,7 +255,7 @@ def test_callables():
         c_clazz,
         "outer",
         15,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "b",
         int,
     ]
@@ -275,7 +275,7 @@ def test_callables():
         c_clazz,
         "inner",
         16,
-        TraceDataCategory.FUNCTION_ARGUMENT,
+        TraceDataCategory.FUNCTION_PARAMETER,
         "i",
         int,
     ]
