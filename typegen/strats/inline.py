@@ -337,10 +337,10 @@ class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, wrapper: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
     ) -> cst.Module:
         visitor = TypeHintTransformer(applicable)
-        hinted = wrapper.visit(visitor)
+        hinted = hintless_ast.visit(visitor)
 
         return hinted
 
