@@ -48,9 +48,9 @@ class TypeHintGenerator(abc.ABC):
             ]
             if not applicable.empty:
                 module = cst.parse_module(source=path.open().read())
-                wrapper = cst.MetadataWrapper(module)
+                module_and_meta = cst.MetadataWrapper(module)
 
-                typed = self._gen_hinted_ast(df=applicable, hintless_ast=wrapper)
+                typed = self._gen_hinted_ast(df=applicable, hintless_ast=module_and_meta)
                 self._store_hinted_ast(source_file=path, hinting=typed)
 
     @abc.abstractmethod
