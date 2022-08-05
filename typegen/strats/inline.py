@@ -37,17 +37,17 @@ class TypeHintTransformer(cst.CSTTransformer):
     def __init__(self, relevant: pd.DataFrame) -> None:
         super().__init__()
         self.df = relevant
-        self._parent_stack: list[cst.FunctionDef | cst.ClassDef] = []
+        self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
 
     def _innermost_class(self) -> cst.ClassDef | None:
-        fromtop = reversed(self._parent_stack)
+        fromtop = reversed(self._scope_stack)
         classes = filter(lambda p: isinstance(p, cst.ClassDef), fromtop)
 
         first: cst.ClassDef | None = next(classes, None)  # type: ignore
         return first
 
     def _innermost_function(self) -> cst.FunctionDef | None:
-        fromtop = reversed(self._parent_stack)
+        fromtop = reversed(self._scope_stack)
         fdefs = filter(lambda p: isinstance(p, cst.FunctionDef), fromtop)
 
         first: cst.FunctionDef | None = next(fdefs, None)  # type: ignore
@@ -68,13 +68,13 @@ class TypeHintTransformer(cst.CSTTransformer):
         logger.debug(f"Entering class '{cdef.name.value}'")
 
         # Track ClassDefs to disambiguate functions from methods
-        self._parent_stack.append(cdef)
+        self._scope_stack.append(cdef)
         return True
 
     def leave_ClassDef(self, _: cst.ClassDef, updated: cst.ClassDef) -> cst.ClassDef:
         logger.debug(f"Leaving class '{updated.name.value}'")
 
-        self._parent_stack.pop()
+        self._scope_stack.pop()
         return updated
 
     def visit_FunctionDef(self, fdef: cst.FunctionDef) -> bool | None:
@@ -85,7 +85,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         for child in cst.walk(direct):  # type: ignore
             child.parent = node  # type: ignore"""
         logger.debug(f"Entering function '{fdef.name.value}'")
-        self._parent_stack.append(fdef)
+        self._scope_stack.append(fdef)
         return True
 
     def leave_FunctionDef(
