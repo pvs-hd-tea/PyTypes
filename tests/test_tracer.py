@@ -68,7 +68,6 @@ def test_if_tracer_is_initialized_with_invalid_values_error_is_raised():
 
 
 def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     integer = 5
     string = "sample"
 
@@ -135,17 +134,18 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object.start_trace()
-    SampleClass(integer, string)
-    test_object.stop_trace()
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        SampleClass(integer, string)
+        test_object.stop_trace()
 
-    actual_trace_data = test_object.trace_data
+        actual_trace_data = test_object.trace_data
 
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     integer = 5
     string = "sample"
 
@@ -232,16 +232,17 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 
     sample_object = SampleClass(integer, string)
 
-    test_object.start_trace()
-    sample_object.sample_check_if_arguments_match_members(integer, string)
-    test_object.stop_trace()
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        sample_object.sample_check_if_arguments_match_members(integer, string)
+        test_object.stop_trace()
 
-    actual_trace_data = test_object.trace_data
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        actual_trace_data = test_object.trace_data
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     invalid_string = "invalid string"
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     string_type = str
@@ -267,16 +268,17 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object.start_trace()
-    sample_convert_string_to_int(invalid_string)
-    test_object.stop_trace()
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        sample_convert_string_to_int(invalid_string)
+        test_object.stop_trace()
 
-    actual_trace_data = test_object.trace_data
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        actual_trace_data = test_object.trace_data
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     value1 = 18
     value2 = 17
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
@@ -321,16 +323,17 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object.start_trace()
-    sample_compare_integers(value1, value2)
-    test_object.stop_trace()
-    actual_trace_data = test_object.trace_data
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        sample_compare_integers(value1, value2)
+        test_object.stop_trace()
+        actual_trace_data = test_object.trace_data
 
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     int_type = int
     string_type = str
@@ -366,16 +369,17 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
 
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object.start_trace()
-    sample_get_two_variables_declared_in_one_line()
-    test_object.stop_trace()
-    actual_trace_data = test_object.trace_data
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        sample_get_two_variables_declared_in_one_line()
+        test_object.stop_trace()
+        actual_trace_data = test_object.trace_data
 
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data():
-    test_object = Tracer(cwd)
     list1 = [1, 2, 3, 4]
     list2 = [1, 2, 4, 4]
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
@@ -485,30 +489,31 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object.start_trace()
-    sample_compare_two_int_lists(list1, list2)
-    test_object.stop_trace()
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
+        sample_compare_two_int_lists(list1, list2)
+        test_object.stop_trace()
 
-    actual_trace_data = test_object.trace_data
-    _compare_dataframes(expected_trace_data, actual_trace_data)
+        actual_trace_data = test_object.trace_data
+        _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
 def test_if_tracer_starts_trace_data_is_none_or_empty():
-    test_object = Tracer(cwd)
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.start_trace()
 
-    test_object.start_trace()
+        tracing_data = test_object.trace_data
 
-    tracing_data = test_object.trace_data
+        # Clears trace setup.
+        test_object.stop_trace()
 
-    # Clears trace setup.
-    test_object.stop_trace()
-
-    assert tracing_data is None or len(tracing_data) == 0
+        assert tracing_data is None or len(tracing_data) == 0
 
 
 def test_if_tracer_stops_no_trace_is_set():
-    test_object = Tracer(cwd)
-
-    test_object.stop_trace()
-
-    assert sys.gettrace() is None
+    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    for test_object in test_objects:
+        test_object.stop_trace()
+        assert sys.gettrace() is None
