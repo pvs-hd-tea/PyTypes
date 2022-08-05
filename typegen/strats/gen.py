@@ -1,5 +1,5 @@
 import abc
-import ast
+import libcst as cst
 import pathlib
 import typing
 
@@ -46,19 +46,20 @@ class TypeHintGenerator(abc.ABC):
                 self.types[constants.TraceData.FILENAME] == str(path)
             ]
             if not applicable.empty:
-                nodes = ast.parse(source=path.open().read(), type_comments=True)
-                typed = self._gen_hinted_ast(df=applicable, nodes=nodes)
+                module = cst.parse_module(source=path.open().read(), type_comments=True)
+                module_w_metadata = cst.MetadataWrapper(module)
+                typed = self._gen_hinted_ast(df=applicable, nodes=module_w_metadata)
                 self._store_hinted_ast(source_file=path, hinting=typed)
 
     @abc.abstractmethod
-    def _gen_hinted_ast(self, applicable: pd.DataFrame, nodes: ast.AST) -> ast.AST:
+    def _gen_hinted_ast(self, applicable: pd.DataFrame, nodes: cst.Module) -> cst.Module:
         """
         Perform operations to generate types for the given file
         """
         pass
 
     @abc.abstractmethod
-    def _store_hinted_ast(self, source_file: pathlib.Path, hinting: ast.AST) -> None:
+    def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
         """
         Store the hinted AST at the correct location, based upon the `source_file` param
         """
