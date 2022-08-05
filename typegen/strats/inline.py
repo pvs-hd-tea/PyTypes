@@ -39,14 +39,14 @@ class TypeHintTransformer(cst.CSTTransformer):
         self.df = relevant
         self._parent_stack: list[cst.FunctionDef | cst.ClassDef] = []
 
-    def _outermost_class(self) -> cst.ClassDef | None:
+    def _innermost_class(self) -> cst.ClassDef | None:
         fromtop = reversed(self._parent_stack)
         classes = filter(lambda p: isinstance(p, cst.ClassDef), fromtop)
 
         first: cst.ClassDef | None = next(classes, None)  # type: ignore
         return first
 
-    def _outermost_function(self) -> cst.FunctionDef | None:
+    def _innermost_function(self) -> cst.FunctionDef | None:
         fromtop = reversed(self._parent_stack)
         fdefs = filter(lambda p: isinstance(p, cst.FunctionDef), fromtop)
 
@@ -94,7 +94,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         # Retrieve outermost class from parent stack
         # to disambig. methods and functions
 
-        cdef = self._outermost_class()
+        cdef = self._innermost_class()
         if cdef is not None:
             names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
             clazz_mask = names == cdef.name.value
@@ -134,7 +134,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         self, original_node: cst.Param, updated_node: cst.Param
     ) -> cst.Param:
         # Retrieve outermost function from parent stack
-        fdef = self._outermost_function()
+        fdef = self._innermost_function()
         assert (
             fdef is not None
         ), f"param {original_node.name.value} has not been associated with a function"
@@ -177,7 +177,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         logger.debug(f"Applying hints to '{', '.join(target_idents)}' for an AugAssign")
 
-        cdef = self._outermost_class()
+        cdef = self._innermost_class()
         if cdef is not None:
             names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
             class_check = names == cdef.name.value
@@ -244,7 +244,7 @@ class TypeHintTransformer(cst.CSTTransformer):
             f"Searching for hints to '{', '.join(target_idents)}' for an Assign"
         )
 
-        cdef = self._outermost_class()
+        cdef = self._innermost_class()
         if cdef is not None:
             names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
             class_check = names == cdef.name.value
