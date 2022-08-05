@@ -317,7 +317,7 @@ def test_callables():
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
-        applicable=traced, wrapper=load_with_metadata(resource_path)
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
 
     logging.debug(f"\n{hinted.code}")
@@ -461,7 +461,7 @@ def test_assignments():
     ]
 
     hinted = gen._gen_hinted_ast(
-        applicable=traced, wrapper=load_with_metadata(resource_path)
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
     logging.debug(f"\n{hinted.code}")
     hinted.visit(HintTest())
