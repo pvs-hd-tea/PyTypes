@@ -1,6 +1,12 @@
 import logging
 import click
 import pathlib
+
+import constants
+
+from tracing import ptconfig
+
+from typegen.strats.gen import TypeHintGenerator
 from typegen.trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
@@ -16,7 +22,7 @@ __all__ = [
     "-p",
     "--path",
     type=click.Path(exists=True, dir_okay=True, writable=False, readable=True, path_type=pathlib.Path),
-    help="Path to directory",
+    help="Path to project directory",
     required=True,
 )
 @click.option(
@@ -44,16 +50,22 @@ __all__ = [
     default=False,
 )
 def main(**params):
-    path, verb, subdirs = (
+    projpath, verb, strat_name, subdirs = (
         params["path"],
         params["verbose"],
+        params["gen_strat"],
         params["subdirs"],
     )
 
     logging.basicConfig(level=verb)
+    logging.debug(f"{projpath=}, {verb=}, {strat_name=} {subdirs=}")
 
-    logging.debug(f"{path=}, {verb=}, {subdirs=}")
+    pytypes_cfg = ptconfig._load_config(projpath / constants.CONFIG_FILE_NAME)
+    traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
 
     collector = TraceDataFileCollector()
-    collector.collect_trace_data(path, subdirs)
+    collector.collect_trace_data(traced_df_folder, subdirs)
     print(collector.trace_data)
+
+    hint_generator = TypeHintGenerator(ident=strat_name, types=collector.trace_data)
+    hint_generator.apply()
