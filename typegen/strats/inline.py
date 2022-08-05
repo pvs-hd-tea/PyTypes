@@ -326,13 +326,11 @@ class TypeHintTransformer(cst.CSTTransformer):
         )
 
         # Replace simple assignment with annotated assignment
-        annass = cst.AnnAssign(
+        return cst.AnnAssign(
             target=original_node.targets[0].target,
             annotation=cst.Annotation(cst.Name(value=hint)),
             value=original_node.value,
         )
-
-        return annass
 
 
 class InlineGenerator(TypeHintGenerator):
