@@ -3,7 +3,6 @@ import pathlib
 import typing
 
 import libcst as cst
-from libcst.metadata.position_provider import PositionProvider
 import pandas as pd
 
 import constants
