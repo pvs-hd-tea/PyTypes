@@ -23,14 +23,16 @@ logger = logging.getLogger(__name__)
 
 
 class Tracer:
-    def __init__(self, project_dir: pathlib.Path):
+    def __init__(self, project_dir: pathlib.Path, apply_opts=True):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
         self.project_dir = project_dir
-
-        self.optimisation_stack: list[Optimisation] = list()
         self.old_values_by_variable_by_function_name: dict[str, dict] = dict()
+        self.apply_opts = apply_opts
+
+        if self.apply_opts:
+            self.optimisation_stack: list[Optimisation] = list()
 
     def start_trace(self) -> None:
         """Starts the trace."""
@@ -41,7 +43,8 @@ class Tracer:
     def stop_trace(self) -> None:
         """Stops the trace."""
         # Clear out all optimisations
-        self.optimisation_stack = list()
+        if self.apply_opts:
+            self.optimisation_stack.clear()
 
         logger.info("Stopping trace")
         sys.settrace(None)
@@ -144,17 +147,18 @@ class Tracer:
         if not pathlib.Path(frame.f_code.co_filename).is_relative_to(self.project_dir):
             return self._on_trace_is_called
 
-        fwm = FrameWithMetadata(frame)
+        if self.apply_opts:
+            fwm = FrameWithMetadata(frame)
 
-        self._advance_optimisations(fwm)
-        self._update_optimisations(fwm)
+            self._advance_optimisations(fwm)
+            self._update_optimisations(fwm)
 
-        # Tracing has been toggled off for this line now, simply return
-        if any(
-            opt.status() in Optimisation.OPTIMIZING_STATES
-            for opt in self.optimisation_stack
-        ):
-            return self._on_trace_is_called
+            # Tracing has been toggled off for this line now, simply return
+            if any(
+                opt.status() in Optimisation.OPTIMIZING_STATES
+                for opt in self.optimisation_stack
+            ):
+                return self._on_trace_is_called
 
         code = frame.f_code
         function_name = code.co_name
