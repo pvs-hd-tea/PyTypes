@@ -45,9 +45,7 @@ class HintTest(cst.CSTVisitor):
                 assert (
                     node.returns is not None
                 ), f"Missing return annotation on {dump(node)}"
-                assert (
-                    node.returns.annotation.value == "bytes"
-                ), f"{dump(node)}"
+                assert node.returns.annotation.value == "bytes", f"{dump(node)}"
             else:
                 for param in node.params.params:
                     assert (
@@ -150,169 +148,200 @@ def test_callables():
     resource_path = pathlib.Path("tests", "resource", "typegen", "callable.py")
     assert resource_path.is_file()
 
-    from tests.resource.typegen.callable import C  # type: ignore
-
-    c_clazz = C
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "x",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "add",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "b",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "c",
-        bool,
+        None,
+        "bool",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "n",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "s",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         10,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        float,
+        None,
+        "float",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         11,
         TraceDataCategory.LOCAL_VARIABLE,
         "e",
-        NoneType,
+        None,
+        "NoneType",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "method",
-        bytes,
+        None,
+        "bytes",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "outer",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         15,
         TraceDataCategory.FUNCTION_PARAMETER,
         "b",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "inner",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         16,
         TraceDataCategory.FUNCTION_PARAMETER,
         "i",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
@@ -336,128 +365,156 @@ def test_assignments():
         str(resource_path),
         None,
         None,
+        None,
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "z",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         4,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         7,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        dict,
+        None,
+        "dict",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         8,
         TraceDataCategory.LOCAL_VARIABLE,
         "s",
-        set,
+        None,
+        "set",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
         None,
+        None,
         9,
         TraceDataCategory.LOCAL_VARIABLE,
         "l",
-        list,
+        None,
+        "list",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
         None,
+        None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "a",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "b",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "j",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
         None,
+        None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     hinted = gen._gen_hinted_ast(
