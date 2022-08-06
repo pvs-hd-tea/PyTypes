@@ -21,7 +21,7 @@ class TraceData:
     FUNCNAME = "FunctionName"
     LINENO = "LineNo"
     CATEGORY = "Category"
-    VARNAME = "Name"
+    VARNAME = "VarName"
     VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
 
