@@ -1,4 +1,8 @@
 import abc
+import logging
+import operator
+import functools
+import os
 import pathlib
 import typing
 
@@ -10,21 +14,34 @@ import constants
 # There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
 class _AddImportVisitor(cst.CSTTransformer):
     def __init__(self, applicable: pd.DataFrame) -> None:
-        self.applicable = applicable
+        self.applicable = applicable.copy()
 
-    def leave_Module(
-        self, _: cst.Module, updated_node: cst.Module
-    ) -> cst.Module:
+    def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
+        def file2module(file: str) -> str:
+            return os.path.splitext(file.replace(os.path.sep, "."))[0]
+
         # Stupid implementation: make from x import y everywhere
+        self.applicable["modules"] = self.applicable[constants.TraceData.FILENAME].map(
+            lambda f: file2module(f)
+        )
 
         # ignore builtins
-        non_builtin = self.applicable[
-            self.applicable[constants.TraceData.VARTYPE_MODULE].notnull()
+        non_builtin = self.applicable[constants.TraceData.VARTYPE_MODULE].notnull()
+        # ignore classes in the same module
+        not_in_same_mod = (
+            self.applicable["modules"]
+            != self.applicable[constants.TraceData.VARTYPE_MODULE]
+        )
+        retain_mask = [
+            non_builtin,
+            not_in_same_mod,
         ]
-        if non_builtin.empty:
+
+        important = self.applicable[functools.reduce(operator.and_, retain_mask)]
+        if important.empty:
             return updated_node
 
-        importables = non_builtin.groupby(
+        importables = important.groupby(
             [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
         ).agg({constants.TraceData.VARTYPE: list})
 
@@ -45,9 +62,7 @@ class _AddImportVisitor(cst.CSTTransformer):
             imports.append(imp_from)
             imports.append(cst.Newline())
 
-        return updated_node.with_changes(
-            body=imports + list(updated_node.body)
-        )
+        return updated_node.with_changes(body=imports + list(updated_node.body))
 
 
 class TypeHintGenerator(abc.ABC):
@@ -114,6 +129,8 @@ class TypeHintGenerator(abc.ABC):
         pass
 
     def _add_all_imports(
-        self, applicable: pd.DataFrame, hinted_ast: cst.Module
+        self,
+        applicable: pd.DataFrame,
+        hinted_ast: cst.Module,
     ) -> cst.Module:
         return hinted_ast.visit(_AddImportVisitor(applicable))

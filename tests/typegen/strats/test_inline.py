@@ -1,8 +1,8 @@
 import libcst as cst
 from libcst.tool import dump
+from libcst.matchers import matches
 import logging
 import pathlib
-from types import NoneType
 
 import constants
 import typing
@@ -15,6 +15,10 @@ import pandas as pd
 
 
 class HintTest(cst.CSTVisitor):
+    @typing.no_type_check
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        assert False, "no imports expected!"
+
     @typing.no_type_check
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         if node.name.value == "add":
@@ -348,9 +352,9 @@ def test_callables():
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-
-    logging.debug(f"\n{hinted.code}")
-    hinted.visit(HintTest())
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
 
 
 def test_assignments():
@@ -520,33 +524,20 @@ def test_assignments():
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-    logging.debug(f"\n{hinted.code}")
-    hinted.visit(HintTest())
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
 
 
 def test_imported():
-    class ImportedHintTest(cst.CSTVisitor):
-        @typing.no_type_check
-        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-            assert isinstance(node.module, cst.Attribute)
-            assert node.module == cst.parse_expression("tests", "resource", "typegen", "callable")
-
-            assert len(node.names) == 1
-            assert node.names[0].name.value == "C"
-
-        @typing.no_type_check
-        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
-            if node.name.value == "function":
-                assert node.params.params[0].name.value == "c"
-                assert node.params.params[0].annotation.annotation.value == "C"
-
-                assert node.returns.annotation.value == "int"
-
     resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
     assert resource_path.is_file()
 
     c_clazz_module = "tests.resource.typegen.callable"
     c_clazz = "C"
+
+    anotherc_clazz_module = "tests.resource.typegen.importing"
+    anotherc_clazz = "AnotherC"
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
@@ -559,7 +550,7 @@ def test_imported():
         TraceDataCategory.FUNCTION_RETURN,
         "function",
         None,
-        "int"
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
@@ -571,7 +562,31 @@ def test_imported():
         TraceDataCategory.FUNCTION_PARAMETER,
         "c",
         c_clazz_module,
-        c_clazz
+        c_clazz,
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "another_function",
+        None,
+        "str",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        7,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        anotherc_clazz_module,
+        anotherc_clazz,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -580,4 +595,34 @@ def test_imported():
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
-    hinted.visit(ImportedHintTest())
+
+    class ImportedHintTest(cst.CSTVisitor):
+        @typing.no_type_check
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            assert isinstance(node.module, cst.Attribute)
+
+            if matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "C"
+
+            else:
+                assert False, f"Unexpected ImportFrom: {node.module.value}"
+
+        @typing.no_type_check
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            if node.name.value == "function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "C"
+
+                assert node.returns.annotation.value == "int"
+
+            elif node.name.value == "another_function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "AnotherC"
+
+                assert node.returns.annotation.value == "str"
+
+            else:
+                assert False, f"Unhandled functiondef: {node.name.value}"
+
+    imported.visit(ImportedHintTest())
