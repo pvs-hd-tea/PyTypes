@@ -72,63 +72,77 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     string = "sample"
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    sample_class_type = SampleClass
-    string_type = str
-    integer_type = int
-    none_type = NoneType
+
+    sample_class_module = str(pathlib.Path("tests", "test_tracer"))
+    sample_class_type = "SampleClass"
+    string_type = "str"
+    integer_type = "int"
+    none_type = "NoneType"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
         "__init__",
         50,
         TraceDataCategory.FUNCTION_PARAMETER,
         "this",
+        sample_class_module,
         sample_class_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
         "__init__",
         50,
         TraceDataCategory.FUNCTION_PARAMETER,
         "integer",
+        None,
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
         "__init__",
         50,
         TraceDataCategory.FUNCTION_PARAMETER,
         "string",
+        None,
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
-        "",
+        "__init__",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "integer",
+        None,
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
-        "",
+        "__init__",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "string",
+        None,
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        sample_class_module,
         sample_class_type,
         "__init__",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "__init__",
+        None,
         none_type,
     ]
 
