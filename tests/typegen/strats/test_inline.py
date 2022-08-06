@@ -522,3 +522,45 @@ def test_assignments():
     )
     logging.debug(f"\n{hinted.code}")
     hinted.visit(HintTest())
+
+
+def test_imported():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
+    assert resource_path.is_file()
+
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        1,
+        TraceDataCategory.FUNCTION_RETURN,
+        "function",
+        None,
+        "int"
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        1,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        c_clazz_module,
+        c_clazz
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    logging.debug(f"\n{hinted.code}")
+    #hinted.visit(HintTest())
+    assert False
