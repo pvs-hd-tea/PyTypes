@@ -31,7 +31,9 @@ class Tracer:
             constants.TraceData.SCHEMA
         )
         self.project_dir = project_dir
-        self.old_values_by_variable_by_function_name: dict[str, dict] = dict()
+
+        # Map of a function name to the variables in that functions scope
+        self.old_vars: dict[str, set] = dict()
         self.apply_opts = apply_opts
 
         if self.apply_opts:
@@ -55,12 +57,13 @@ class Tracer:
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
 
-        trace_name, trace_file = Tracer.__name__, inspect.getfile(Tracer)
+        tname, fname = Tracer.__name__, self.stop_trace.__name__
         drop_masks = [
-            self.trace_data[constants.TraceData.CLASS] != trace_name,
-            self.trace_data[constants.TraceData.CLASS_MODULE] != trace_file,
+            self.trace_data[constants.TraceData.CLASS] == tname,
+            self.trace_data[constants.TraceData.FUNCNAME] == fname,
         ]
-        self.trace_data = self.trace_data[functools.reduce(operator.and_, drop_masks)]
+        td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
+        self.trace_data = self.trace_data.drop(td_drop.index)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -116,8 +119,8 @@ class Tracer:
 
     def _on_call(self, frame, _: typing.Any) -> dict[str, tuple[str | None, str]]:
         names2types = {
-            var_name: _get_module_and_name(type(var_value), self.project_dir)
-            for var_name, var_value in frame.f_locals.items()
+            name: _get_module_and_name(type(value), self.project_dir)
+            for name, value in frame.f_locals.items()
         }
 
         return names2types
@@ -132,7 +135,7 @@ class Tracer:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
-            self.old_values_by_variable_by_function_name[function_name],
+            self.old_vars[function_name],
             frame.f_locals,
             self.project_dir,
         )
@@ -200,6 +203,9 @@ class Tracer:
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
 
+            # Remove from storage
+            self.old_vars.pop(function_name)
+
             # Special case
             line_number = 0
 
@@ -208,7 +214,7 @@ class Tracer:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
 
-                # Line number is 0 and function name is empty to 
+                # Line number is 0 and function name is empty to
                 # unify matching class members more better.
 
                 # Class Members contain state and can theoretically, at any time, on the same line, be of many types
@@ -247,10 +253,7 @@ class Tracer:
                 names2types,
             )
 
-        self.old_values_by_variable_by_function_name[
-            function_name
-        ] = frame.f_locals.copy()
-
+        self.old_vars[function_name] = set(frame.f_locals.keys())
         return self._on_trace_is_called
 
     def _update_trace_data_with(
@@ -276,8 +279,9 @@ class Tracer:
         @param names2types A dictionary containing the variable name, the type's module and the type's name.
         """
         varnames = list(names2types.keys())
-        vartypes = list(map(operator.itemgetter(1), names2types.values()))
+
         vartype_modules = list(map(operator.itemgetter(0), names2types.values()))
+        vartypes = list(map(operator.itemgetter(1), names2types.values()))
 
         d = {
             constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
@@ -291,21 +295,26 @@ class Tracer:
             constants.TraceData.VARTYPE: vartypes,
         }
         update = pd.DataFrame(d).astype(constants.TraceData.SCHEMA)
+
+        logger.debug(f"Update: \n{update}")
+
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
         ).astype(constants.TraceData.SCHEMA)
 
 
 def _get_new_defined_local_variables_with_types(
-    prev_vars2vals: dict[str, type],
+    prev_vars2vals: set[str],
     new_vars2vals: dict[str, type],
     proj_root: pathlib.Path,
 ) -> dict[str, tuple[str | None, str]]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
+
     for name, value in new_vars2vals.items():
         if name not in prev_vars2vals:
             names2types[name] = _get_module_and_name(type(value), proj_root)
+
     return names2types
 
 

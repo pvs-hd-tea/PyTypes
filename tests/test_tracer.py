@@ -279,25 +279,30 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
     invalid_string = "invalid string"
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    string_type = str
-    none_type = NoneType
+
+    string_type = "str"
+    none_type = "NoneType"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_convert_string_to_int",
         41,
         TraceDataCategory.FUNCTION_PARAMETER,
         "string_to_convert",
+        None,
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_convert_string_to_int",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_convert_string_to_int",
+        None,
         none_type,
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
@@ -316,8 +321,8 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     value1 = 18
     value2 = 17
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    itype = int
-    btype = bool
+    itype = "int"
+    btype = "bool"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
