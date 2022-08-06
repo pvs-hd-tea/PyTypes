@@ -207,16 +207,21 @@ class Tracer:
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
+
+                # Line number is 0 and function name is empty to 
+                # unify matching class members more better.
+
+                # Class Members contain state and can theoretically, at any time, on the same line, be of many types
+
                 self._update_trace_data_with(
                     file_name,
                     class_module,
                     class_name,
-                    function_name,
+                    "",
                     0,
                     category2,
                     names2types2,
                 )
-                # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
             logger.info(f"Tracing line: {frameinfo}")
@@ -292,16 +297,15 @@ class Tracer:
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, type],
-    new_values_by_variable: dict[str, type],
+    prev_vars2vals: dict[str, type],
+    new_vars2vals: dict[str, type],
     proj_root: pathlib.Path,
 ) -> dict[str, tuple[str | None, str]]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
-    for item in new_values_by_variable.items():
-        variable_name, variable_value = item[0], item[1]
-        if variable_name not in old_values_by_variable:
-            names2types[variable_name] = _get_module_and_name(variable_value, proj_root)
+    for name, value in new_vars2vals.items():
+        if name not in prev_vars2vals:
+            names2types[name] = _get_module_and_name(type(value), proj_root)
     return names2types
 
 
