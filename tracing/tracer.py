@@ -296,8 +296,6 @@ class Tracer:
         }
         update = pd.DataFrame(d).astype(constants.TraceData.SCHEMA)
 
-        logger.debug(f"Update: \n{update}")
-
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
         ).astype(constants.TraceData.SCHEMA)

@@ -327,37 +327,45 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_integers",
         31,
         TraceDataCategory.FUNCTION_PARAMETER,
         "value1",
+        None,
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_integers",
         31,
         TraceDataCategory.FUNCTION_PARAMETER,
         "value2",
+        None,
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_integers",
         33,
         TraceDataCategory.LOCAL_VARIABLE,
         "result",
+        None,
         btype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_integers",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_integers",
+        None,
         btype,
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
@@ -374,35 +382,41 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
 
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    int_type = int
-    string_type = str
-    tuple_type = tuple
+    int_type = "int"
+    string_type = "str"
+    tuple_type = "tuple"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_get_two_variables_declared_in_one_line",
         38,
         TraceDataCategory.LOCAL_VARIABLE,
         "variable1",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_get_two_variables_declared_in_one_line",
         38,
         TraceDataCategory.LOCAL_VARIABLE,
         "variable2",
+        None,
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_get_two_variables_declared_in_one_line",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_get_two_variables_declared_in_one_line",
+        None,
         tuple_type,
     ]
 
@@ -423,107 +437,129 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     list2 = [1, 2, 4, 4]
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
-    list_type = list
-    int_type = int
-    bool_type = bool
+    list_type = "list"
+    int_type = "int"
+    bool_type = "bool"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_two_int_lists",
         19,
         TraceDataCategory.FUNCTION_PARAMETER,
         "list1",
+        None,
         list_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_two_int_lists",
         19,
         TraceDataCategory.FUNCTION_PARAMETER,
         "list2",
+        None,
         list_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_two_int_lists",
         24,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_two_int_lists",
         24,
         TraceDataCategory.LOCAL_VARIABLE,
         "element1",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_two_int_lists",
         25,
         TraceDataCategory.LOCAL_VARIABLE,
         "element2",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_integers",
         31,
         TraceDataCategory.FUNCTION_PARAMETER,
         "value1",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_integers",
         31,
         TraceDataCategory.FUNCTION_PARAMETER,
         "value2",
+        None,
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_integers",
         33,
         TraceDataCategory.LOCAL_VARIABLE,
         "result",
+        None,
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_integers",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_integers",
+        None,
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
+        None,
         None,
         "sample_compare_two_int_lists",
         26,
         TraceDataCategory.LOCAL_VARIABLE,
         "are_elements_equal",
+        None,
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
         str(pathlib.Path("tests", "test_tracer.py")),
         None,
+        None,
         "sample_compare_two_int_lists",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "sample_compare_two_int_lists",
+        None,
         bool_type,
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
