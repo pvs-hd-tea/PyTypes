@@ -33,7 +33,7 @@ class TestDetector(ABC):
 
     @abstractmethod
     def create_strategy(
-        self, overwrite_tests: bool, recurse_into_subdirs: bool
+        self, overwrite_tests: bool, recurse_into_subdirs: bool, use_performance: bool
     ) -> ApplicationStrategy:
         """Create application strategy."""
         pass
@@ -47,12 +47,13 @@ class PyTestDetector(TestDetector):
         return self._has_pytest_ini() or self._has_pytest_in_pyproject()
 
     def create_strategy(
-        self, overwrite_tests: bool, recurse_into_subdirs: bool
+        self, overwrite_tests: bool, recurse_into_subdirs: bool, use_performance: bool
     ) -> ApplicationStrategy:
         return PyTestStrategy(
             pytest_root=pathlib.Path.cwd(),
             overwrite_tests=overwrite_tests,
             recurse_into_subdirs=recurse_into_subdirs,
+            use_performance=use_performance
         )
 
     def _has_pytest_ini(self) -> bool:

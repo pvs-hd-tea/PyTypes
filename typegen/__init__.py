@@ -1,17 +1,18 @@
 import logging
 import click
 import pathlib
-from typegen.trace_data_file_collector import TraceDataFileCollector
+from typegen.trace_data_file_collector import TraceDataFileCollector, DataFileCollector
 
 from .strats.stub import StubFileGenerator
 from .strats.inline import InlineGenerator
 
 __all__ = [
+    DataFileCollector.__name__,
     TraceDataFileCollector.__name__,
 ]
 
 
-@click.command(name="typegen", help="Collects trace data files in directories")
+@click.command(name="typegen", help="Generate type hinted files using trace data")
 @click.option(
     "-p",
     "--path",
@@ -55,5 +56,5 @@ def main(**params):
     logging.debug(f"{path=}, {verb=}, {subdirs=}")
 
     collector = TraceDataFileCollector()
-    collector.collect_trace_data(path, subdirs)
+    collector.collect_data(path, subdirs)
     print(collector.trace_data)

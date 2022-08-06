@@ -46,7 +46,7 @@ class ApplicationStrategy(ABC):
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = constants.PYTEST_FUNCTION_PATTERN
     SYS_IMPORT = "import sys"
-    PYTYPE_IMPORTS = "from tracing import register, entrypoint"
+    PYTYPE_IMPORTS = "from tracing import register, register_performance, entrypoint"
     SUFFIX = "_decorator_appended.py"
     ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
@@ -55,6 +55,7 @@ class PyTestStrategy(ApplicationStrategy):
         pytest_root: pathlib.Path,
         overwrite_tests: bool = True,
         recurse_into_subdirs: bool = True,
+        use_performance: bool = False
     ):
         super().__init__(overwrite_tests, recurse_into_subdirs)
 
@@ -67,7 +68,7 @@ class PyTestStrategy(ApplicationStrategy):
         self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
         self.sys_path_ext_node = ast.parse(sys_path_ext)
         self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(
-            PyTestStrategy.FUNCTION_PATTERN
+            PyTestStrategy.FUNCTION_PATTERN, use_performance
         )
 
     def _apply(self, path: pathlib.Path) -> None:
@@ -113,11 +114,13 @@ class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
     """
 
     REGISTER = "register()"
+    REGISTER_PERFORMANCE = "register_performance()"
 
-    def __init__(self, test_function_name_pattern: Pattern[str]):
+    def __init__(self, test_function_name_pattern: Pattern[str], use_performance: bool):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
         self.register_decorator_node = ast.Name(
-            AppendRegisterDecoratorTransformer.REGISTER
+            AppendRegisterDecoratorTransformer.REGISTER_PERFORMANCE
+            if use_performance else AppendRegisterDecoratorTransformer.REGISTER
         )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
