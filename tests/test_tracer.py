@@ -73,7 +73,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
-    sample_class_module = str(pathlib.Path("tests", "test_tracer"))
+    sample_class_module = "tests.test_tracer"
     sample_class_type = "SampleClass"
     string_type = "str"
     integer_type = "int"
