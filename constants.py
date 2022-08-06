@@ -16,13 +16,13 @@ PYTEST_FUNCTION_PATTERN = re.compile(r"test_")
 
 class TraceData:
     FILENAME = "Filename"
-    CLASS_MODULE = "Class Module"
+    CLASS_MODULE = "ClassModule"
     CLASS = "Class"
-    FUNCNAME = "Function Name"
-    LINENO = "Line Number"
+    FUNCNAME = "FunctionName"
+    LINENO = "LineNo"
     CATEGORY = "Category"
     VARNAME = "Name"
-    VARTYPE_MODULE = "Type Module"
+    VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
 
     SCHEMA = {
