@@ -16,20 +16,23 @@ PYTEST_FUNCTION_PATTERN = re.compile(r"test_")
 
 class TraceData:
     FILENAME = "Filename"
+    CLASS_MODULE = "Class Module"
     CLASS = "Class"
     FUNCNAME = "Function Name"
     LINENO = "Line Number"
     CATEGORY = "Category"
     VARNAME = "Name"
+    VARTYPE_MODULE = "Type Module"
     VARTYPE = "Type"
 
     SCHEMA = {
         FILENAME: pd.StringDtype(),
-        CLASS: object,
+        CLASS_MODULE: pd.StringDtype(),
+        CLASS: pd.StringDtype(),
         FUNCNAME: pd.StringDtype(),
         LINENO: pd.UInt64Dtype(),
-        # because of TraceDataCategory's inheritance from enum.Enum
-        CATEGORY: pd.StringDtype(),
+        CATEGORY: pd.Int64Dtype(),
         VARNAME: pd.StringDtype(),
-        VARTYPE: object,
+        VARTYPE_MODULE: pd.StringDtype(),
+        VARTYPE: pd.StringDtype(),
     }
