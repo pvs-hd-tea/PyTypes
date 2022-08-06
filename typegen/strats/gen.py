@@ -7,6 +7,48 @@ import pandas as pd
 
 import constants
 
+# There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
+class _AddImportVisitor(cst.CSTTransformer):
+    def __init__(self, applicable: pd.DataFrame) -> None:
+        self.applicable = applicable
+
+    def leave_Module(
+        self, _: cst.Module, updated_node: cst.Module
+    ) -> cst.Module:
+        # Stupid implementation: make from x import y everywhere
+
+        # ignore builtins
+        non_builtin = self.applicable[
+            self.applicable[constants.TraceData.VARTYPE_MODULE].notnull()
+        ]
+        if non_builtin.empty:
+            return updated_node
+
+        importables = non_builtin.groupby(
+            [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
+        ).agg({constants.TraceData.VARTYPE: list})
+
+        imports: list[cst.ImportFrom | cst.Newline] = []
+
+        for module in importables.index:
+
+            mod_name = cst.parse_expression(module[0])
+            assert isinstance(
+                mod_name, cst.Name | cst.Attribute
+            ), f"Accidentally parsed {type(mod_name)}"
+            aliases: list[cst.ImportAlias] = []
+
+            for ty in importables.loc[module].values[0]:
+                aliases.append(cst.ImportAlias(name=cst.Name(ty)))
+
+            imp_from = cst.ImportFrom(module=mod_name, names=aliases)
+            imports.append(imp_from)
+            imports.append(cst.Newline())
+
+        return updated_node.with_changes(
+            body=imports + list(updated_node.body)
+        )
+
 
 class TypeHintGenerator(abc.ABC):
     """Base class for different generation styles of type hints"""
@@ -49,8 +91,11 @@ class TypeHintGenerator(abc.ABC):
                 module = cst.parse_module(source=path.open().read())
                 module_and_meta = cst.MetadataWrapper(module)
 
-                typed = self._gen_hinted_ast(df=applicable, hintless_ast=module_and_meta)
-                self._store_hinted_ast(source_file=path, hinting=typed)
+                typed = self._gen_hinted_ast(
+                    df=applicable, hintless_ast=module_and_meta
+                )
+                imported = self._add_all_imports(applicable, typed)
+                self._store_hinted_ast(source_file=path, hinting=imported)
 
     @abc.abstractmethod
     def _gen_hinted_ast(
@@ -67,3 +112,8 @@ class TypeHintGenerator(abc.ABC):
         Store the hinted AST at the correct location, based upon the `source_file` param
         """
         pass
+
+    def _add_all_imports(
+        self, applicable: pd.DataFrame, hinted_ast: cst.Module
+    ) -> cst.Module:
+        return hinted_ast.visit(_AddImportVisitor(applicable))

@@ -525,6 +525,23 @@ def test_assignments():
 
 
 def test_imported():
+    class ImportedHintTest(cst.CSTVisitor):
+        @typing.no_type_check
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            assert isinstance(node.module, cst.Attribute)
+            assert node.module == cst.parse_expression("tests", "resource", "typegen", "callable")
+
+            assert len(node.names) == 1
+            assert node.names[0].name.value == "C"
+
+        @typing.no_type_check
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            if node.name.value == "function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "C"
+
+                assert node.returns.annotation.value == "int"
+
     resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
     assert resource_path.is_file()
 
@@ -538,7 +555,7 @@ def test_imported():
         None,
         None,
         "function",
-        1,
+        0,
         TraceDataCategory.FUNCTION_RETURN,
         "function",
         None,
@@ -561,6 +578,6 @@ def test_imported():
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-    logging.debug(f"\n{hinted.code}")
-    #hinted.visit(HintTest())
-    assert False
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    hinted.visit(ImportedHintTest())
