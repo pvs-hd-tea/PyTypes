@@ -58,9 +58,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 constants.TraceData.VARTYPE,
             ]
         ]
-        basetype_module, basetype = self._get_common_base_type(
-            modules_with_types_in_group
-        )
+        common = self._get_common_base_type(modules_with_types_in_group)
+        if common is None:
+            return group
+
+        basetype_module, basetype = common
         if self.only_replace_if_base_was_traced:
             if basetype_module not in entire[constants.TraceData.VARTYPE_MODULE].values:
                 return group
@@ -74,7 +76,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
     def _get_common_base_type(
         self, modules_with_types: pd.DataFrame
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str] | None:
         type2bases = {}
         for _, row in modules_with_types.iterrows():
             varmodule, vartyp = (
@@ -85,7 +87,15 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
             # drop mros that are useless
             abcless = list(filter(lambda p: p[0] != "abc", types_topologically_sorted))
-            type2bases[(varmodule, vartyp)] = abcless
+
+            # also remove object from the end, as means that there is no common type
+            abcless.pop()
+
+            if len(abcless):
+                type2bases[(varmodule, vartyp)] = abcless
+            else:
+                # There is no common base type for the requested types, do not change anything
+                return None
 
         # Pick shortest base types to minimise runtime
         smallest = min(type2bases.items(), key=lambda kv: len(kv[1]))
