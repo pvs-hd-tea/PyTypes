@@ -1,12 +1,37 @@
 import importlib
+import importlib.util
 from importlib.machinery import SourceFileLoader
-from operator import mod
+import logging
 import os
+from types import ModuleType
 import pandas as pd
 import pathlib
+import sys
 
 from .filter_base import TraceDataFilter
 import constants
+
+logger = logging.getLogger(__name__)
+
+
+def _attempt_module_lookup(
+    module_name: str, root: pathlib.Path, lookup_path: pathlib.Path
+) -> ModuleType | None:
+    try:
+        loader = SourceFileLoader(module_name, str(root / lookup_path))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        if spec is not None:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            loader.exec_module(module)
+
+            logger.debug(f"Imported {module_name} from {str(root / lookup_path)}")
+            return module
+
+    except FileNotFoundError:
+        logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
+
+    return None
 
 
 class ReplaceSubTypesFilter(TraceDataFilter):
@@ -14,6 +39,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
     ident = "repl_subty"
 
+    stdlib_path: pathlib.Path | None = None
     proj_path: pathlib.Path | None = None
     venv_path: pathlib.Path | None = None
     only_replace_if_base_was_traced: bool | None = None
@@ -26,19 +52,6 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        if self.proj_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.proj_path=}"
-            )
-        if self.venv_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.venv_path=}"
-            )
-        if self.only_replace_if_base_was_traced is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.only_replace_if_base_was_traced=}"
-            )
-
         subset = list(constants.TraceData.SCHEMA.keys())
         subset.remove(constants.TraceData.VARTYPE_MODULE)
         subset.remove(constants.TraceData.VARTYPE)
@@ -47,9 +60,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         processed_trace_data = grouped_trace_data.apply(
             lambda group: self._update_group(trace_data, group)
         )
-        return processed_trace_data.reset_index(drop=True).astype(
+        typed = processed_trace_data.reset_index(drop=True).astype(
             constants.TraceData.SCHEMA
         )
+        typed.columns = constants.TraceData.SCHEMA.keys()
+        return typed
 
     def _update_group(self, entire: pd.DataFrame, group):
         modules_with_types_in_group = group[
@@ -66,9 +81,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         basetype_module, basetype = common
         if self.only_replace_if_base_was_traced:
             if basetype_module not in entire[constants.TraceData.VARTYPE_MODULE].values:
+                logger.debug(f"Discarding {common}; module was not found in trace data")
                 return group
 
             if basetype not in entire[constants.TraceData.VARTYPE].values:
+                logger.debug(f"Discarding {common}; type was not found in trace data")
                 return group
 
         group[constants.TraceData.VARTYPE_MODULE] = basetype_module
@@ -102,23 +119,49 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         smallest = min(type2bases.items(), key=lambda kv: len(kv[1]))
         smallest_bases = type2bases.pop(smallest[0])
 
-        print(smallest_bases)
-        print(type2bases)
+        logger.debug(smallest_bases)
+        logger.debug(type2bases)
 
         # Loop will only end if all objects share "object"
         # object is always the very last element of mro, but was removed in the
         # assignment to `abcless`,
         for modty in smallest_bases:
             if all(modty in bases for bases in type2bases.values()):
+                logger.debug(f"Finishing MRO traversal; common base type is {modty}")
                 return modty
+
+        logger.debug(
+            "Finishing MRO traversal; there is no common base type except object"
+        )
         return None
 
     def _get_type_and_mro(
         self, relative_type_module_name: str | None, variable_type_name: str
     ) -> list[tuple[str | None, str]]:
-        # builtin types
-        if relative_type_module_name is None:
-            builtin_ty: type = __builtins__[variable_type_name]
+        if self.stdlib_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.stdlib_path=}"
+            )
+        if self.proj_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.proj_path=}"
+            )
+        if self.venv_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.venv_path=}"
+            )
+        if self.only_replace_if_base_was_traced is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.only_replace_if_base_was_traced=}"
+            )
+        # Follow import order specified by sys.path
+
+        # 0. builtin types
+        if relative_type_module_name is None or isinstance(
+            relative_type_module_name, type(pd.NA)
+        ):
+            # __builtins__ is typed as Module by mypy, but is dict in the REPL?
+            builtin_ty: type = __builtins__[variable_type_name]  # type: ignore
             mros = builtin_ty.mro()
 
         else:
@@ -127,14 +170,30 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 relative_type_module_name.replace(".", os.path.sep) + ".py"
             )
 
-            # project import
-            loader = SourceFileLoader(
-                relative_type_module_name, str(self.proj_path / lookup_path)
+            # 1. project path
+            module = _attempt_module_lookup(
+                relative_type_module_name, self.proj_path, lookup_path
             )
+            if module is None:
+                # 2. stdlib
+                module = _attempt_module_lookup(
+                    relative_type_module_name, self.stdlib_path, lookup_path
+                )
 
-            spec = importlib.util.spec_from_loader(loader.name, loader)
-            module = importlib.util.module_from_spec(spec)
-            loader.exec_module(module)
+            if module is None:
+                # 23 venv
+                major, minor = sys.version_info[:2]
+                site_packages = (
+                    self.venv_path / "lib" / f"python{major}.{minor}" / "site-packages"
+                )
+                module = _attempt_module_lookup(
+                    relative_type_module_name, site_packages, lookup_path
+                )
+
+            if module is None:
+                raise ImportError(
+                    f"Failed to import {relative_type_module_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
+                )
             variable_type: type = getattr(module, variable_type_name)
 
             # TODO: venv import
