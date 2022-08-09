@@ -15,10 +15,14 @@ class TraceDataFilter(ABC):
         TraceDataFilter._REGISTRY[cls.ident] = cls
 
     def __new__(
-        cls: typing.Type["TraceDataFilter"], /, ident: str
+        cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs
     ) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
             subinst = object.__new__(subcls)
+
+            for attr, value in kwargs:
+                setattr(subinst, attr, value)
+
             return subinst
 
         raise LookupError(f"Unsupported filter: {ident}")
