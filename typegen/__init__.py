@@ -18,10 +18,6 @@ __all__ = [
     TraceDataFileCollector.__name__,
 ]
 
-from .unification import DropTestFunctionDataFilter, TraceDataFilterList, DropDuplicatesFilter, ReplaceSubTypesFilter, \
-    DropVariablesOfMultipleTypesFilter
-
-
 @click.command(name="typegen", help="Collects trace data files in directories")
 @click.option(
     "-p",
