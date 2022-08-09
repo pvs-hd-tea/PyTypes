@@ -8,7 +8,7 @@ from .data import get_sample_trace_data
 
 import constants
 
-drop_test_filter = TraceDataFilter(
+drop_test_filter = TraceDataFilter(  # type: ignore
     ident=DropTestFunctionDataFilter.ident, test_func_name_pattern="test_"
 )
 

@@ -5,10 +5,12 @@ from .data import get_sample_trace_data
 
 import constants
 
-dropdup = TraceDataFilter(DropDuplicatesFilter.ident)
+dropdup = TraceDataFilter(DropDuplicatesFilter.ident)  # type: ignore
+
 
 def test_factory():
     assert isinstance(dropdup, DropDuplicatesFilter)
+
 
 def test_drop_duplicates_filter_processes_and_returns_correct_data_and_difference():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)

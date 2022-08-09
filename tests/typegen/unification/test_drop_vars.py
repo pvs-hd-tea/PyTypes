@@ -5,10 +5,12 @@ from .data import get_sample_trace_data
 
 import constants
 
-multi_var_filter = TraceDataFilter(ident=DropVariablesOfMultipleTypesFilter.ident)
+multi_var_filter = TraceDataFilter(ident=DropVariablesOfMultipleTypesFilter.ident)  # type: ignore
+
 
 def test_factory():
     assert isinstance(multi_var_filter, DropVariablesOfMultipleTypesFilter)
+
 
 def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_data():
     expected_trace_data = (

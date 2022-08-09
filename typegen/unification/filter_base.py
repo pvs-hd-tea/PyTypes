@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+import abc
 import typing
 
 import pandas as pd
 
 
-class TraceDataFilter(ABC):
+class TraceDataFilter(abc.ABC):
     """Base class for different strategies of trace data filtering"""
 
     _REGISTRY: dict[str, typing.Type["TraceDataFilter"]] = {}
@@ -14,9 +14,7 @@ class TraceDataFilter(ABC):
         super().__init_subclass__(**kwargs)
         TraceDataFilter._REGISTRY[cls.ident] = cls
 
-    def __new__(
-        cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs
-    ) -> "TraceDataFilter":
+    def __new__(cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
             subinst = object.__new__(subcls)
             for attr, value in kwargs.items():
@@ -26,7 +24,7 @@ class TraceDataFilter(ABC):
 
         raise LookupError(f"Unsupported filter: {ident}")
 
-    @abstractmethod
+    @abc.abstractmethod
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Processes the provided trace data and returns the processed trace data and the difference between the old and new data.
