@@ -36,6 +36,8 @@ class TraceDataFilter(ABC):
 class TraceDataFilterList(TraceDataFilter):
     """Applies the filters in this list on the trace data."""
 
+    ident = "list"
+
     def __init__(self):
         self.filters: list[TraceDataFilter] = []
 
