@@ -1,9 +1,9 @@
+import abc
+import logging
 import pathlib
 import pandas as pd
 import constants
 from tracing import TraceDataCategory
-
-from abc import ABC
 
 from typegen.unification import (
     DropDuplicatesFilter,
@@ -14,7 +14,7 @@ from typegen.unification import (
 )
 
 
-class BaseClass(ABC):
+class BaseClass(abc.ABC):
     pass
 
 
@@ -38,7 +38,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_filter.py")
-    resource_module = "tests.typegen.test_filter"
+    resource_module = "tests.typegen.unification.test_filter"
 
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -172,23 +172,36 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
     )
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object = DropDuplicatesFilter()
+    test_filter = DropDuplicatesFilter()
 
     trace_data = get_sample_trace_data()
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
 
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = SubClass1
-    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = SubClass1
+    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = "SubClass1"
+    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = "SubClass1"
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
-    test_object = ReplaceSubTypesFilter(True)
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    test_filter = ReplaceSubTypesFilter(pathlib.Path.cwd(), None, True)
+    actual_trace_data = test_filter.apply(trace_data)
+
+    exp_types_and_module = expected_trace_data[[
+        constants.TraceData.VARTYPE_MODULE,
+        constants.TraceData.VARTYPE
+    ]]
+    act_types_and_module = actual_trace_data[[
+        constants.TraceData.VARTYPE_MODULE,
+        constants.TraceData.VARTYPE
+    ]]
+
+    logging.debug(f"expected: \n{exp_types_and_module}")
+    logging.debug(f"actual: \n{act_types_and_module}")
+    logging.debug(f"diff: \n{exp_types_and_module.compare(act_types_and_module)}")
 
     assert expected_trace_data.equals(actual_trace_data)
 
@@ -200,8 +213,8 @@ def test_replace_subtypes_filter_processes_and_returns_correct_data():
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
-    test_object = ReplaceSubTypesFilter(False)
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    test_filter = ReplaceSubTypesFilter(False)
+    actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
 
@@ -213,8 +226,8 @@ def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_d
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()
-    test_object = DropVariablesOfMultipleTypesFilter()
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    test_filter = DropVariablesOfMultipleTypesFilter()
+    actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
 
@@ -223,10 +236,10 @@ def test_drop_test_function_data_filter_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().iloc[:-1].reset_index(drop=True)
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_object = DropTestFunctionDataFilter(constants.PYTEST_FUNCTION_PATTERN)
+    test_filter = DropTestFunctionDataFilter(constants.PYTEST_FUNCTION_PATTERN)
 
     trace_data = get_sample_trace_data()
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
 
@@ -242,14 +255,14 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     replace_subtypes_filter = ReplaceSubTypesFilter(True)
     drop_variables_of_multiple_types_filter = DropVariablesOfMultipleTypesFilter()
 
-    test_object = TraceDataFilterList()
-    test_object.append(drop_test_function_data_filter)
-    test_object.append(drop_duplicates_filter)
-    test_object.append(replace_subtypes_filter)
-    test_object.append(drop_duplicates_filter)
-    test_object.append(drop_variables_of_multiple_types_filter)
+    test_filter = TraceDataFilterList()
+    test_filter.append(drop_test_function_data_filter)
+    test_filter.append(drop_duplicates_filter)
+    test_filter.append(replace_subtypes_filter)
+    test_filter.append(drop_duplicates_filter)
+    test_filter.append(drop_variables_of_multiple_types_filter)
 
     trace_data = get_sample_trace_data()
-    actual_trace_data = test_object.get_processed_data(trace_data)
+    actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
