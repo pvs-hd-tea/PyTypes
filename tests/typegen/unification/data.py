@@ -1,18 +1,11 @@
 import abc
 import logging
 import pathlib
+
 import pandas as pd
+
 import constants
-from tracing import TraceDataCategory
-
-from typegen.unification import (
-    DropDuplicatesFilter,
-    ReplaceSubTypesFilter,
-    DropVariablesOfMultipleTypesFilter,
-    TraceDataFilterList,
-    DropTestFunctionDataFilter,
-)
-
+from tracing.trace_data_category import TraceDataCategory
 
 class BaseClass(abc.ABC):
     pass
@@ -164,22 +157,7 @@ def get_sample_trace_data() -> pd.DataFrame:
     trace_data = trace_data.astype(constants.TraceData.SCHEMA)
     return trace_data
 
-
-def test_drop_duplicates_filter_processes_and_returns_correct_data_and_difference():
-    expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data = expected_trace_data.drop(index=[0, 5, 7]).reset_index(
-        drop=True
-    )
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
-
-    test_filter = DropDuplicatesFilter()
-
-    trace_data = get_sample_trace_data()
-    actual_trace_data = test_filter.apply(trace_data)
-
-    assert expected_trace_data.equals(actual_trace_data)
-
-
+""" 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
     expected_trace_data.loc[3, constants.TraceData.VARTYPE] = "SubClass1"
@@ -279,3 +257,4 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
+ """
