@@ -1,5 +1,6 @@
 import importlib
 from importlib.machinery import SourceFileLoader
+from operator import mod
 import os
 import pandas as pd
 import pathlib
@@ -76,7 +77,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
     def _get_common_base_type(
         self, modules_with_types: pd.DataFrame
-    ) -> tuple[str, str] | None:
+    ) -> tuple[str | None, str] | None:
         type2bases = {}
         for _, row in modules_with_types.iterrows():
             varmodule, vartyp = (
@@ -101,19 +102,26 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         smallest = min(type2bases.items(), key=lambda kv: len(kv[1]))
         smallest_bases = type2bases.pop(smallest[0])
 
-        # Loop is guaranteed to return as all objects share "object" at a minimum
-        for ty in smallest_bases:
-            if all(ty in bases for bases in type2bases.values()):
-                return ty
+        print(smallest_bases)
+        print(type2bases)
 
-        raise AssertionError(
-            f"MRO Search loop failed to terminate:\nNeedles: {smallest}, Haystack: {type2bases}"
-        )
+        # Loop will only end if all objects share "object"
+        # object is always the very last element of mro, but was removed in the
+        # assignment to `abcless`,
+        for modty in smallest_bases:
+            if all(modty in bases for bases in type2bases.values()):
+                return modty
+        return None
 
     def _get_type_and_mro(
         self, relative_type_module_name: str | None, variable_type_name: str
-    ) -> list[tuple[str, str]]:
-        if relative_type_module_name is not None:
+    ) -> list[tuple[str | None, str]]:
+        # builtin types
+        if relative_type_module_name is None:
+            builtin_ty: type = __builtins__[variable_type_name]
+            mros = builtin_ty.mro()
+
+        else:
             # recreate filename
             lookup_path = pathlib.Path(
                 relative_type_module_name.replace(".", os.path.sep) + ".py"
@@ -133,5 +141,10 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
             mros = variable_type.mro()
 
-        module_and_name = list(map(lambda m: (m.__module__, m.__name__), mros))
+        def none_if_builtin(module: str) -> str | None:
+            return module if module != "builtins" else None
+
+        module_and_name = list()
+        for m in mros:
+            module_and_name.append((none_if_builtin(m.__module__), m.__name__))
         return module_and_name
