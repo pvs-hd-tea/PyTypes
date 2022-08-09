@@ -157,61 +157,6 @@ def get_sample_trace_data() -> pd.DataFrame:
     trace_data = trace_data.astype(constants.TraceData.SCHEMA)
     return trace_data
 
-""" 
-def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
-
-    trace_data = get_sample_trace_data()
-    test_filter = ReplaceSubTypesFilter(pathlib.Path.cwd(), None, True)
-    actual_trace_data = test_filter.apply(trace_data)
-
-    exp_types_and_module = expected_trace_data[[
-        constants.TraceData.VARTYPE_MODULE,
-        constants.TraceData.VARTYPE
-    ]]
-    act_types_and_module = actual_trace_data[[
-        constants.TraceData.VARTYPE_MODULE,
-        constants.TraceData.VARTYPE
-    ]]
-
-    logging.debug(f"expected: \n{exp_types_and_module}")
-    logging.debug(f"actual: \n{act_types_and_module}")
-    logging.debug(f"diff: \n{exp_types_and_module.compare(act_types_and_module)}")
-
-    assert expected_trace_data.equals(actual_trace_data)
-
-
-
-
-
-def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_data():
-    expected_trace_data = (
-        get_sample_trace_data().iloc[[5, 6, 10]].reset_index(drop=True)
-    )
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
-
-    trace_data = get_sample_trace_data()
-    test_filter = DropVariablesOfMultipleTypesFilter()
-    actual_trace_data = test_filter.apply(trace_data)
-
-    assert expected_trace_data.equals(actual_trace_data)
-
-
-def test_drop_test_function_data_filter_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().iloc[:-1].reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
-
-    test_filter = DropTestFunctionDataFilter(constants.PYTEST_FUNCTION_PATTERN)
-
-    trace_data = get_sample_trace_data()
-    actual_trace_data = test_filter.apply(trace_data)
-
-    assert expected_trace_data.equals(actual_trace_data)
-
-
 def test_trace_data_filter_list_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().iloc[[4, 5, 7]].reset_index(drop=True)
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
@@ -234,4 +179,3 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     actual_trace_data = test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)
- """

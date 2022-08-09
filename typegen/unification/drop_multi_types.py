@@ -8,13 +8,8 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
 
     ident = "drop_mult_var"
 
-    def __init__(self, min_amount_types_to_drop: int = 2):
-        """
-        @param min_amount_types_to_drop The minimum amount of types to drop the data of the corresponding variable.
-        """
-        super().__init__()
-        self.min_amount_types_to_drop = min_amount_types_to_drop
-
+    min_amount_types_to_drop: int = 2
+    
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Drops rows containing variables if the amount of inferred types is higher than self.min_amount_types_to_drop
