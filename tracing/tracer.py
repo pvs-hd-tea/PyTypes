@@ -333,20 +333,17 @@ def _get_class_in_frame(frame) -> type | None:
 
 
 def _get_module_and_name(t: type, proj_root: pathlib.Path) -> tuple[str | None, str]:
-    try:
-        ty_mod = pathlib.Path(inspect.getfile(t))
-
-        # user defined type
-        if ty_mod.is_relative_to(proj_root):
-            relative = ty_mod.relative_to(proj_root)
-            module = str(relative.with_suffix("")).replace(os.path.sep, ".")
-
-        # stdlib type
-        else:
-            module = str(ty_mod.with_suffix("")).replace(os.path.sep, ".")
-
-        return module, t.__name__
-
-    # builtin type
-    except TypeError:
+    module = sys.modules[t.__module__]
+    if module.__name__ == "builtins":
         return None, t.__name__
+    ty_mod = os.path.abspath(module.__file__)
+    # user defined type
+    relative = os.path.relpath(ty_mod, proj_root)
+    print("Project root: " + str(proj_root))
+    print("Module name: " + str(module.__name__))
+    print("Module file path: " + str(ty_mod))
+    print("Relative path: " + str(relative))
+    print("---")
+    module = relative.replace(os.path.sep, ".")
+
+    return ty_mod, t.__name__

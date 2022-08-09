@@ -1,10 +1,15 @@
 import operator
 from abc import ABC, abstractmethod
 from re import Pattern
+import importlib
 
+from importlib.machinery import SourceFileLoader
 import pandas as pd
 from functools import reduce
 from collections import Counter  # type: ignore
+
+from pandas._libs.missing import NAType
+
 import constants
 
 
@@ -58,23 +63,53 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
         subset = list(constants.TraceData.SCHEMA.keys())
+        subset.remove(constants.TraceData.VARTYPE_MODULE)
         subset.remove(constants.TraceData.VARTYPE)
-        grouped_trace_data = trace_data.groupby(subset)
+        subset.remove(constants.TraceData.FILENAME)
+        grouped_trace_data = trace_data.groupby(subset, dropna=False)
         processed_trace_data = grouped_trace_data.apply(lambda group: self._update_group(group))
         return processed_trace_data.reset_index(drop=True)
 
     def _update_group(self, group):
-        types_in_group = group[constants.TraceData.VARTYPE].tolist()
-        common_base_type = self._get_common_base_type(types_in_group)
+        modules_with_types_in_group = group[[constants.TraceData.FILENAME, constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]]
+        common_base_type = self._get_common_base_type(modules_with_types_in_group)
+        print("Common base type: " + str(common_base_type))
+        types_in_group = modules_with_types_in_group[constants.TraceData.VARTYPE].tolist()
         if not self.only_replace_if_base_type_already_in_data or common_base_type in types_in_group:
             group[constants.TraceData.VARTYPE] = common_base_type
         return group
 
-    def _get_common_base_type(self, types: list[type]) -> type:
-        common_base_type_counters_of_subtypes = [Counter(subtype.mro()) for subtype in types]
+    def _get_common_base_type(self, modules_with_types: pd.DataFrame) -> type:
+        common_base_type_counters_of_subtypes = []
+        for _, row in modules_with_types.iterrows():
+            types_topologically_sorted = self._get_mro_of_type(row[constants.TraceData.VARTYPE_MODULE],
+                                                               row[constants.TraceData.VARTYPE])
+            counter = Counter(types_topologically_sorted)
+            common_base_type_counters_of_subtypes.append(counter)
         common_base_types_in_order = reduce(operator.and_, common_base_type_counters_of_subtypes).keys()
         first_common_base_type = next(iter(common_base_types_in_order))
         return first_common_base_type
+
+    def _get_mro_of_type(self, relative_type_module_name: str | None, variable_type_name: str) -> list[str]:
+        if relative_type_module_name is not None and not isinstance(relative_type_module_name, NAType):
+            try:
+                loader = SourceFileLoader("temp", relative_type_module_name)
+                spec = importlib.util.spec_from_loader(loader.name, loader)
+                module = importlib.util.module_from_spec(spec)
+                loader.exec_module(module)
+                variable_type = getattr(module, variable_type_name)
+            except Exception as e:
+                print("Import error: " + str(e))
+                return [object.__name__]
+        else:
+            try:
+                variable_type = globals()[variable_type_name]
+            except KeyError:
+                # Builtin type.
+                return [variable_type_name, object.__name__]
+        types_topologically_sorted = variable_type.mro()
+        print(types_topologically_sorted)
+        return [type_in_hierarchy.__name__ for type_in_hierarchy in types_topologically_sorted]
 
 
 class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
@@ -95,9 +130,10 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         """
         subset = list(constants.TraceData.SCHEMA.keys())
         subset.remove(constants.TraceData.VARTYPE)
-        grouped_trace_data_with_unique_count = trace_data.groupby(subset)[constants.TraceData.VARTYPE].nunique()\
+        grouped_trace_data_with_unique_count = trace_data.groupby(subset, dropna=False)[constants.TraceData.VARTYPE].nunique()\
             .reset_index(name="amount_types")
         joined_trace_data = pd.merge(trace_data, grouped_trace_data_with_unique_count, on=subset, how='inner')
+        print(joined_trace_data)
         trace_data_with_dropped_variables = joined_trace_data[
             joined_trace_data["amount_types"] < self.min_amount_types_to_drop]
         processed_data = trace_data_with_dropped_variables.drop(["amount_types"], axis=1)

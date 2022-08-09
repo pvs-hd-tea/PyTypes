@@ -1,4 +1,6 @@
 import logging
+import sys
+
 import click
 import pathlib
 
@@ -15,6 +17,9 @@ from .strats.inline import InlineGenerator
 __all__ = [
     TraceDataFileCollector.__name__,
 ]
+
+from .unification import DropTestFunctionDataFilter, TraceDataFilterList, DropDuplicatesFilter, ReplaceSubTypesFilter, \
+    DropVariablesOfMultipleTypesFilter
 
 
 @click.command(name="typegen", help="Collects trace data files in directories")
@@ -60,12 +65,28 @@ def main(**params):
     logging.basicConfig(level=verb)
     logging.debug(f"{projpath=}, {verb=}, {strat_name=} {subdirs=}")
 
+    project_root_file = next(pathlib.Path(projpath).rglob("project_root.txt"))
+    with project_root_file.open() as f:
+        project_roots = f.readlines()
+        sys.path.append(project_roots)
+
     pytypes_cfg = ptconfig._load_config(projpath / constants.CONFIG_FILE_NAME)
     traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
 
     collector = TraceDataFileCollector()
-    collector.collect_trace_data(traced_df_folder, subdirs)
+    collector.collect_trace_data(projpath, subdirs)
+
     print(collector.trace_data)
 
-    hint_generator = TypeHintGenerator(ident=strat_name, types=collector.trace_data)
+    filter_list = TraceDataFilterList()
+    filter_list.append(DropTestFunctionDataFilter(test_function_name_pattern=constants.PYTEST_FUNCTION_PATTERN))
+    filter_list.append(DropDuplicatesFilter())
+    filter_list.append(ReplaceSubTypesFilter(only_replace_if_base_type_already_in_data=True))
+    #filter_list.append(DropDuplicatesFilter())
+    #filter_list.append(DropVariablesOfMultipleTypesFilter(min_amount_types_to_drop=2))
+
+    processed_data = filter_list.get_processed_data(collector.trace_data)
+    print(processed_data)
+    return
+    hint_generator = TypeHintGenerator(ident=strat_name, types=processed_data)
     hint_generator.apply()
