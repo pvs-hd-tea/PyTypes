@@ -169,16 +169,16 @@ def test_inherit_from_builtin_type():
     # once for strict
     strict_actual = strict_rstf.apply(trace_data)
 
-    logging.debug(f": expected\n{expected}")
-    logging.debug(f": actual\n{strict_actual}")
-    logging.debug(f": diff\n{expected.compare(strict_actual)}")
+    logging.debug(f"expected: \n{expected}")
+    logging.debug(f"actual: \n{strict_actual}")
+    logging.debug(f"diff: \n{expected.compare(strict_actual)}")
     assert expected.equals(strict_actual)
 
     # once for relaxed
     relaxed_actual = relaxed_rstf.apply(trace_data)
 
-    logging.debug(f": expected\n{expected}")
-    logging.debug(f": actual\n{relaxed_actual}")
-    logging.debug(f": diff\n{expected.compare(relaxed_actual)}")
+    logging.debug(f"expected: \n{expected}")
+    logging.debug(f"actual: \n{relaxed_actual}")
+    logging.debug(f"diff: \n{expected.compare(relaxed_actual)}")
 
     assert expected.equals(relaxed_actual)

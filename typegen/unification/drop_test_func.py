@@ -25,4 +25,4 @@ class DropTestFunctionDataFilter(TraceDataFilter):
                 self.test_func_name_pattern
             )
         ]
-        return processed_trace_data
+        return processed_trace_data.astype(constants.TraceData.SCHEMA)
