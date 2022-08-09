@@ -19,8 +19,7 @@ class TraceDataFilter(ABC):
     ) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
             subinst = object.__new__(subcls)
-
-            for attr, value in kwargs:
+            for attr, value in kwargs.items():
                 setattr(subinst, attr, value)
 
             return subinst

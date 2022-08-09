@@ -184,30 +184,7 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
     assert expected_trace_data.equals(actual_trace_data)
 
 
-def test_replace_subtypes_filter_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[:3, constants.TraceData.VARTYPE] = "BaseClass"
-    expected_trace_data.loc[3:, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    trace_data = get_sample_trace_data()
-    test_filter = ReplaceSubTypesFilter(pathlib.Path.cwd(), None, False)
-    actual_trace_data = test_filter.apply(trace_data)
-
-    exp_types_and_module = expected_trace_data[[
-        constants.TraceData.VARTYPE_MODULE,
-        constants.TraceData.VARTYPE
-    ]]
-    act_types_and_module = actual_trace_data[[
-        constants.TraceData.VARTYPE_MODULE,
-        constants.TraceData.VARTYPE
-    ]]
-
-    logging.debug(f"expected: \n{exp_types_and_module}")
-    logging.debug(f"actual: \n{act_types_and_module}")
-    logging.debug(f"diff: \n{exp_types_and_module.compare(act_types_and_module)}")
-
-    assert expected_trace_data.equals(actual_trace_data)
 
 
 def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_data():
