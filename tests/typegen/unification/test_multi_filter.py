@@ -1,5 +1,6 @@
 import os
 import pathlib
+import sys
 from typegen.unification.drop_dupes import DropDuplicatesFilter
 from typegen.unification.drop_vars import DropVariablesOfMultipleTypesFilter
 
@@ -11,6 +12,9 @@ from .data import get_sample_trace_data
 
 import constants
 
+proj_path = pathlib.Path.cwd()
+venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
+stdlib_path = pathlib.Path(sys.path[3])
 
 def test_factory():
     container = TraceDataFilter(ident=TraceDataFilterList.ident)
@@ -27,12 +31,11 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
 
     drop_duplicates_filter = TraceDataFilter(DropDuplicatesFilter.ident)
 
-    proj_path = pathlib.Path.cwd()
-    venv_path = os.environ["VIRTUAL_ENV"]
     replace_subtypes_filter = TraceDataFilter(
         ReplaceSubTypesFilter.ident,
         proj_path=proj_path,
         venv_path=venv_path,
+        stdlib_path=stdlib_path,
         only_replace_if_base_was_traced=True,
     )
     drop_variables_of_multiple_types_filter = TraceDataFilter(
