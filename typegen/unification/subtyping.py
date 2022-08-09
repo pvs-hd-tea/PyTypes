@@ -103,8 +103,6 @@ class ReplaceSubTypesFilter(TraceDataFilter):
     def _get_type_and_mro(
         self, relative_type_module_name: str | None, variable_type_name: str
     ) -> list[tuple[str, str]]:
-        print(relative_type_module_name, variable_type_name)
-
         if relative_type_module_name is not None:
             # recreate filename
             lookup_path = pathlib.Path(
