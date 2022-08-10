@@ -1,12 +1,6 @@
-import importlib
-import importlib.util
-from importlib.machinery import SourceFileLoader
 import logging
-import os
-from types import ModuleType
 import pandas as pd
 import pathlib
-import sys
 
 from tracing.resolver import Resolver
 
@@ -25,10 +19,12 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
     ident = "repl_subty"
 
-    stdlib_path: pathlib.Path | None = None
-    proj_path: pathlib.Path | None = None
-    venv_path: pathlib.Path | None = None
-    only_replace_if_base_was_traced: bool | None = None
+    stdlib_path: pathlib.Path
+    proj_path: pathlib.Path
+    venv_path: pathlib.Path
+    only_replace_if_base_was_traced: bool = True
+
+    _UNDESIRABLE_MODULES = ("abc",)
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -38,23 +34,6 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        if self.stdlib_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.stdlib_path=}"
-            )
-        if self.proj_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.proj_path=}"
-            )
-        if self.venv_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.venv_path=}"
-            )
-        if self.only_replace_if_base_was_traced is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.only_replace_if_base_was_traced=}"
-            )
-
         self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
 
         subset = list(constants.TraceData.SCHEMA.keys())
@@ -108,10 +87,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             )
             types_topologically_sorted = self._get_type_and_mro(varmodule, vartyp)
 
-            # drop mros that are useless
-            abcless = list(filter(lambda p: p[0] != "abc", types_topologically_sorted))
-
-            # also remove object from the end, as means that there is no common type
+            # drop base types which are considered too common (ABC, ABCMeta, object)
+            abcless: list[tuple[str | None, str]] = list()
+            for mod, ty in types_topologically_sorted:
+                if mod not in ReplaceSubTypesFilter._UNDESIRABLE_MODULES:
+                    abcless.append((mod, ty))
             abcless.pop()
 
             if len(abcless):
@@ -120,7 +100,8 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 # There is no common base type for the requested types, do not change anything
                 return None
 
-        # Pick shortest base types to minimise runtime
+        # Use shortest list of base types in order to
+        # speed up intersection searching
         smallest = min(type2bases.items(), key=lambda kv: len(kv[1]))
         smallest_bases = type2bases.pop(smallest[0])
 
