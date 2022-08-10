@@ -15,7 +15,14 @@ def register(proj_root: pathlib.Path | None = None):
     """
 
     def impl(test_function: Callable[[], None]):
-        tracer = Tracer(project_dir=proj_root or pathlib.Path.cwd())
+        root = proj_root or pathlib.Path.cwd()
+        cfg = load_config(root / constants.CONFIG_FILE_NAME)
+
+        tracer = Tracer(
+            proj_path=cfg.pytypes.proj_path,
+            stdlib_path=cfg.pytypes.stdlib_path,
+            venv_path=cfg.pytypes.venv_path,
+        )
         setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
         return test_function
 
