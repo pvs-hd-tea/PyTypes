@@ -41,7 +41,7 @@ def test_drop_test_function_data_filter_processes_and_returns_correct_data():
     actual_trace_data = drop_test_filter.apply(trace_data).astype(
         constants.TraceData.SCHEMA
     )
-    logging.debug(f"{expected_trace_data.compare(actual_trace_data)}")
+    # logging.debug(f"{expected_trace_data.compare(actual_trace_data)}")
 
     assert expected_trace_data.equals(
         actual_trace_data
