@@ -29,7 +29,14 @@ class ApplicationStrategy(ABC):
             self._apply(path)
 
         cfg_path = project.root / constants.CONFIG_FILE_NAME
-        toml = TomlCfg(pytypes=PyTypes(project=project.root.name))
+        pts = PyTypes(
+            project=project.root.name,
+            proj_path=project.root,
+            stdlib_path=pathlib.Path("stdlib", "goes", "here"),
+            venv_path=pathlib.Path("venv", "goes", "here")
+        )
+
+        toml = TomlCfg(pts, unifier=None)
         write_config(cfg_path, toml)
 
     @abstractmethod
