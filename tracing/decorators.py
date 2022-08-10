@@ -8,7 +8,11 @@ from .ptconfig import load_config
 import constants
 
 
-def register(proj_root: pathlib.Path | None = None):
+def register(
+    proj_root: pathlib.Path | None = None,
+    stdlib_path: pathlib.Path | None = None,
+    venv_path: pathlib.Path | None = None,
+):
     """
     Register a test function for tracing.
     @param proj_root the path to project's root directory
@@ -16,13 +20,21 @@ def register(proj_root: pathlib.Path | None = None):
 
     def impl(test_function: Callable[[], None]):
         root = proj_root or pathlib.Path.cwd()
-        cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
-        tracer = Tracer(
-            proj_path=cfg.pytypes.proj_path,
-            stdlib_path=cfg.pytypes.stdlib_path,
-            venv_path=cfg.pytypes.venv_path,
-        )
+        if not all(p is not None for p in (proj_root, stdlib_path, venv_path)):
+            cfg = load_config(root / constants.CONFIG_FILE_NAME)
+
+            tracer = Tracer(
+                proj_path=cfg.pytypes.proj_path,
+                stdlib_path=stdlib_path or cfg.pytypes.stdlib_path,
+                venv_path=venv_path or cfg.pytypes.venv_path,
+            )
+
+        else:
+            tracer = Tracer(
+                proj_path=root, stdlib_path=stdlib_path, venv_path=venv_path
+            )
+
         setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
         return test_function
 
