@@ -1,11 +1,9 @@
 import os.path
 import pathlib
 from typing import Dict
-
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
-
 import constants
 from tracing import TraceDataCategory
 
