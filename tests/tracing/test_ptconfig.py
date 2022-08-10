@@ -19,20 +19,26 @@ def test_full():
 
     assert len(config.unifier) == 6
 
+    assert config.unifier[0].name == "remove_dups"
     assert config.unifier[0].kind == "dedup"
 
+    assert config.unifier[1].name == "ignore_test"
     assert config.unifier[1].kind == "drop_test"
     assert config.unifier[1].test_name_pat == "test_"
 
+    assert config.unifier[2].name == "drop_implicit_2"
     assert config.unifier[2].kind == "drop_mult_var"
     assert config.unifier[2].min_amount_types_to_drop == 2
 
+    assert config.unifier[3].name == "drop_explicit_5"
     assert config.unifier[3].kind == "drop_mult_var"
     assert config.unifier[3].min_amount_types_to_drop == 5
 
+    assert config.unifier[4].name ==  "replace_subtypes_relaxed"
     assert config.unifier[4].kind ==  "repl_subty"
     assert config.unifier[4].only_replace_if_base_was_traced == False
 
+    assert config.unifier[5].name ==  "replace_subtypes_strict"
     assert config.unifier[5].kind ==  "repl_subty"
     assert config.unifier[5].only_replace_if_base_was_traced == True
 

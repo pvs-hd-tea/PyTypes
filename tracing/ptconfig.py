@@ -24,23 +24,27 @@ class PyTypes:
 
 @dataclass
 class Dedup:
+    name: str
     kind: typing.Literal["dedup"] = "dedup"
 
 
 @dataclass
 class DropTest:
+    name: str
     test_name_pat: str
     kind: typing.Literal["drop_test"] = "drop_test"
 
 
 @dataclass
 class DropVars:
+    name: str
     kind: typing.Literal["drop_mult_var"] = "drop_mult_var"
     min_amount_types_to_drop: int | None = 2
 
 
 @dataclass
 class ReplaceSubtypes:
+    name: str
     kind: typing.Literal["repl_subty"] = "repl_subty"
     only_replace_if_base_was_traced: bool | None = False
 
