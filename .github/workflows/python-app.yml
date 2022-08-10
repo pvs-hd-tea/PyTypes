@@ -34,17 +34,10 @@ jobs:
     - name: Set up Poetry
       uses: snok/install-poetry@v1
       with:
-        virtualenvs-create: true
+        virtualenvs-create: false
         virtualenvs-in-project: false
         virtualenvs-path: ~/.cache/virtualenvs
         installer-parallel: true
-
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/virtualenvs
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'

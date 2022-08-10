@@ -234,10 +234,6 @@ class Tracer:
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
-        elif event == "exception":
-            logger.info(f"Skipping exception: {frameinfo}")
-            pass
-
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
         # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
 
