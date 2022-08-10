@@ -75,12 +75,20 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
         )
 
     except DaciteError as e:
-        print(f"Failed to load config from {config_path}. Here is the schema:\n")
+        print(f"Failed to load config from {config_path}")
         raise e
 
 
 def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
     config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Not the nicest way to do this, but Path's repr operator
+    # leaves "PosixPath" in the config file
+    pttoml.pytypes.proj_path = str(pttoml.pytypes.proj_path) # type: ignore
+    pttoml.pytypes.stdlib_path = str(pttoml.pytypes.stdlib_path) # type: ignore
+    pttoml.pytypes.venv_path = str(pttoml.pytypes.venv_path) # type: ignore
+
     ad = asdict(pttoml)
     ad["pytypes"].pop("output_template")
+
     toml.dump(ad, config_path.open("w"))
