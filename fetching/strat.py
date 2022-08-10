@@ -6,7 +6,7 @@ from re import Pattern
 
 from .projio import Project
 import constants
-from tracing.ptconfig import _write_config, PyTypesToml, Config
+from tracing.ptconfig import write_config, TomlCfg, PyTypes
 
 
 class ApplicationStrategy(ABC):
@@ -29,8 +29,8 @@ class ApplicationStrategy(ABC):
             self._apply(path)
 
         cfg_path = project.root / constants.CONFIG_FILE_NAME
-        toml = PyTypesToml(pytypes=Config(project=project.root.name))
-        _write_config(cfg_path, toml)
+        toml = TomlCfg(pytypes=PyTypes(project=project.root.name))
+        write_config(cfg_path, toml)
 
     @abstractmethod
     def _apply(self, path: pathlib.Path) -> None:

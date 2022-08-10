@@ -74,7 +74,7 @@ def main(**params):
         project_roots = f.readlines()
         sys.path.append(project_roots)
 
-    pytypes_cfg = ptconfig._load_config(projpath / constants.CONFIG_FILE_NAME)
+    pytypes_cfg = ptconfig.load_config(projpath / constants.CONFIG_FILE_NAME)
     traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
 
     collector = TraceDataFileCollector()
