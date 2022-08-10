@@ -22,8 +22,10 @@ def _attempt_module_lookup(
         spec = importlib.util.spec_from_loader(loader.name, loader)
         if spec is not None:
             module = importlib.util.module_from_spec(spec)
+
             sys.modules[module_name] = module
             loader.exec_module(module)
+            del sys.modules[module_name]
 
             logger.debug(f"Imported {module_name} from {str(root / lookup_path)}")
             return module
