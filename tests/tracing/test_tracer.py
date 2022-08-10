@@ -63,12 +63,23 @@ from types import NoneType
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
 import pathlib
+
 stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 
 def tracers() -> tuple[Tracer, Tracer]:
-    opt = Tracer(proj_path=proj_path, venv_path=venv_path, stdlib_path=stdlib_path, apply_opts=True)
-    nonopt = Tracer(proj_path=proj_path, venv_path=venv_path, stdlib_path=stdlib_path, apply_opts=True)
+    opt = Tracer(
+        proj_path=proj_path,
+        venv_path=venv_path,
+        stdlib_path=stdlib_path,
+        apply_opts=True,
+    )
+    nonopt = Tracer(
+        proj_path=proj_path,
+        venv_path=venv_path,
+        stdlib_path=stdlib_path,
+        apply_opts=False,
+    )
 
     return opt, nonopt
 
@@ -79,14 +90,14 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
-    sample_class_module = "tests.test_tracer"
+    sample_class_module = "tests.tracing.test_tracer"
     sample_class_type = "SampleClass"
     string_type = "str"
     integer_type = "int"
     none_type = "NoneType"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "__init__",
@@ -97,7 +108,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         sample_class_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "__init__",
@@ -108,7 +119,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "__init__",
@@ -119,7 +130,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "",
@@ -130,7 +141,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "",
@@ -141,7 +152,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         sample_class_module,
         sample_class_type,
         "__init__",
@@ -171,7 +182,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 
     expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
-    module = "tests.test_tracer"
+    module = "tests.tracing.test_tracer"
 
     sample_class_type = "SampleClass"
     string_type = "str"
@@ -179,7 +190,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     bool_type = "bool"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -190,7 +201,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         sample_class_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -201,7 +212,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -212,7 +223,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -223,7 +234,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -234,7 +245,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "",
@@ -245,7 +256,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         integer_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "",
@@ -256,7 +267,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
@@ -289,7 +300,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     none_type = "NoneType"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_convert_string_to_int",
@@ -300,7 +311,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_convert_string_to_int",
@@ -330,7 +341,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     btype = "bool"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -341,7 +352,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -352,7 +363,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         itype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -363,7 +374,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         btype,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -392,7 +403,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
     tuple_type = "tuple"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_get_two_variables_declared_in_one_line",
@@ -403,7 +414,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_get_two_variables_declared_in_one_line",
@@ -414,7 +425,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         string_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_get_two_variables_declared_in_one_line",
@@ -447,7 +458,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     bool_type = "bool"
 
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -458,7 +469,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         list_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -469,7 +480,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         list_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -480,7 +491,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -491,7 +502,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -502,7 +513,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -513,7 +524,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -524,7 +535,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         int_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -535,7 +546,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_integers",
@@ -546,7 +557,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
@@ -557,7 +568,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         bool_type,
     ]
     expected_trace_data.loc[len(expected_trace_data.index)] = [
-        str(pathlib.Path("tests", "test_tracer.py")),
+        str(pathlib.Path("tests", "tracing", "test_tracer.py")),
         None,
         None,
         "sample_compare_two_int_lists",
