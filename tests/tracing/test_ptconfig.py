@@ -3,10 +3,9 @@ import pathlib
 from tracing import ptconfig
 
 
-config_path = pathlib.Path("tests", "resource", "configs", "example.toml")
 
-
-def test_pytypes():
+def test_full():
+    config_path = pathlib.Path("tests", "resource", "configs", "example.toml")
     config = ptconfig.load_config(config_path)
 
     assert config.pytypes.project == "PyTypes"
@@ -36,3 +35,19 @@ def test_pytypes():
 
     assert config.unifier[5].kind ==  "repl_subty"
     assert config.unifier[5].only_replace_if_base_was_traced == True
+
+
+def test_simple():
+    config_path = pathlib.Path("tests", "resource", "configs", "simple.toml")
+    config = ptconfig.load_config(config_path)
+
+    assert config.pytypes.project == "PyTypes"
+    assert config.pytypes.stdlib_path == pathlib.Path("/", "usr", "lib", "python3.10")
+    assert config.pytypes.proj_path == pathlib.Path(
+        "/", "home", "benji", "Documents", "Uni", "heidelberg", "04", "pytype", "repo"
+    )
+    assert config.pytypes.venv_path == pathlib.Path(
+        "/", "home", "benji", ".cache", "pypoetry", "virtualenvs", "pytypes-xvtnrWJT-py3.10"
+    )
+
+    assert len(config.unifier) == 0

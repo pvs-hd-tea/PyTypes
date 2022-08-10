@@ -45,13 +45,15 @@ class ReplaceSubtypes:
     only_replace_if_base_was_traced: bool | None = False
 
 
-
 # https://github.com/konradhalas/dacite/pull/184
 # the cooler union syntax is not supported
+Unifier = typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes]
+
+
 @dataclass
 class TomlCfg:
     pytypes: PyTypes
-    unifier: list[typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes]]
+    unifier: list[Unifier] = field(default_factory=list)
 
 
 def load_config(config_path: pathlib.Path) -> TomlCfg:
@@ -71,6 +73,7 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
     except DaciteError as e:
         print(f"Failed to load config from {config_path}. Here is the schema:\n")
         raise e
+
 
 def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
     config_path.parent.mkdir(parents=True, exist_ok=True)
