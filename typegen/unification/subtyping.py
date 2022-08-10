@@ -183,7 +183,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 )
 
             if module is None:
-                # 23 venv
+                # 3. venv
                 major, minor = sys.version_info[:2]
                 site_packages = (
                     self.venv_path / "lib" / f"python{major}.{minor}" / "site-packages"
