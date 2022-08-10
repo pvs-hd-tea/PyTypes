@@ -77,6 +77,8 @@ class Tracer:
         td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
         self.trace_data = self.trace_data.drop(td_drop.index)
 
+        self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
+
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
         self.start_trace()

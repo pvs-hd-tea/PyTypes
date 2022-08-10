@@ -60,12 +60,16 @@ class SampleClass:
 cwd = pathlib.Path.cwd()
 from types import NoneType
 
+proj_path = pathlib.Path.cwd()
+venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
+stdlib_path = pathlib.Path(sys.path[2])
 
-def test_if_tracer_is_initialized_with_invalid_values_error_is_raised():
-    with pytest.raises(TypeError):
-        Tracer()
-        Tracer(1)
-        Tracer("string")
+
+def tracers() -> tuple[Tracer, Tracer]:
+    opt = Tracer(proj_path=proj_path, venv_path=venv_path, stdlib_path=stdlib_path, apply_opts=True)
+    nonopt = Tracer(proj_path=proj_path, venv_path=venv_path, stdlib_path=stdlib_path, apply_opts=True)
+
+    return opt, nonopt
 
 
 def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data():
@@ -149,7 +153,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         SampleClass(integer, string)
@@ -266,7 +270,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 
     sample_object = SampleClass(integer, string)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         sample_object.sample_check_if_arguments_match_members(integer, string)
@@ -307,7 +311,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         sample_convert_string_to_int(invalid_string)
@@ -370,7 +374,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         sample_compare_integers(value1, value2)
@@ -422,7 +426,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
 
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         sample_get_two_variables_declared_in_one_line()
@@ -564,7 +568,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     ]
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
         sample_compare_two_int_lists(list1, list2)
@@ -575,7 +579,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
 
 
 def test_if_tracer_starts_trace_data_is_none_or_empty():
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.start_trace()
 
@@ -588,7 +592,7 @@ def test_if_tracer_starts_trace_data_is_none_or_empty():
 
 
 def test_if_tracer_stops_no_trace_is_set():
-    test_objects = [Tracer(cwd, True), Tracer(cwd, False)]
+    test_objects = tracers()
     for test_object in test_objects:
         test_object.stop_trace()
         assert sys.gettrace() is None
