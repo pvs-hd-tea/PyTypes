@@ -62,7 +62,8 @@ from types import NoneType
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
-stdlib_path = pathlib.Path(sys.path[2])
+import pathlib
+stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 
 def tracers() -> tuple[Tracer, Tracer]:
@@ -215,7 +216,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
-        56,
+        55,
         TraceDataCategory.LOCAL_VARIABLE,
         "are_integers_equal",
         None,
@@ -226,7 +227,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         module,
         sample_class_type,
         "sample_check_if_arguments_match_members",
-        57,
+        56,
         TraceDataCategory.LOCAL_VARIABLE,
         "are_strings_equal",
         None,
@@ -355,7 +356,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         None,
         None,
         "sample_compare_integers",
-        33,
+        32,
         TraceDataCategory.LOCAL_VARIABLE,
         "result",
         None,
@@ -395,7 +396,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         None,
         None,
         "sample_get_two_variables_declared_in_one_line",
-        38,
+        37,
         TraceDataCategory.LOCAL_VARIABLE,
         "variable1",
         None,
@@ -406,7 +407,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         None,
         None,
         "sample_get_two_variables_declared_in_one_line",
-        38,
+        37,
         TraceDataCategory.LOCAL_VARIABLE,
         "variable2",
         None,
@@ -472,7 +473,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         None,
         "sample_compare_two_int_lists",
-        24,
+        23,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
         None,
@@ -483,7 +484,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         None,
         "sample_compare_two_int_lists",
-        24,
+        23,
         TraceDataCategory.LOCAL_VARIABLE,
         "element1",
         None,
@@ -494,7 +495,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         None,
         "sample_compare_two_int_lists",
-        25,
+        24,
         TraceDataCategory.LOCAL_VARIABLE,
         "element2",
         None,
@@ -527,7 +528,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         None,
         "sample_compare_integers",
-        33,
+        32,
         TraceDataCategory.LOCAL_VARIABLE,
         "result",
         None,
@@ -549,7 +550,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         None,
         "sample_compare_two_int_lists",
-        26,
+        25,
         TraceDataCategory.LOCAL_VARIABLE,
         "are_elements_equal",
         None,

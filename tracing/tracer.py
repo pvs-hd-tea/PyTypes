@@ -45,7 +45,7 @@ class Tracer:
         self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
 
         # Map of a function name to the variables in that functions scope
-        self.old_vars: dict[str, set] = dict()
+        self.old_vars: dict[str, dict[str, typing.Any]] = dict()
         self.apply_opts = apply_opts
 
         if self.apply_opts:
@@ -56,6 +56,9 @@ class Tracer:
         logger.info("Starting trace")
         sys.settrace(self._on_trace_is_called)
         # sys.setprofile(self._on_trace_is_called)
+
+        # stack based in order to hold previous line when returning
+        self._prev_line: list[int] = list()
 
     def stop_trace(self) -> None:
         """Stops the trace."""
@@ -164,7 +167,9 @@ class Tracer:
 
     def _on_class_function_return(self, frame) -> dict[str, tuple[str | None, str]]:
         """Updates the trace data with the members of the class object."""
-        first_element_name = next(iter(frame.f_locals))
+        first_element_name = next(iter(frame.f_locals), None)
+        if first_element_name is None:
+            return dict()
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
 
@@ -220,6 +225,7 @@ class Tracer:
         frameinfo = inspect.getframeinfo(frame)
 
         if event == "call":
+            self._prev_line.append(line_number)
             logger.info(f"Tracing call: {frameinfo}")
             names2types = self._on_call(frame, arg)
             category = TraceDataCategory.FUNCTION_PARAMETER
@@ -231,6 +237,7 @@ class Tracer:
 
             # Remove from storage
             self.old_vars.pop(function_name)
+            self._prev_line.pop()
 
             # Special case
             line_number = 0
@@ -256,15 +263,13 @@ class Tracer:
                 )
 
         elif event == "line":
+            line_number, self._prev_line[-1] = self._prev_line[-1], line_number
             logger.info(f"Tracing line: {frameinfo}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
-        # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
-        # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
-
+        logger.debug(f"{event} @ {line_number} {names2types or 'NO NEW TYPES'} {category or 'NO CATEGORY'}")
         if names2types and category:
-            logger.debug(f"{event}: {names2types} {category}")
             self._update_trace_data_with(
                 file_name,
                 class_module,
@@ -275,7 +280,9 @@ class Tracer:
                 names2types,
             )
 
-        self.old_vars[function_name] = set(frame.f_locals.keys())
+        self.old_vars[function_name] = frame.f_locals.copy()
+        if self.apply_opts:
+            self.trace_data = self.trace_data.drop_duplicates()
         return self._on_trace_is_called
 
     def _update_trace_data_with(
@@ -323,16 +330,17 @@ class Tracer:
         ).astype(constants.TraceData.SCHEMA)
 
     def _get_new_defined_local_variables_with_types(
-        self, prev_vars2vals: set[str], new_vars2vals: dict[str, type]
+        self, prev_vars2vals: dict[str, typing.Any], new_vars2vals: dict[str, typing.Any]
     ) -> dict[str, tuple[str | None, str]]:
         """Gets the new defined variable from one frame to the next frame."""
         names2types = {}
 
         for name, value in new_vars2vals.items():
-            if name not in prev_vars2vals:
-                modname = self._resolver.get_module_and_name(type(value))
+            if name not in prev_vars2vals or value != prev_vars2vals[name]:
+                valt = type(value)
+                modname = self._resolver.get_module_and_name(valt)
                 if modname is None:
-                    self._on_non_importable(type(value))
+                    self._on_non_importable(valt)
                 names2types[name] = modname
 
         return names2types
