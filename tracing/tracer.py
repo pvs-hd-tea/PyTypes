@@ -1,6 +1,9 @@
 import contextlib
+import functools
 import logging
+import os
 import inspect
+import operator
 import sys
 
 import pandas as pd
@@ -28,7 +31,9 @@ class Tracer:
             constants.TraceData.SCHEMA
         )
         self.project_dir = project_dir
-        self.old_values_by_variable_by_function_name: dict[str, dict] = dict()
+
+        # Map of a function name to the variables in that functions scope
+        self.old_vars: dict[str, set] = dict()
         self.apply_opts = apply_opts
 
         if self.apply_opts:
@@ -51,9 +56,14 @@ class Tracer:
 
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
-        self.trace_data = self.trace_data[
-            self.trace_data[constants.TraceData.CLASS] != Tracer
+
+        tname, fname = Tracer.__name__, self.stop_trace.__name__
+        drop_masks = [
+            self.trace_data[constants.TraceData.CLASS] == tname,
+            self.trace_data[constants.TraceData.FUNCNAME] == fname,
         ]
+        td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
+        self.trace_data = self.trace_data.drop(td_drop.index)
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -107,37 +117,43 @@ class Tracer:
         for optimisation in self.optimisation_stack:
             optimisation.advance(fwm, self.trace_data)
 
-    def _on_call(self, frame, arg: typing.Any) -> dict[str, type]:
+    def _on_call(self, frame, _: typing.Any) -> dict[str, tuple[str | None, str]]:
         names2types = {
-            var_name: type(var_value) for var_name, var_value in frame.f_locals.items()
+            name: _get_module_and_name(type(value), self.project_dir)
+            for name, value in frame.f_locals.items()
         }
 
         return names2types
 
-    def _on_return(self, frame, arg: typing.Any) -> dict[str, type]:
+    def _on_return(self, frame, arg: typing.Any) -> dict[str, tuple[str | None, str]]:
         code = frame.f_code
         function_name = code.co_name
-        names2types = {function_name: type(arg)}
+        names2types = {function_name: _get_module_and_name(type(arg), self.project_dir)}
         return names2types
 
-    def _on_line(self, frame) -> dict[str, type]:
+    def _on_line(self, frame) -> dict[str, tuple[str | None, str]]:
         code = frame.f_code
         function_name = code.co_name
         names2types = _get_new_defined_local_variables_with_types(
-            self.old_values_by_variable_by_function_name[function_name], frame.f_locals
+            self.old_vars[function_name],
+            frame.f_locals,
+            self.project_dir,
         )
         return names2types
 
-    def _on_class_function_return(self, frame) -> dict[str, type]:
+    def _on_class_function_return(self, frame) -> dict[str, tuple[str | None, str]]:
         """Updates the trace data with the members of the class object."""
         first_element_name = next(iter(frame.f_locals))
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
 
-    def _evaluate_object(self, class_object: typing.Any) -> dict[str, type]:
+    def _evaluate_object(
+        self, class_object: typing.Any
+    ) -> dict[str, tuple[str | None, str]]:
         object_dict = class_object.__dict__
         names2types = {
-            var_name: type(var_value) for var_name, var_value in object_dict.items()
+            var_name: _get_module_and_name(type(var_value), self.project_dir)
+            for var_name, var_value in object_dict.items()
         }
         return names2types
 
@@ -164,6 +180,13 @@ class Tracer:
         function_name = code.co_name
         possible_class = _get_class_in_frame(frame)
 
+        if possible_class is not None:
+            class_module, class_name = _get_module_and_name(
+                possible_class, self.project_dir
+            )
+        else:
+            class_module, class_name = None, None
+
         file_name = pathlib.Path(code.co_filename).relative_to(self.project_dir)
         line_number = frame.f_lineno
 
@@ -180,6 +203,9 @@ class Tracer:
             names2types = self._on_return(frame, arg)
             category = TraceDataCategory.FUNCTION_RETURN
 
+            # Remove from storage
+            self.old_vars.pop(function_name)
+
             # Special case
             line_number = 0
 
@@ -187,19 +213,26 @@ class Tracer:
             if possible_class is not None:
                 names2types2 = self._on_class_function_return(frame)
                 category2 = TraceDataCategory.CLASS_MEMBER
+
+                # Line number is 0 and function name is empty to
+                # unify matching class members more better.
+
+                # Class Members contain state and can theoretically, at any time, on the same line, be of many types
+
                 self._update_trace_data_with(
-                    file_name, possible_class, "", 0, category2, names2types2
+                    file_name,
+                    class_module,
+                    class_name,
+                    "",
+                    0,
+                    category2,
+                    names2types2,
                 )
-                # Line number is 0 and function name is empty to unify matching class members more easily.
 
         elif event == "line":
             logger.info(f"Tracing line: {frameinfo}")
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
-
-        elif event == "exception":
-            logger.info(f"Skipping exception: {frameinfo}")
-            pass
 
         # NOTE: If there is any error occurred in the trace function, it will be unset, just like settrace(None) is called.
         # NOTE: therefore, throwing an exception does not work, as the trace function will simply be unset
@@ -208,66 +241,74 @@ class Tracer:
             logger.debug(f"{event}: {names2types} {category}")
             self._update_trace_data_with(
                 file_name,
-                possible_class,
+                class_module,
+                class_name,
                 function_name,
                 line_number,
                 category,
                 names2types,
             )
 
-        self.old_values_by_variable_by_function_name[
-            function_name
-        ] = frame.f_locals.copy()
-
+        self.old_vars[function_name] = set(frame.f_locals.keys())
         return self._on_trace_is_called
 
     def _update_trace_data_with(
         self,
         file_name: pathlib.Path,
-        class_type: type | None,
-        function_name: str,
+        class_module: str | None,
+        class_name: str | None,
+        function_name: str | None,
         line_number: int,
         category: TraceDataCategory,
-        names2types: dict[str, type],
+        names2types: dict[str, tuple[str | None, str]],
     ) -> None:
         """
         Constructs a DataFrame from the provided arguments, and appends
         it to the existing trace data collection.
 
         @param file_name The file name in which the variables are declared.
+        @param class_module Module of the class the variable is in
+        @param class_name Name of the class the variable is in
         @param function_name The function which declares the variable.
-        @param names2types A dictionary containing the variable name and its type.
         @param line_number The line number.
         @param category The data category of the row.
+        @param names2types A dictionary containing the variable name, the type's module and the type's name.
         """
         varnames = list(names2types.keys())
-        vartypes = list(names2types.values())
+
+        vartype_modules = list(map(operator.itemgetter(0), names2types.values()))
+        vartypes = list(map(operator.itemgetter(1), names2types.values()))
 
         d = {
             constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
-            constants.TraceData.CLASS: [class_type] * len(varnames),
+            constants.TraceData.CLASS_MODULE: [class_module] * len(varnames),
+            constants.TraceData.CLASS: [class_name] * len(varnames),
             constants.TraceData.FUNCNAME: [function_name] * len(varnames),
-            constants.TraceData.VARNAME: varnames,
-            constants.TraceData.VARTYPE: vartypes,
             constants.TraceData.LINENO: [line_number] * len(varnames),
             constants.TraceData.CATEGORY: [category] * len(varnames),
+            constants.TraceData.VARNAME: varnames,
+            constants.TraceData.VARTYPE_MODULE: vartype_modules,
+            constants.TraceData.VARTYPE: vartypes,
         }
         update = pd.DataFrame(d).astype(constants.TraceData.SCHEMA)
+
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
         ).astype(constants.TraceData.SCHEMA)
 
 
 def _get_new_defined_local_variables_with_types(
-    old_values_by_variable: dict[str, str],
-    new_values_by_variable: dict[str, str],
-) -> dict[str, type]:
+    prev_vars2vals: set[str],
+    new_vars2vals: dict[str, type],
+    proj_root: pathlib.Path,
+) -> dict[str, tuple[str | None, str]]:
     """Gets the new defined variable from one frame to the next frame."""
     names2types = {}
-    for item in new_values_by_variable.items():
-        variable_name, variable_value = item[0], item[1]
-        if variable_name not in old_values_by_variable:
-            names2types[variable_name] = type(variable_value)
+
+    for name, value in new_vars2vals.items():
+        if name not in prev_vars2vals:
+            names2types[name] = _get_module_and_name(type(value), proj_root)
+
     return names2types
 
 
@@ -285,3 +326,20 @@ def _get_class_in_frame(frame) -> type | None:
                 return possible_class
 
     return None
+
+
+def _get_module_and_name(t: type, proj_root: pathlib.Path) -> tuple[str | None, str]:
+    module = sys.modules[t.__module__]
+    if module.__name__ == "builtins":
+        return None, t.__name__
+    ty_mod = os.path.abspath(module.__file__)
+    # user defined type
+    relative = os.path.relpath(ty_mod, proj_root)
+    print("Project root: " + str(proj_root))
+    print("Module name: " + str(module.__name__))
+    print("Module file path: " + str(ty_mod))
+    print("Relative path: " + str(relative))
+    print("---")
+    module = relative.replace(os.path.sep, ".")
+
+    return ty_mod, t.__name__

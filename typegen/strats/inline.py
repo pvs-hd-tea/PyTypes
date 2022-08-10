@@ -96,8 +96,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         cdef = self._innermost_class()
         if cdef is not None:
-            names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
-            clazz_mask = names == cdef.name.value
+            clazz_mask = self.df[TraceData.CLASS] == cdef.name.value
         else:
             clazz_mask = self.df[TraceData.CLASS].isnull()
 
@@ -123,12 +122,11 @@ class TypeHintTransformer(cst.CSTTransformer):
             rettype = rettypes[TraceData.VARTYPE].values[0]
             assert rettype is not None
 
-            ret_hint = rettype.__name__
             logger.debug(
-                f"Applying return type hint '{ret_hint}' to '{original_node.name.value}'"
+                f"Applying return type hint '{rettype}' to '{original_node.name.value}'"
             )
             logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
-            return updated_node.with_changes(returns=cst.Annotation(cst.Name(ret_hint)))
+            return updated_node.with_changes(returns=cst.Annotation(cst.Name(rettype)))
 
     def leave_Param(
         self, original_node: cst.Param, updated_node: cst.Param
@@ -163,11 +161,10 @@ class TypeHintTransformer(cst.CSTTransformer):
         argtype = params[TraceData.VARTYPE].values[0]
         assert argtype is not None
 
-        arg_hint = argtype.__name__
         logger.debug(
-            f"Applying hint '{arg_hint}' to parameter '{original_node.name.value}'"
+            f"Applying hint '{argtype}' to parameter '{original_node.name.value}'"
         )
-        return updated_node.with_changes(annotation=cst.Annotation(cst.Name(arg_hint)))
+        return updated_node.with_changes(annotation=cst.Annotation(cst.Name(argtype)))
 
     def leave_AugAssign(
         self, original_node: cst.AugAssign, _: cst.AugAssign
@@ -179,8 +176,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         cdef = self._innermost_class()
         if cdef is not None:
-            names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
-            class_check = names == cdef.name.value
+            class_check = self.df[TraceData.CLASS] == cdef.name.value
         else:
             class_check = self.df[TraceData.CLASS].isnull()
 
@@ -219,9 +215,8 @@ class TypeHintTransformer(cst.CSTTransformer):
                 logger.debug(f"No type hint stored for {ident} in AugAssign")
                 continue
 
-            hint_ty = hinted[TraceData.VARTYPE].values[0]
-            assert hint_ty is not None
-            hint = hint_ty.__name__
+            hint = hinted[TraceData.VARTYPE].values[0]
+            assert hint is not None
 
             hinted_targets.append(
                 cst.AnnAssign(
@@ -246,8 +241,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         cdef = self._innermost_class()
         if cdef is not None:
-            names = self.df[TraceData.CLASS].map(lambda t: t.__name__ if t else None)
-            class_check = names == cdef.name.value
+            class_check = self.df[TraceData.CLASS] == cdef.name.value
         else:
             class_check = self.df[TraceData.CLASS].isnull()
 
@@ -291,13 +285,12 @@ class TypeHintTransformer(cst.CSTTransformer):
                 else:
                     hint_ty = hinted[TraceData.VARTYPE].values[0]
                     assert hint_ty is not None
-                    hint = hint_ty.__name__
 
-                    logger.debug(f"Found {hint} for {ident}")
+                    logger.debug(f"Found {hint_ty} for {ident}")
                     hinted_targets.append(
                         cst.AnnAssign(
                             target=var,
-                            annotation=cst.Annotation(cst.Name(value=hint)),
+                            annotation=cst.Annotation(cst.Name(value=hint_ty)),
                             value=None,
                         )
                     )
@@ -319,16 +312,15 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         hint_ty = hinted[TraceData.VARTYPE].values[0]
         assert hint_ty is not None
-        hint = hint_ty.__name__
 
         logger.debug(
-            f"Replacing Assign for '{ident}' with AnnAssign with hint '{hint}'"
+            f"Replacing Assign for '{ident}' with AnnAssign with hint '{hint_ty}'"
         )
 
         # Replace simple assignment with annotated assignment
         return cst.AnnAssign(
             target=original_node.targets[0].target,
-            annotation=cst.Annotation(cst.Name(value=hint)),
+            annotation=cst.Annotation(cst.Name(value=hint_ty)),
             value=original_node.value,
         )
 
