@@ -14,6 +14,10 @@ import constants
 logger = logging.getLogger(__name__)
 
 
+def _none_if_builtin(module: str) -> str | None:
+    return module if module != "builtins" else None
+
+
 def _attempt_module_lookup(
     module_name: str, root: pathlib.Path, lookup_path: pathlib.Path
 ) -> ModuleType | None:
@@ -197,15 +201,9 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                     f"Failed to import {relative_type_module_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
                 )
             variable_type: type = getattr(module, variable_type_name)
-
-            # TODO: venv import
-
             mros = variable_type.mro()
-
-        def none_if_builtin(module: str) -> str | None:
-            return module if module != "builtins" else None
 
         module_and_name = list()
         for m in mros:
-            module_and_name.append((none_if_builtin(m.__module__), m.__name__))
+            module_and_name.append((_none_if_builtin(m.__module__), m.__name__))
         return module_and_name

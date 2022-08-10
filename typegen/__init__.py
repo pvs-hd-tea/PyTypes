@@ -8,7 +8,6 @@ import constants
 
 from tracing import ptconfig
 
-from typegen.strats.gen import TypeHintGenerator
 from typegen.trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
@@ -18,11 +17,18 @@ __all__ = [
     TraceDataFileCollector.__name__,
 ]
 
+
 @click.command(name="typegen", help="Collects trace data files in directories")
 @click.option(
     "-p",
     "--path",
-    type=click.Path(exists=True, dir_okay=True, writable=False, readable=True, path_type=pathlib.Path),
+    type=click.Path(
+        exists=True,
+        dir_okay=True,
+        writable=False,
+        readable=True,
+        path_type=pathlib.Path,
+    ),
     help="Path to project directory",
     required=True,
 )
@@ -38,7 +44,9 @@ __all__ = [
     "-g",
     "--gen-strat",
     help="Select a strategy for generating type hints",
-    type=click.Choice([StubFileGenerator.ident, InlineGenerator.ident], case_sensitive=False),
+    type=click.Choice(
+        [StubFileGenerator.ident, InlineGenerator.ident], case_sensitive=False
+    ),
     required=True,
 )
 @click.option(
@@ -70,7 +78,7 @@ def main(**params):
     traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
 
     collector = TraceDataFileCollector()
-    collector.collect_trace_data(projpath, subdirs)
+    collector.collect_trace_data(traced_df_folder, subdirs)
 
     print(collector.trace_data)
     return

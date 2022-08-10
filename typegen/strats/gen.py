@@ -1,5 +1,4 @@
 import abc
-import logging
 import operator
 import functools
 import os
@@ -9,28 +8,28 @@ import typing
 import libcst as cst
 import pandas as pd
 
-import constants
+from constants import TraceData
 
-# There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
+
 class _AddImportVisitor(cst.CSTTransformer):
     def __init__(self, applicable: pd.DataFrame) -> None:
         self.applicable = applicable.copy()
 
+    # There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
     def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
         def file2module(file: str) -> str:
             return os.path.splitext(file.replace(os.path.sep, "."))[0]
 
         # Stupid implementation: make from x import y everywhere
-        self.applicable["modules"] = self.applicable[constants.TraceData.FILENAME].map(
+        self.applicable["modules"] = self.applicable[TraceData.FILENAME].map(
             lambda f: file2module(f)
         )
 
         # ignore builtins
-        non_builtin = self.applicable[constants.TraceData.VARTYPE_MODULE].notnull()
+        non_builtin = self.applicable[TraceData.VARTYPE_MODULE].notnull()
         # ignore classes in the same module
         not_in_same_mod = (
-            self.applicable["modules"]
-            != self.applicable[constants.TraceData.VARTYPE_MODULE]
+            self.applicable["modules"] != self.applicable[TraceData.VARTYPE_MODULE]
         )
         retain_mask = [
             non_builtin,
@@ -42,8 +41,8 @@ class _AddImportVisitor(cst.CSTTransformer):
             return updated_node
 
         importables = important.groupby(
-            [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
-        ).agg({constants.TraceData.VARTYPE: list})
+            [TraceData.VARTYPE_MODULE, TraceData.VARTYPE]
+        ).agg({TraceData.VARTYPE: list})
 
         imports: list[cst.ImportFrom | cst.Newline] = []
 
@@ -96,12 +95,10 @@ class TypeHintGenerator(abc.ABC):
         return True
 
     def apply(self):
-        files = self.types[constants.TraceData.FILENAME].unique()
+        files = self.types[TraceData.FILENAME].unique()
         for path in filter(self._is_hintable_file, files):
             # Get type hints relevant to this file
-            applicable = self.types[
-                self.types[constants.TraceData.FILENAME] == str(path)
-            ]
+            applicable = self.types[self.types[TraceData.FILENAME] == str(path)]
             if not applicable.empty:
                 module = cst.parse_module(source=path.open().read())
                 module_and_meta = cst.MetadataWrapper(module)
