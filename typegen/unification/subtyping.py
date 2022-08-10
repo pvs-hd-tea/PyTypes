@@ -8,6 +8,8 @@ import pandas as pd
 import pathlib
 import sys
 
+from tracing.resolver import Resolver
+
 from .filter_base import TraceDataFilter
 import constants
 
@@ -16,28 +18,6 @@ logger = logging.getLogger(__name__)
 
 def _none_if_builtin(module: str) -> str | None:
     return module if module != "builtins" else None
-
-
-def _attempt_module_lookup(
-    module_name: str, root: pathlib.Path, lookup_path: pathlib.Path
-) -> ModuleType | None:
-    try:
-        loader = SourceFileLoader(module_name, str(root / lookup_path))
-        spec = importlib.util.spec_from_loader(loader.name, loader)
-        if spec is not None:
-            module = importlib.util.module_from_spec(spec)
-
-            sys.modules[module_name] = module
-            loader.exec_module(module)
-            del sys.modules[module_name]
-
-            logger.debug(f"Imported {module_name} from {str(root / lookup_path)}")
-            return module
-
-    except FileNotFoundError:
-        logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
-
-    return None
 
 
 class ReplaceSubTypesFilter(TraceDataFilter):
@@ -58,6 +38,25 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
+        if self.stdlib_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.stdlib_path=}"
+            )
+        if self.proj_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.proj_path=}"
+            )
+        if self.venv_path is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.venv_path=}"
+            )
+        if self.only_replace_if_base_was_traced is None:
+            raise AttributeError(
+                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.only_replace_if_base_was_traced=}"
+            )
+
+        self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
+
         subset = list(constants.TraceData.SCHEMA.keys())
         subset.remove(constants.TraceData.VARTYPE_MODULE)
         subset.remove(constants.TraceData.VARTYPE)
@@ -142,66 +141,14 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         return None
 
     def _get_type_and_mro(
-        self, relative_type_module_name: str | None, variable_type_name: str
+        self, module_name: str | None, type_name: str
     ) -> list[tuple[str | None, str]]:
-        if self.stdlib_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.stdlib_path=}"
+        variable_type = self._resolver.type_lookup(module_name, type_name)
+        if variable_type is None:
+            raise ImportError(
+                f"Failed to import {module_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
             )
-        if self.proj_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.proj_path=}"
-            )
-        if self.venv_path is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.venv_path=}"
-            )
-        if self.only_replace_if_base_was_traced is None:
-            raise AttributeError(
-                f"{ReplaceSubTypesFilter.__name__} was not initialised properly: {self.only_replace_if_base_was_traced=}"
-            )
-        # Follow import order specified by sys.path
-
-        # 0. builtin types
-        if relative_type_module_name is None or isinstance(
-            relative_type_module_name, type(pd.NA)
-        ):
-            # __builtins__ is typed as Module by mypy, but is dict in the REPL?
-            builtin_ty: type = __builtins__[variable_type_name]  # type: ignore
-            mros = builtin_ty.mro()
-
-        else:
-            # recreate filename
-            lookup_path = pathlib.Path(
-                relative_type_module_name.replace(".", os.path.sep) + ".py"
-            )
-
-            # 1. project path
-            module = _attempt_module_lookup(
-                relative_type_module_name, self.proj_path, lookup_path
-            )
-            if module is None:
-                # 2. stdlib
-                module = _attempt_module_lookup(
-                    relative_type_module_name, self.stdlib_path, lookup_path
-                )
-
-            if module is None:
-                # 3. venv
-                major, minor = sys.version_info[:2]
-                site_packages = (
-                    self.venv_path / "lib" / f"python{major}.{minor}" / "site-packages"
-                )
-                module = _attempt_module_lookup(
-                    relative_type_module_name, site_packages, lookup_path
-                )
-
-            if module is None:
-                raise ImportError(
-                    f"Failed to import {relative_type_module_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
-                )
-            variable_type: type = getattr(module, variable_type_name)
-            mros = variable_type.mro()
+        mros = variable_type.mro()
 
         module_and_name = list()
         for m in mros:
