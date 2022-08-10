@@ -18,7 +18,8 @@ from pandas.testing import assert_frame_equal
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
-stdlib_path = pathlib.Path(sys.path[2])
+import pathlib
+stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 strict_rstf = TraceDataFilter(  # type: ignore
     ident=ReplaceSubTypesFilter.ident,
