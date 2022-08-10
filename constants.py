@@ -33,3 +33,13 @@ class TraceData:
         VARNAME: pd.StringDtype(),
         VARTYPE: object,
     }
+
+    TYPE_HINT_SCHEMA = {
+        FILENAME: pd.StringDtype(),
+        CLASS: pd.StringDtype(),
+        FUNCNAME: pd.StringDtype(),
+        LINENO: pd.UInt64Dtype(),
+        CATEGORY: pd.Int64Dtype(),
+        VARNAME: pd.StringDtype(),
+        VARTYPE: pd.StringDtype(),
+    }
