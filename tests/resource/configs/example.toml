@@ -1,0 +1,27 @@
+[pytypes]
+project = "PyTypes"
+
+stdlib_path = "/usr/lib/python3.10"
+proj_path = "/home/benji/Documents/Uni/heidelberg/04/pytype/repo"
+venv_path = "/home/benji/.cache/pypoetry/virtualenvs/pytypes-xvtnrWJT-py3.10"
+
+[[unifier]]
+kind = "dedup"
+
+[[unifier]]
+kind = "drop_test"
+test_name_pat = "test_"
+
+[[unifier]]
+kind = "drop_mult_var"
+
+[[unifier]]
+kind = "drop_mult_var"
+min_amount_types_to_drop = 5
+
+[[unifier]]
+kind = "repl_subty"
+
+[[unifier]]
+kind = "repl_subty"
+only_replace_if_base_was_traced = true
