@@ -73,16 +73,4 @@ def main(**params):
     collector.collect_trace_data(projpath, subdirs)
 
     print(collector.trace_data)
-
-    filter_list = TraceDataFilterList()
-    filter_list.append(DropTestFunctionDataFilter(test_function_name_pattern=constants.PYTEST_FUNCTION_PATTERN))
-    filter_list.append(DropDuplicatesFilter())
-    filter_list.append(ReplaceSubTypesFilter(only_replace_if_base_type_already_in_data=True))
-    #filter_list.append(DropDuplicatesFilter())
-    #filter_list.append(DropVariablesOfMultipleTypesFilter(min_amount_types_to_drop=2))
-
-    processed_data = filter_list.get_processed_data(collector.trace_data)
-    print(processed_data)
     return
-    hint_generator = TypeHintGenerator(ident=strat_name, types=processed_data)
-    hint_generator.apply()
