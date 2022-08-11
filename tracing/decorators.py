@@ -59,6 +59,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             with tracer.active_trace():
                 function()
 
-            tracer.trace_data.to_pickle(str(tracer.project_dir / substituted_output))
+            output_path: pathlib.Path = tracer.project_dir / substituted_output
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            tracer.trace_data.to_pickle(str(output_path))
 
     return impl

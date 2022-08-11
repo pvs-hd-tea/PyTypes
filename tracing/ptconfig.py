@@ -11,7 +11,7 @@ import constants
 class Config:
     project: str
     output_template: str = field(
-        default="{project}-{func_name}" + constants.TRACE_DATA_FILE_ENDING
+        default="pytypes/{project}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
     )
 
 
