@@ -11,7 +11,7 @@ import pandas as pd
 from constants import TraceData
 
 
-class _AddImportVisitor(cst.CSTTransformer):
+class _AddImportTransformer(cst.CSTTransformer):
     def __init__(self, applicable: pd.DataFrame) -> None:
         self.applicable = applicable.copy()
 
@@ -131,4 +131,4 @@ class TypeHintGenerator(abc.ABC):
         applicable: pd.DataFrame,
         hinted_ast: cst.Module,
     ) -> cst.Module:
-        return hinted_ast.visit(_AddImportVisitor(applicable))
+        return hinted_ast.visit(_AddImportTransformer(applicable))
