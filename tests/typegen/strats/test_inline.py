@@ -599,9 +599,18 @@ def test_imported():
     class ImportedHintTest(cst.CSTVisitor):
         @typing.no_type_check
         def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-            assert isinstance(node.module, cst.Attribute)
+            if matches(node.module, cst.parse_expression("__future__")):
+                assert isinstance(node.module, cst.Name)
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "annotations"
 
-            if matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+            elif matches(node.module, cst.parse_expression("typing")):
+                assert isinstance(node.module, cst.Name)
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "TYPE_CHECKING"
+
+            elif matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+                assert isinstance(node.module, cst.Attribute)
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "C"
 
