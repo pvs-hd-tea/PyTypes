@@ -24,7 +24,7 @@ class FileTypeHintsCollector:
             module = cst.parse_module(source=file_content)
             module_and_meta = cst.MetadataWrapper(module)
             relative_path = str(pathlib.Path(os.path.relpath(file_path.resolve(), self.project_dir.resolve())))
-            visitor = TypeHintVisitor(relative_path)
+            visitor = _TypeHintVisitor(relative_path)
             module_and_meta.visit(visitor)
             typehint_data = visitor.typehint_data.astype(constants.TraceData.TYPE_HINT_SCHEMA)
 
@@ -33,7 +33,7 @@ class FileTypeHintsCollector:
             ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
 
 
-class TypeHintVisitor(cst.CSTVisitor):
+class _TypeHintVisitor(cst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, file_path: str) -> None:

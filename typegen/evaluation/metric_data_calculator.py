@@ -7,6 +7,7 @@ import constants
 
 
 class MetricDataCalculator:
+    """Calculates the metric data containing the correctness & completeness."""
     def __init__(self):
         self.modified_filenames_by_original: Dict[str, str] = {}
 
