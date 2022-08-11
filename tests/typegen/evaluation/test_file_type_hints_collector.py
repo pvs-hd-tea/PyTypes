@@ -19,6 +19,7 @@ def test_file_type_hints_collector_returns_correct_data():
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(actual_typehint_data)
 
+    assert actual_typehint_data.shape[0] == 20
     assert expected_typehint_data.equals(actual_typehint_data)
 
 
@@ -33,4 +34,5 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_files():
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(actual_typehint_data)
 
+    assert actual_typehint_data.shape[0] == 40
     assert expected_typehint_data.equals(actual_typehint_data)
