@@ -1,4 +1,5 @@
 import abc
+import logging
 import typing
 
 import pandas as pd
@@ -16,6 +17,7 @@ class TraceDataFilter(abc.ABC):
 
     def __new__(cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
+            logging.debug(f"Creating {subcls.__name__} with {kwargs}")
             subinst = object.__new__(subcls)
             for attr, value in kwargs.items():
                 setattr(subinst, attr, value)

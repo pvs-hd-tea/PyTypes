@@ -14,7 +14,9 @@ import constants
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
-stdlib_path = pathlib.Path(sys.path[3])
+import pathlib
+stdlib_path = pathlib.Path(pathlib.__file__).parent
+
 
 def test_factory():
     container = TraceDataFilter(ident=TraceDataFilterList.ident)
@@ -26,7 +28,7 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     drop_test_function_data_filter = TraceDataFilter(
-        ident=DropTestFunctionDataFilter.ident, test_func_name_pattern="test_"
+        ident=DropTestFunctionDataFilter.ident, test_name_pat="test_"
     )
 
     drop_duplicates_filter = TraceDataFilter(DropDuplicatesFilter.ident)

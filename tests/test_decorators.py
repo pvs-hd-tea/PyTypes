@@ -1,10 +1,12 @@
 import pathlib
 
-from tracing import entrypoint, register, Tracer
+from tracing import register, Tracer
 import constants
 
+DUMMY = pathlib.Path("dummy")
+
 def test_tracer_attribute_exists():
-    @register()
+    @register(DUMMY, DUMMY, DUMMY)
     def another_test_fn():
         return 0
 

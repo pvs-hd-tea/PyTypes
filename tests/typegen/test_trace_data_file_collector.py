@@ -14,8 +14,7 @@ def test_if_test_object_collects_generated_trace_data_in_folder_and_subfolders_a
     test_object = TraceDataFileCollector()
     test_object.collect_trace_data(cwd, True)
     actual_trace_data = test_object.trace_data
-    actual_trace_data = actual_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
-                                                      ignore_index=True)
+
     # with pd.option_context("display.max_rows", None, "display.max_columns", None):
     #   print(actual_trace_data.shape[0])
     #   print(expected_trace_data.shape[0])
@@ -32,8 +31,6 @@ def test_if_test_object_collects_generated_trace_data_in_folder_it_returns_corre
     test_object = TraceDataFileCollector()
     test_object.collect_trace_data(cwd, False)
     actual_trace_data = test_object.trace_data
-    actual_trace_data = actual_trace_data.sort_values(by=['Filename', 'Function Name', 'Line Number'],
-                                                      ignore_index=True)
 
     assert actual_trace_data.shape[0] == 14
     assert expected_trace_data.equals(actual_trace_data)
