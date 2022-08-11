@@ -14,7 +14,8 @@ import constants
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
-stdlib_path = pathlib.Path(sys.path[3])
+import pathlib
+stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 
 def test_factory():

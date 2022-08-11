@@ -61,7 +61,8 @@ class _AddImportVisitor(cst.CSTTransformer):
             imports.append(imp_from)
             imports.append(cst.Newline())
 
-        return updated_node.with_changes(body=imports + list(updated_node.body))
+        # mypy doesnt like us writing in NewLines into their body, but the codegen is fine
+        return updated_node.with_changes(body=imports + list(updated_node.body))  # type: ignore
 
 
 class TypeHintGenerator(abc.ABC):
