@@ -4,7 +4,7 @@ from typing import Callable
 
 
 from .tracer import Tracer
-from .ptconfig import _load_config
+from .ptconfig import load_config
 import constants
 
 
@@ -28,7 +28,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
     """
     root = proj_root or pathlib.Path.cwd()
-    cfg = _load_config(root / constants.CONFIG_FILE_NAME)
+    cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
     def impl(main: Callable[[], None]):
         main()

@@ -1,0 +1,6 @@
+[pytypes]
+project = "PyTypes"
+
+stdlib_path = "/usr/lib/python3.10"
+proj_path = "/home/benji/Documents/Uni/heidelberg/04/pytype/repo"
+venv_path = "/home/benji/.cache/pypoetry/virtualenvs/pytypes-xvtnrWJT-py3.10"

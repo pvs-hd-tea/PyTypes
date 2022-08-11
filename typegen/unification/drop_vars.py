@@ -28,7 +28,6 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         joined_trace_data = pd.merge(
             trace_data, grouped_trace_data_with_unique_count, on=subset, how="inner"
         )
-        print(joined_trace_data)
         trace_data_with_dropped_variables = joined_trace_data[
             joined_trace_data["amount_types"] < self.min_amount_types_to_drop
         ]
