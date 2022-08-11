@@ -20,20 +20,28 @@ def register(
 
     def impl(test_function: Callable[[], None]):
         root = proj_root or pathlib.Path.cwd()
-
-        if not all(p is not None for p in (proj_root, stdlib_path, venv_path)):
-            cfg = load_config(root / constants.CONFIG_FILE_NAME)
-
-            tracer = Tracer(
-                proj_path=cfg.pytypes.proj_path,
-                stdlib_path=stdlib_path or cfg.pytypes.stdlib_path,
-                venv_path=venv_path or cfg.pytypes.venv_path,
+        cfg = load_config(root / constants.CONFIG_FILE_NAME)
+        if cfg.pytypes.proj_path != root:
+            raise RuntimeError(
+                f"Invalid config file: wrong project root: {register.__name__} had \
+                {root} specified, config file has {cfg.pytypes.proj_path} set"
             )
 
-        else:
-            tracer = Tracer(
-                proj_path=root, stdlib_path=stdlib_path, venv_path=venv_path
+        chosen_root = root
+        chosen_stdlib = stdlib_path or cfg.pytypes.stdlib_path
+        chosen_venv = venv_path or cfg.pytypes.venv_path
+
+        if all(p is not None for p in (proj_root, stdlib_path, venv_path)):
+            print(
+                f"All arguments to the {register.__name__} on {test_function.__name__} \
+                were specified; NOT reading from {constants.CONFIG_FILE_NAME}"
             )
+
+        tracer = Tracer(
+            proj_path=chosen_root,
+            stdlib_path=chosen_stdlib,
+            venv_path=chosen_venv,
+        )
 
         setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
         return test_function

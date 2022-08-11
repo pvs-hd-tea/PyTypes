@@ -33,10 +33,10 @@ class ApplicationStrategy(ABC):
             project=project.root.name,
             proj_path=project.root,
             stdlib_path=pathlib.Path("stdlib", "goes", "here"),
-            venv_path=pathlib.Path("venv", "goes", "here")
+            venv_path=pathlib.Path("venv", "goes", "here"),
         )
 
-        toml = TomlCfg(pts, unifier=None) # type: ignore
+        toml = TomlCfg(pts, unifier=None)  # type: ignore
         write_config(cfg_path, toml)
 
     @abstractmethod

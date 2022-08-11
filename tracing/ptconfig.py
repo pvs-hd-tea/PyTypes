@@ -84,9 +84,9 @@ def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
 
     # Not the nicest way to do this, but Path's repr operator
     # leaves "PosixPath" in the config file
-    pttoml.pytypes.proj_path = str(pttoml.pytypes.proj_path) # type: ignore
-    pttoml.pytypes.stdlib_path = str(pttoml.pytypes.stdlib_path) # type: ignore
-    pttoml.pytypes.venv_path = str(pttoml.pytypes.venv_path) # type: ignore
+    pttoml.pytypes.proj_path = str(pttoml.pytypes.proj_path)  # type: ignore
+    pttoml.pytypes.stdlib_path = str(pttoml.pytypes.stdlib_path)  # type: ignore
+    pttoml.pytypes.venv_path = str(pttoml.pytypes.venv_path)  # type: ignore
 
     ad = asdict(pttoml)
     ad["pytypes"].pop("output_template")

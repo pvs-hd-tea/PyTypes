@@ -1,7 +1,6 @@
 import contextlib
 import functools
 import logging
-import os
 import inspect
 import operator
 import sys
@@ -268,7 +267,9 @@ class Tracer:
             names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
-        logger.debug(f"{event} @ {line_number} {names2types or 'NO NEW TYPES'} {category or 'NO CATEGORY'}")
+        logger.debug(
+            f"{event} @ {line_number} {names2types or 'NO NEW TYPES'} {category or 'NO CATEGORY'}"
+        )
         if names2types and category:
             self._update_trace_data_with(
                 file_name,
@@ -330,7 +331,9 @@ class Tracer:
         ).astype(constants.TraceData.SCHEMA)
 
     def _get_new_defined_local_variables_with_types(
-        self, prev_vars2vals: dict[str, typing.Any], new_vars2vals: dict[str, typing.Any]
+        self,
+        prev_vars2vals: dict[str, typing.Any],
+        new_vars2vals: dict[str, typing.Any],
     ) -> dict[str, tuple[str | None, str]]:
         """Gets the new defined variable from one frame to the next frame."""
         names2types = {}
