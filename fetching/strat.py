@@ -36,7 +36,7 @@ class ApplicationStrategy(ABC):
             venv_path=pathlib.Path("venv", "goes", "here")
         )
 
-        toml = TomlCfg(pts, unifier=None)
+        toml = TomlCfg(pts, unifier=None) # type: ignore
         write_config(cfg_path, toml)
 
     @abstractmethod
