@@ -11,7 +11,7 @@ class A:
     def function(self, a: pathlib.Path, b: Path) -> bool:
         c: bool; d = a == b, 10
         e: str = str(d)
-        f: object; g: float = None, 3.14
+        f: object = None; g: float = 3.14
         return c
 
 

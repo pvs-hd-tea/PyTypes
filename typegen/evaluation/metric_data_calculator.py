@@ -30,7 +30,7 @@ class MetricDataCalculator:
         traced_type_hint_data_without_types = modified_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
         merged_data_completeness = pd.merge(original_type_hint_data, traced_type_hint_data_without_types,
                                             on=subset_completeness, how='left',
-                                            indicator=constants.TraceData.COMPLETENESS)
+                                            indicator=constants.TraceData.COMPLETENESS)  # type: ignore
         merged_data_completeness[constants.TraceData.COMPLETENESS] = \
             np.where(merged_data_completeness[constants.TraceData.COMPLETENESS] == "both", True, False)
 
@@ -38,7 +38,7 @@ class MetricDataCalculator:
         # which rows of the original data are contained in the traced data (with type comparison).
         merged_data_completeness_correctness = pd.merge(merged_data_completeness, modified_type_hint_data,
                                                         on=subset_correctness, how='left',
-                                                        indicator=constants.TraceData.CORRECTNESS)
+                                                        indicator=constants.TraceData.CORRECTNESS)  # type: ignore
         merged_data_completeness_correctness[constants.TraceData.CORRECTNESS] = \
             np.where(merged_data_completeness_correctness[constants.TraceData.CORRECTNESS] == "both", True, False)
 
