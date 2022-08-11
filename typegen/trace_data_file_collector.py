@@ -31,15 +31,14 @@ class TraceDataFileCollector:
         for potential_trace_data_file_path in potential_trace_data_file_paths:
             try:
                 potential_trace_data = pd.read_pickle(potential_trace_data_file_path)
+                if (self.trace_data.dtypes == potential_trace_data.dtypes).all():
+                    trace_datas.append(potential_trace_data)
+                else:
+                    logger.info(f"Invalid column types for file: {str(potential_trace_data_file_path)}")
             except Exception as exception:
                 logger.error(f"Error encountered for file: {str(potential_trace_data_file_path)}")
                 logger.error(exception)
                 continue
-
-            if (self.trace_data.dtypes == potential_trace_data.dtypes).all():
-                trace_datas.append(potential_trace_data)
-            else:
-                logger.info(f"Invalid column types for file: {str(potential_trace_data_file_path)}")
 
         if len(trace_datas) > 0:
             self.trace_data = pd.concat(trace_datas, ignore_index=True, sort=False)

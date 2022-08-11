@@ -1,11 +1,68 @@
 import abc
+import operator
+import functools
+import os
 import pathlib
 import typing
 
 import libcst as cst
 import pandas as pd
 
-import constants
+from constants import TraceData
+
+
+class _AddImportTransformer(cst.CSTTransformer):
+    def __init__(self, applicable: pd.DataFrame) -> None:
+        self.applicable = applicable.copy()
+
+    # There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
+    def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
+        def file2module(file: str) -> str:
+            return os.path.splitext(file.replace(os.path.sep, "."))[0]
+
+        # Stupid implementation: make from x import y everywhere
+        self.applicable["modules"] = self.applicable[TraceData.FILENAME].map(
+            lambda f: file2module(f)
+        )
+
+        # ignore builtins
+        non_builtin = self.applicable[TraceData.VARTYPE_MODULE].notnull()
+        # ignore classes in the same module
+        not_in_same_mod = (
+            self.applicable["modules"] != self.applicable[TraceData.VARTYPE_MODULE]
+        )
+        retain_mask = [
+            non_builtin,
+            not_in_same_mod,
+        ]
+
+        important = self.applicable[functools.reduce(operator.and_, retain_mask)]
+        if important.empty:
+            return updated_node
+
+        importables = important.groupby(
+            [TraceData.VARTYPE_MODULE, TraceData.VARTYPE]
+        ).agg({TraceData.VARTYPE: list})
+
+        imports: list[cst.ImportFrom | cst.Newline] = []
+
+        for module in importables.index:
+
+            mod_name = cst.parse_expression(module[0])
+            assert isinstance(
+                mod_name, cst.Name | cst.Attribute
+            ), f"Accidentally parsed {type(mod_name)}"
+            aliases: list[cst.ImportAlias] = []
+
+            for ty in importables.loc[module].values[0]:
+                aliases.append(cst.ImportAlias(name=cst.Name(ty)))
+
+            imp_from = cst.ImportFrom(module=mod_name, names=aliases)
+            imports.append(imp_from)
+            imports.append(cst.Newline())
+
+        # mypy doesnt like us writing in NewLines into their body, but the codegen is fine
+        return updated_node.with_changes(body=imports + list(updated_node.body))  # type: ignore
 
 
 class TypeHintGenerator(abc.ABC):
@@ -39,18 +96,19 @@ class TypeHintGenerator(abc.ABC):
         return True
 
     def apply(self):
-        files = self.types[constants.TraceData.FILENAME].unique()
+        files = self.types[TraceData.FILENAME].unique()
         for path in filter(self._is_hintable_file, files):
             # Get type hints relevant to this file
-            applicable = self.types[
-                self.types[constants.TraceData.FILENAME] == str(path)
-            ]
+            applicable = self.types[self.types[TraceData.FILENAME] == str(path)]
             if not applicable.empty:
                 module = cst.parse_module(source=path.open().read())
                 module_and_meta = cst.MetadataWrapper(module)
 
-                typed = self._gen_hinted_ast(df=applicable, hintless_ast=module_and_meta)
-                self._store_hinted_ast(source_file=path, hinting=typed)
+                typed = self._gen_hinted_ast(
+                    df=applicable, hintless_ast=module_and_meta
+                )
+                imported = self._add_all_imports(applicable, typed)
+                self._store_hinted_ast(source_file=path, hinting=imported)
 
     @abc.abstractmethod
     def _gen_hinted_ast(
@@ -67,3 +125,10 @@ class TypeHintGenerator(abc.ABC):
         Store the hinted AST at the correct location, based upon the `source_file` param
         """
         pass
+
+    def _add_all_imports(
+        self,
+        applicable: pd.DataFrame,
+        hinted_ast: cst.Module,
+    ) -> cst.Module:
+        return hinted_ast.visit(_AddImportTransformer(applicable))

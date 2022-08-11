@@ -1,8 +1,8 @@
 import libcst as cst
 from libcst.tool import dump
+from libcst.matchers import matches
 import logging
 import pathlib
-from types import NoneType
 
 import constants
 import typing
@@ -15,6 +15,10 @@ import pandas as pd
 
 
 class HintTest(cst.CSTVisitor):
+    @typing.no_type_check
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        assert False, "no imports expected!"
+
     @typing.no_type_check
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         if node.name.value == "add":
@@ -45,9 +49,7 @@ class HintTest(cst.CSTVisitor):
                 assert (
                     node.returns is not None
                 ), f"Missing return annotation on {dump(node)}"
-                assert (
-                    node.returns.annotation.value == "bytes"
-                ), f"{dump(node)}"
+                assert node.returns.annotation.value == "bytes", f"{dump(node)}"
             else:
                 for param in node.params.params:
                     assert (
@@ -150,178 +152,209 @@ def test_callables():
     resource_path = pathlib.Path("tests", "resource", "typegen", "callable.py")
     assert resource_path.is_file()
 
-    from tests.resource.typegen.callable import C  # type: ignore
-
-    c_clazz = C
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "x",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "add",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "b",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "c",
-        bool,
+        None,
+        "bool",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "n",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "s",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         10,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        float,
+        None,
+        "float",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         11,
         TraceDataCategory.LOCAL_VARIABLE,
         "e",
-        NoneType,
+        None,
+        "NoneType",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "method",
-        bytes,
+        None,
+        "bytes",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "outer",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         15,
         TraceDataCategory.FUNCTION_PARAMETER,
         "b",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "inner",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         16,
         TraceDataCategory.FUNCTION_PARAMETER,
         "i",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-
-    logging.debug(f"\n{hinted.code}")
-    hinted.visit(HintTest())
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
 
 
 def test_assignments():
@@ -336,132 +369,260 @@ def test_assignments():
         str(resource_path),
         None,
         None,
+        None,
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "z",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         4,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         7,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        dict,
+        None,
+        "dict",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         8,
         TraceDataCategory.LOCAL_VARIABLE,
         "s",
-        set,
+        None,
+        "set",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         9,
         TraceDataCategory.LOCAL_VARIABLE,
         "l",
-        list,
+        None,
+        "list",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "a",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "b",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "j",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
         None,
+        None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-    logging.debug(f"\n{hinted.code}")
-    hinted.visit(HintTest())
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
+
+
+def test_imported():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
+    assert resource_path.is_file()
+
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
+
+    anotherc_clazz_module = "tests.resource.typegen.importing"
+    anotherc_clazz = "AnotherC"
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "function",
+        None,
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        1,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        c_clazz_module,
+        c_clazz,
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "another_function",
+        None,
+        "str",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        7,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        anotherc_clazz_module,
+        anotherc_clazz,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class ImportedHintTest(cst.CSTVisitor):
+        @typing.no_type_check
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            assert isinstance(node.module, cst.Attribute)
+
+            if matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "C"
+
+            else:
+                assert False, f"Unexpected ImportFrom: {node.module.value}"
+
+        @typing.no_type_check
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            if node.name.value == "function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "C"
+
+                assert node.returns.annotation.value == "int"
+
+            elif node.name.value == "another_function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "AnotherC"
+
+                assert node.returns.annotation.value == "str"
+
+            else:
+                assert False, f"Unhandled functiondef: {node.name.value}"
+
+    imported.visit(ImportedHintTest())
