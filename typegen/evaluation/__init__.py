@@ -1,5 +1,6 @@
 from typegen.evaluation.file_type_hints_collector import FileTypeHintsCollector
+from typegen.evaluation.metric_data_calculator import MetricDataCalculator
 
 __all__ = [
-    FileTypeHintsCollector.__name__
+    FileTypeHintsCollector.__name__, MetricDataCalculator.__name__
 ]

@@ -22,6 +22,8 @@ class TraceData:
     CATEGORY = "Category"
     VARNAME = "Name"
     VARTYPE = "Type"
+    COMPLETENESS = "Completeness"
+    CORRECTNESS = "Correctness"
 
     SCHEMA = {
         FILENAME: pd.StringDtype(),
@@ -42,4 +44,12 @@ class TraceData:
         CATEGORY: pd.Int64Dtype(),
         VARNAME: pd.StringDtype(),
         VARTYPE: pd.StringDtype(),
+    }
+
+    METRICS_SCHEMA = {
+        FILENAME: pd.StringDtype(),
+        CLASS: pd.StringDtype(),
+        CATEGORY: pd.Int64Dtype(),
+        COMPLETENESS: pd.BooleanDtype(),
+        CORRECTNESS: pd.BooleanDtype(),
     }
