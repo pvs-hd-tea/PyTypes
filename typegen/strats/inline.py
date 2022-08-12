@@ -78,9 +78,6 @@ class TypeHintTransformer(cst.CSTTransformer):
     ) -> tuple[pd.DataFrame, pd.DataFrame, Targets]:
         """
         Fetches trace data for the targets from the given assignment statement.
-        If the statement references members of classes, but is NOT within a
-        method of a class with these members, then we do not NOT return their data.
-
         Return order is (variables, class attributes, targets)
         """
         targets = _find_targets(node)
