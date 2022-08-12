@@ -3,6 +3,18 @@ from pathlib import Path
 from pathlib import PosixPath, WindowsPath
 import numpy as np
 from typegen import evaluation
+from tests.resource.typegen.evaluation.sample_to_import import FileTypeHintsCollector
+from typegen.evaluation import FileTypeHintsCollector
+from tests.resource.typegen.evaluation import MetricDataCalculator
+from typegen.evaluation.metric_data_calculator import MetricDataCalculator
+
+
+class MetricDataCalculator:
+    pass
+
+
+from typegen.evaluation.metric_data_calculator import MetricDataCalculator
+
 
 class A:
     def __init__(self):
@@ -10,7 +22,10 @@ class A:
         self.array: np.ndarray = np.zeros((3, 3))
         self.not_annotated_member = False
 
+        w: MetricDataCalculator.A = ...
         x: evaluation.FileTypeHintsCollector = ...
+        y: MetricDataCalculator = MetricDataCalculator()
+        z: FileTypeHintsCollector = FileTypeHintsCollector()
 
     def function(self, a: pathlib.Path, b: Path) -> bool:
         c: bool; d = a == b, 10

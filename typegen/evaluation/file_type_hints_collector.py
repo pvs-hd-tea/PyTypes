@@ -24,8 +24,8 @@ class FileTypeHintsCollector:
 
             module = cst.parse_module(source=file_content)
             module_and_meta = cst.MetadataWrapper(module)
-            relative_path = file_path.relative_to(self.project_dir)
-            visitor = _TypeHintVisitor(relative_path)
+            relative_path_str = str(file_path.relative_to(self.project_dir))
+            visitor = _TypeHintVisitor(relative_path_str)
             module_and_meta.visit(visitor)
             typehint_data = pd.DataFrame(visitor.typehint_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
 
@@ -40,10 +40,11 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def __init__(self, file_path: str) -> None:
         super().__init__()
         self.file_path = file_path
-        self.typehint_data = []
+        self.typehint_data: list = []
         self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
         self.imports: dict[str, str] = {}
         self.imports_alias: dict[str, str] = {}
+        self.defined_classes: list[str] = list()
 
     def _innermost_class(self) -> cst.ClassDef | None:
         fromtop = reversed(self._scope_stack)
@@ -60,20 +61,18 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return first
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-        if isinstance(node.module, cst.Name):
-            module_name: str = node.module.value
-            try:
-                iterator = iter(node.names)
-                for name in iterator:
-                    imported_element_name: str = name.name.value
-                    self.imports[imported_element_name] = module_name
-            except TypeError:
-                pass
-        else:
-            raise NotImplementedError(type(node.module))
+        module_name = self._get_module_name(node)
+        if not isinstance(node.names, cst.ImportStar):
+            iterator = iter(node.names)
+            for name in iterator:
+                imported_element_name: str = str(name.name.value)
+                if imported_element_name in self.imports.keys():
+                    # The first import is considered as the module of the imported element.
+                    continue
+                self.imports[imported_element_name] = module_name
         return True
 
-    def visit_Import(self, node: "Import") -> bool | None:
+    def visit_Import(self, node: cst.Import) -> bool | None:
         try:
             iterator = iter(node.names)
             for name in iterator:
@@ -84,9 +83,10 @@ class _TypeHintVisitor(cst.CSTVisitor):
                 self.imports_alias[module_alias] = module_name
         except TypeError:
             pass
+        return True
 
     def visit_ClassDef(self, cdef: cst.ClassDef) -> bool | None:
-        # Track ClassDefs to disambiguate functions from methods
+        self.defined_classes.append(cdef.name.value)
         self._scope_stack.append(cdef)
         return True
 
@@ -94,9 +94,6 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._scope_stack.pop()
 
     def visit_FunctionDef(self, fdef: cst.FunctionDef) -> bool | None:
-        # Track assignments from Functions
-        # NOTE: this handles nested functions too, because the parent reference gets overwritten
-        # NOTE: before we start generating hints for its children
         self._scope_stack.append(fdef)
         return True
 
@@ -174,6 +171,10 @@ class _TypeHintVisitor(cst.CSTVisitor):
         elif isinstance(actual_annotation, cst.Name):
             module_name = None
             type_name = actual_annotation.value
+            if type_name in self.defined_classes:
+                # If an import imports a class but a class with the same name is defined in the file,
+                # the class in the file is used.
+                return type_name
             if type_name in self.imports.keys():
                 module_name = self.imports[type_name]
         else:
@@ -200,4 +201,20 @@ class _TypeHintVisitor(cst.CSTVisitor):
             first_module_element = module_name + "." + first_module_element
 
         return first_module_element + "." + remaining_annotation
+
+    def _get_module_name(self, import_from_node: cst.ImportFrom) -> str:
+        module_node = import_from_node.module
+        if isinstance(module_node, cst.Name):
+            return module_node.value
+        if isinstance(module_node, cst.Attribute):
+            module_name = module_node.attr.value
+            current_module_node = module_node.value
+            while isinstance(current_module_node, cst.Attribute):
+                module_name = current_module_node.attr.value + "." + module_name
+                current_module_node = current_module_node.value
+            assert isinstance(current_module_node, cst.Name)
+            module_name = current_module_node.value + "." + module_name
+            return module_name
+        else:
+            raise NotImplementedError(type(module_node))
 

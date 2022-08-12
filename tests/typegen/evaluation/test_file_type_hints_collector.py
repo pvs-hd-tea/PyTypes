@@ -18,7 +18,7 @@ def test_file_type_hints_collector_returns_correct_data():
 
     print(actual_typehint_data)
 
-    assert actual_typehint_data.shape[0] == 19
+    assert actual_typehint_data.shape[0] == 22
     assert expected_typehint_data.equals(actual_typehint_data)
 
 
@@ -33,5 +33,5 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_files():
 
     print(actual_typehint_data)
 
-    assert actual_typehint_data.shape[0] == 38
+    assert actual_typehint_data.shape[0] == 44
     assert expected_typehint_data.equals(actual_typehint_data)
