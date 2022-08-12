@@ -86,13 +86,13 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             substituted_output = cfg.pytypes.output_template.format_map(
                 {"project": cfg.pytypes.project, "func_name": fname}
             )
-            tracer = getattr(function, constants.TRACER_ATTRIBUTE)
+            tracer: Tracer = getattr(function, constants.TRACER_ATTRIBUTE)
             # delattr(function, constants.TRACER_ATTRIBUTE)
 
             with tracer.active_trace():
                 function()
 
-            output_path: pathlib.Path = tracer.project_dir / substituted_output
+            output_path: pathlib.Path = tracer.proj_path / substituted_output
             output_path.parent.mkdir(parents=True, exist_ok=True)
             tracer.trace_data.to_pickle(str(output_path))
 
