@@ -336,18 +336,6 @@ def test_callables():
         "int",
     ]
 
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        c_clazz_module,
-        c_clazz,
-        "inner",
-        0,
-        TraceDataCategory.CLASS_MEMBER,
-        "a",
-        None,
-        "int",
-    ]
-
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
@@ -609,7 +597,9 @@ def test_imported():
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "TYPE_CHECKING"
 
-            elif matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+            elif matches(
+                node.module, cst.parse_expression("tests.resource.typegen.callable")
+            ):
                 assert isinstance(node.module, cst.Attribute)
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "C"
@@ -635,3 +625,107 @@ def test_imported():
                 assert False, f"Unhandled functiondef: {node.name.value}"
 
     imported.visit(ImportedHintTest())
+
+
+def test_present_annotations_are_removed():
+    # Nothing was gathered that is in the file
+    resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
+    assert resource_path.is_file()
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        -1,
+        TraceDataCategory.FUNCTION_RETURN,
+        "",
+        None,
+        "",
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+
+    class HintLessTest(cst.CSTVisitor):
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            # arguments
+            assert all(param.annotation is None for param in node.params.params)
+            # return
+            assert node.returns is None
+            return True
+
+        def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+            # no annotations
+            assert False, f"Type hint should not have been set: {dump(node)}"
+
+        def visit_Assign(self, node: cst.Assign) -> bool | None:
+            # cannot be annotated, trivially true
+            return True
+
+    logging.debug(f"{imported.code}")
+    imported.visit(HintLessTest())
+
+
+def test_attributes_are_not_annotated_outside_of_classes():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "attribute.py")
+    class_module = "tests.resource.typegen.attribute"
+    class_name1 = "AClass"
+    class_name2 = "AnotherC"
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name1,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "aclass_attr",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name2,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "aclass",
+        class_module,
+        class_name1,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class ExternalAttributesAreHintLessVisitor(cst.CSTVisitor):
+        def __init__(self) -> None:
+            self.classes: list[cst.ClassDef] = list()
+
+        def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
+            self.classes.append(node)
+            return True
+
+        def leave_ClassDef(self, _: cst.ClassDef) -> None:
+            self.classes.pop()
+
+        def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+            if isinstance(node.target, cst.Attribute):
+                assert (
+                    self.classes
+                ), f"Found annotated assignment for attribute outside of class!: {dump(node)}"
+
+            return True
+
+    imported.visit(ExternalAttributesAreHintLessVisitor())

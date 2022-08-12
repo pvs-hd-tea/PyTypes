@@ -20,5 +20,6 @@ class C:
 
 
 # Do not type hint, as it is not in the class C
-def method(b, n, s):
-    return bytes(f"{n} + {s}")
+def method(c, n, s):
+    c.a = 5  # set attribute in class C, DO NOT TYPE HINT!
+    return c.method(n, s)
