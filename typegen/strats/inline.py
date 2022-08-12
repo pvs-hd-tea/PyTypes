@@ -230,7 +230,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         # no type hint, skip
         if arg_hints.empty:
             logger.debug(f"No hint found for parameter '{original_node.name.value}'")
-            logger.debug(f"Removing any previous return type annotation on parameter")
+            logger.debug("Removing any previous return type annotation on parameter")
             return updated_node.with_changes(annotation=None)
 
         argtype = params[TraceData.VARTYPE].values[0]
@@ -259,7 +259,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
             if hinted.empty:
                 logger.debug(f"No type hint stored for {ident} in AugAssign")
-                logger.debug(f"Not adding AnnAssign for AugAssign")
+                logger.debug("Not adding AnnAssign for AugAssign")
                 continue
 
             hint = hinted[TraceData.VARTYPE].values[0]
@@ -304,7 +304,7 @@ class TypeHintTransformer(cst.CSTTransformer):
                     else:
                         logger.debug(f"Hint for {ident} could not be found")
 
-                    logger.debug(f"Not adding AnnAssign for Assign")
+                    logger.debug("Not adding AnnAssign for Assign")
                     continue
 
                 else:
@@ -333,7 +333,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         if hinted.empty:
             logger.debug(f"No hints found for '{ident}'")
-            logger.debug(f"Not adding type hint annotation for Assign")
+            logger.debug("Not adding type hint annotation for Assign")
             return updated_node
 
         hint_ty = hinted[TraceData.VARTYPE].values[0]
@@ -367,14 +367,14 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         if hinted.empty and original_node.value is None:
             logger.debug(
-                f"Removing AnnAssign without value because no type hint \
-                    can be provided"
+                "Removing AnnAssign without value \
+                    because no type hint can be provided"
             )
             return cst.RemoveFromParent()
 
         elif hinted.empty and original_node.value is not None:
             logger.debug(
-                f"Replacing AnnAssign with value by Assign without type hint \
+                "Replacing AnnAssign with value by Assign without type hint \
                     because no type hint can be provided"
             )
             return cst.Assign(
