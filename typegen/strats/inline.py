@@ -115,8 +115,10 @@ class TypeHintTransformer(cst.CSTTransformer):
         # no type hint, skip
         if rettypes.empty:
             logger.debug(f"No return type hint found for {original_node.name.value}")
-            logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
-            return updated_node
+            logger.debug(
+                f"Removing any previous return type annotation on FunctionDef '{original_node.name.value}'"
+            )
+            return updated_node.with_changes(returns=None)
 
         else:
             rettype = rettypes[TraceData.VARTYPE].values[0]
@@ -156,7 +158,8 @@ class TypeHintTransformer(cst.CSTTransformer):
         # no type hint, skip
         if arg_hints.empty:
             logger.debug(f"No hint found for parameter '{original_node.name.value}'")
-            return updated_node
+            logger.debug(f"Removing any previous return type annotation on parameter")
+            return updated_node.with_changes(annotation=None)
 
         argtype = params[TraceData.VARTYPE].values[0]
         assert argtype is not None
@@ -213,6 +216,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
             if hinted.empty:
                 logger.debug(f"No type hint stored for {ident} in AugAssign")
+                logger.debug(f"Not adding AnnAssign for AugAssign")
                 continue
 
             hint = hinted[TraceData.VARTYPE].values[0]
@@ -280,6 +284,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
                 if hinted.empty:
                     logger.debug(f"No hint found for {ident}")
+                    logger.debug(f"Not adding AnnAssign for Assign")
                     continue
 
                 else:
@@ -308,6 +313,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         if hinted.empty:
             logger.debug(f"No hints found for '{ident}'")
+            logger.debug(f"Not adding type hint annotation for Assign")
             return updated_node
 
         hint_ty = hinted[TraceData.VARTYPE].values[0]
@@ -323,6 +329,73 @@ class TypeHintTransformer(cst.CSTTransformer):
             annotation=cst.Annotation(cst.Name(value=hint_ty)),
             value=original_node.value,
         )
+
+    def leave_AnnAssign(
+        self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign
+    ) -> cst.AnnAssign | cst.RemovalSentinel:
+        targets = self._find_targets(original_node)
+        assert len(targets) == 1
+
+        ident, ident_node = targets[0]
+
+        logger.debug(f"Searching for hints to '{ident}' for an Assign")
+
+        cdef = self._innermost_class()
+        if cdef is not None:
+            class_check = self.df[TraceData.CLASS] == cdef.name.value
+        else:
+            class_check = self.df[TraceData.CLASS].isnull()
+
+        pos = self.get_metadata(PositionProvider, original_node).start
+
+        if isinstance(ident_node, cst.Name):
+            relevant_mask = [
+                self.df[TraceData.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
+                self.df[TraceData.VARNAME] == ident,
+                self.df[TraceData.LINENO] == pos.line,
+                class_check,
+            ]
+        else:
+            relevant_mask = [
+                self.df[TraceData.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
+                self.df[TraceData.VARNAME] == ident,
+                self.df[TraceData.FUNCNAME] == "",
+                self.df[TraceData.LINENO] == 0,
+                class_check,
+            ]
+
+        hinted = self.df[functools.reduce(operator.and_, relevant_mask)]
+        assert hinted.shape[0] <= 1, f"Found more than one type hint for '{ident}'"
+
+        if hinted.empty and updated_node.value is None:
+            logger.debug(
+                f"Removing AnnAssign without value because no type hint \
+                    can be provided"
+            )
+            return cst.RemoveFromParent()
+
+        elif hinted.empty and updated_node.value is not None:
+            logger.debug(
+                f"Replacing AnnAssign with value by Assign without type hint \
+                    because no type hint can be provided"
+            )
+            return cst.Assign(
+                targets=[cst.AssignTarget(original_node.target)],
+                value=original_node.value,
+            )
+
+        else:
+            hint_ty = hinted[TraceData.VARTYPE].values[0]
+            assert hint_ty is not None
+
+            logger.debug(f"Using '{hint_ty}' for the AnnAssign with '{ident}'")
+
+            # Replace simple assignment with annotated assignment
+            return updated_node.with_changes(
+                target=original_node.target,
+                annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                value=original_node.value,
+            )
 
 
 class InlineGenerator(TypeHintGenerator):

@@ -609,7 +609,9 @@ def test_imported():
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "TYPE_CHECKING"
 
-            elif matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+            elif matches(
+                node.module, cst.parse_expression("tests.resource.typegen.callable")
+            ):
                 assert isinstance(node.module, cst.Attribute)
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "C"
@@ -635,3 +637,37 @@ def test_imported():
                 assert False, f"Unhandled functiondef: {node.name.value}"
 
     imported.visit(ImportedHintTest())
+
+
+def test_present_annotations_are_removed():
+    # No type hints gathered
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
+    assert resource_path.is_file()
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+
+    class HintLessTest(cst.CSTVisitor):
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            # arguments
+            assert all(param.annotation is None for param in node.params.params)
+            # return
+            assert node.returns is None
+            return True
+
+        def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+            # no annotations
+            assert False, f"Type hint should not have been set: {dump(node)}"
+
+        def visit_Assign(self, node: cst.Assign) -> bool | None:
+            # cannot be annotated, trivially true
+            return True
+
+    logging.debug(f"{imported.code}")
+    imported.visit(HintLessTest())
+
