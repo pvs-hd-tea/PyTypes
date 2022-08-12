@@ -672,9 +672,7 @@ def test_present_annotations_are_removed():
 
 
 def test_attributes_are_not_annotated_outside_of_classes():
-    resource_path = pathlib.Path(
-        "tests", "resource", "typegen", "attribute.py"
-    )
+    resource_path = pathlib.Path("tests", "resource", "typegen", "attribute.py")
     class_module = "tests.resource.typegen.attribute"
     class_name1 = "AClass"
     class_name2 = "AnotherC"
@@ -699,66 +697,9 @@ def test_attributes_are_not_annotated_outside_of_classes():
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        "ano_attr",
-        None,
-        "int",
-    ]
-
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        class_module,
-        class_name1,
-        "__init__",
-        4,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "a",
-        None,
-        "int",
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        class_module,
-        class_name2,
-        "__init__",
-        8,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "a",
-        None,
-        "int",
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        class_module,
-        class_name2,
-        "reset",
-        11,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "a",
-        None,
-        "int",
-    ]
-
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        None,
-        None,
-        "func_taking_aclass",
-        15,
-        TraceDataCategory.FUNCTION_PARAMETER,
         "aclass",
         class_module,
         class_name1,
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        None,
-        None,
-        "func_taking_anotherc",
-        19,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "anotherc",
-        class_module,
-        class_name2,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -768,70 +709,23 @@ def test_attributes_are_not_annotated_outside_of_classes():
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
 
-    
+    class ExternalAttributesAreHintLessVisitor(cst.CSTVisitor):
+        def __init__(self) -> None:
+            self.classes: list[cst.ClassDef] = list()
 
-def test_same_name_same_line():
-    resource_path = pathlib.Path(
-        "tests", "resource", "typegen", "same_name_same_line.py"
-    )
-    class_module = "tests.resource.typegen.same_name_same_line"
-    class_name = "C"
+        def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
+            self.classes.append(node)
+            return True
 
-    assert resource_path.is_file()
+        def leave_ClassDef(self, _: cst.ClassDef) -> None:
+            self.classes.pop()
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        class_module,
-        class_name,
-        "",
-        0,
-        TraceDataCategory.CLASS_MEMBER,
-        "name",
-        None,
-        "str",
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        class_module,
-        class_name,
-        "",
-        2,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "self",
-        class_module,
-        class_name,
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        None,
-        None,
-        "",
-        6,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "c",
-        class_module,
-        class_name,
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        None,
-        None,
-        "f",
-        0,
-        TraceDataCategory.FUNCTION_RETURN,
-        "f",
-        None,
-        "None",
-    ]
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        None,
-        None,
-        "f",
-        8,
-        TraceDataCategory.FUNCTION_RETURN,
-        "f",
-        None,
-        "None",
-    ]
+        def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+            if isinstance(node.target, cst.Attribute):
+                assert (
+                    self.classes
+                ), f"Found annotated assignment for attribute outside of class!: {dump(node)}"
+
+            return True
+
+    imported.visit(ExternalAttributesAreHintLessVisitor())
