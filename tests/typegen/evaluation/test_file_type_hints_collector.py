@@ -16,10 +16,9 @@ def test_file_type_hints_collector_returns_correct_data():
     test_object.collect_data([path_sample_file])
     actual_typehint_data = test_object.typehint_data
 
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(actual_typehint_data)
+    print(actual_typehint_data)
 
-    assert actual_typehint_data.shape[0] == 20
+    assert actual_typehint_data.shape[0] == 19
     assert expected_typehint_data.equals(actual_typehint_data)
 
 
@@ -31,8 +30,8 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_files():
     test_object = FileTypeHintsCollector(pathlib.Path.cwd())
     test_object.collect_data([path_sample_file, path_sample_file])
     actual_typehint_data = test_object.typehint_data
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(actual_typehint_data)
 
-    assert actual_typehint_data.shape[0] == 40
+    print(actual_typehint_data)
+
+    assert actual_typehint_data.shape[0] == 38
     assert expected_typehint_data.equals(actual_typehint_data)

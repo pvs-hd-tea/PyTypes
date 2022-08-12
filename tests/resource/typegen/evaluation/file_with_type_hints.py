@@ -1,12 +1,16 @@
 import pathlib
 from pathlib import Path
 from pathlib import PosixPath, WindowsPath
-
+import numpy as np
+from typegen import evaluation
 
 class A:
     def __init__(self):
         self.string: WindowsPath = WindowsPath("string")
+        self.array: np.ndarray = np.zeros((3, 3))
         self.not_annotated_member = False
+
+        x: evaluation.FileTypeHintsCollector = ...
 
     def function(self, a: pathlib.Path, b: Path) -> bool:
         c: bool; d = a == b, 10
