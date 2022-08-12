@@ -336,18 +336,6 @@ def test_callables():
         "int",
     ]
 
-    traced.loc[len(traced.index)] = [
-        str(resource_path),
-        c_clazz_module,
-        c_clazz,
-        "inner",
-        0,
-        TraceDataCategory.CLASS_MEMBER,
-        "a",
-        None,
-        "int",
-    ]
-
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
@@ -640,11 +628,22 @@ def test_imported():
 
 
 def test_present_annotations_are_removed():
-    # No type hints gathered
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-
+    # Nothing was gathered that is in the file
     resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
     assert resource_path.is_file()
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        -1,
+        TraceDataCategory.FUNCTION_RETURN,
+        "",
+        None,
+        "",
+    ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
@@ -671,3 +670,168 @@ def test_present_annotations_are_removed():
     logging.debug(f"{imported.code}")
     imported.visit(HintLessTest())
 
+
+def test_attributes_are_not_annotated_outside_of_classes():
+    resource_path = pathlib.Path(
+        "tests", "resource", "typegen", "attribute.py"
+    )
+    class_module = "tests.resource.typegen.attribute"
+    class_name1 = "AClass"
+    class_name2 = "AnotherC"
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name1,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "aclass_attr",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name2,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "ano_attr",
+        None,
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name1,
+        "__init__",
+        4,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name2,
+        "__init__",
+        8,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name2,
+        "reset",
+        11,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        None,
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "func_taking_aclass",
+        15,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "aclass",
+        class_module,
+        class_name1,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "func_taking_anotherc",
+        19,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "anotherc",
+        class_module,
+        class_name2,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    
+
+def test_same_name_same_line():
+    resource_path = pathlib.Path(
+        "tests", "resource", "typegen", "same_name_same_line.py"
+    )
+    class_module = "tests.resource.typegen.same_name_same_line"
+    class_name = "C"
+
+    assert resource_path.is_file()
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "name",
+        None,
+        "str",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "",
+        2,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "self",
+        class_module,
+        class_name,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "",
+        6,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        class_module,
+        class_name,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "f",
+        None,
+        "None",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        8,
+        TraceDataCategory.FUNCTION_RETURN,
+        "f",
+        None,
+        "None",
+    ]
