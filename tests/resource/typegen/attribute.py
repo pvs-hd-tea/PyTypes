@@ -8,7 +8,7 @@ class AnotherC:
     def __init__(self, a):
         self.ano_attr = a # set attribute in class C, TYPE HINT!
 
-    def reset(a):
+    def reset(self, a):
         a.ano_attr = -50  # set attribute in class C, TYPE HINT!
 
 # Do not type hint, as it is not in the class C
