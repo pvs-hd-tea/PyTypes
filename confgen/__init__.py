@@ -15,7 +15,7 @@ import click
     required=True,
 )
 def main(**params):
-    project = params["project"]
+    project: pathlib.Path = params["project"]
     stdlib = pathlib.Path(pathlib.__file__).parent
     venv = pathlib.Path(os.environ["VIRTUAL_ENV"])
 
@@ -24,7 +24,7 @@ def main(**params):
 
     cfg = ptconfig.TomlCfg(
         pytypes=ptconfig.PyTypes(
-            project="PyTypes",
+            project=project.stem,
             proj_path=project.resolve(),
             stdlib_path=stdlib.resolve(),
             venv_path=venv.resolve(),
