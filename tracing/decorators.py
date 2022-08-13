@@ -114,7 +114,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
                 "The current stack frame has no predecessor, unable to trace execution!"
             )
 
-        dfs = list()
+        trace_dataframes = list()
+        performance_arrays = list()
 
         # https://docs.python.org/3/library/collections.html#collections.ChainMap clearly exists?
         search_space = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
@@ -154,15 +155,18 @@ def entrypoint(proj_root: pathlib.Path | None = None):
             )
 
             trace_data = _generate_and_serialize_trace_data(clazz, registered_call, registered_call_mocks, substituted_output)
-            dfs.append(trace_data)
+            trace_dataframes.append(trace_data)
 
             if hasattr(registered_call, constants.TRACERS_ATTRIBUTE):
                 substituted_output_performance_data = cfg.pytypes.output_npy_template.format_map(
                     {"project": cfg.pytypes.project, "test_case": module_name, "func_name": callable_name}
                 )
-                _generate_and_serialize_performance_data(clazz, registered_call, registered_call_mocks, substituted_output_performance_data)
+                performance_data = _generate_and_serialize_performance_data(
+                    clazz, registered_call, registered_call_mocks, substituted_output_performance_data)
+                performance_arrays.append(performance_data)
 
-        return pd.concat(dfs) if dfs else None
+        return pd.concat(trace_dataframes) if trace_dataframes else None, \
+               np.array(performance_arrays) if performance_arrays else None
 
     return impl
 
@@ -185,7 +189,7 @@ def _generate_and_serialize_trace_data(clazz: type | None, registered_call: Call
 def _generate_and_serialize_performance_data(clazz: type | None, registered_call: Callable, mocks: dict, substituted_output: str) -> pd.DataFrame:
     tracers = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
     measured_times = np.zeros((1 + len(tracers), constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE))
-    project_dir = tracers[0].project_dir
+    proj_path = tracers[0].proj_path
     for i in range(constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE):
         if clazz is None:
             start_time = default_timer()
@@ -209,5 +213,5 @@ def _generate_and_serialize_performance_data(clazz: type | None, registered_call
             measured_times[1 + j, i] = end_time - start_time
     measured_times_mean = np.mean(measured_times, axis=1)
 
-    np.save(str(project_dir / substituted_output), measured_times_mean)
+    np.save(str(proj_path / substituted_output), measured_times_mean)
     return measured_times_mean
