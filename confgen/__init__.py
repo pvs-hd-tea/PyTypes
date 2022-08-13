@@ -5,6 +5,7 @@ from tracing import ptconfig
 
 import click
 
+
 @click.command(name="confgen", help="generate pytypes.toml")
 @click.option(
     "-p",
