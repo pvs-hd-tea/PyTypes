@@ -1,5 +1,6 @@
 import collections
 import inspect
+import itertools
 import pathlib
 from typing import Callable, Mapping
 
@@ -57,7 +58,9 @@ def register(
     return impl
 
 
-def entrypoint(proj_root: pathlib.Path | None = None) -> Callable[..., pd.DataFrame | None]:
+def entrypoint(
+    proj_root: pathlib.Path | None = None,
+) -> Callable[..., pd.DataFrame | None]:
     """
     Execute and trace all registered test functions in the same module as the marked function
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
@@ -65,11 +68,17 @@ def entrypoint(proj_root: pathlib.Path | None = None) -> Callable[..., pd.DataFr
     root = proj_root or pathlib.Path.cwd()
     cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
-    def _load_mocks_for_func(func: Callable, lookup: Mapping) -> dict | None:
+    def _load_mocks(func: Callable, lookup: Mapping, is_method: bool) -> dict | None:
         signature = inspect.signature(func)
         mocks = dict()
 
-        for param in signature.parameters:
+        # skip self
+        if is_method:
+            params = itertools.islice(signature.parameters, 1, None)
+        else:
+            params = itertools.islice(signature.parameters, None)
+
+        for param in params:
             glob = lookup.get(param)
             # Mocks are usually callables
             if glob is None or not inspect.isfunction(glob):
@@ -96,33 +105,66 @@ def entrypoint(proj_root: pathlib.Path | None = None) -> Callable[..., pd.DataFr
 
         # https://docs.python.org/3/library/collections.html#collections.ChainMap clearly exists?
         searchable = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
-        for fname, function in searchable.items():
-            if not inspect.isfunction(function) or not hasattr(
-                function, constants.TRACER_ATTRIBUTE
+
+        functions = []
+        methods = []
+
+        for entity in searchable.values():
+            if inspect.isfunction(entity) and hasattr(
+                entity, constants.TRACER_ATTRIBUTE
             ):
-                continue
+                functions.append(entity)
 
-            else:
-                substituted_output = cfg.pytypes.output_template.format_map(
-                    {"project": cfg.pytypes.project, "func_name": fname}
+            if inspect.isclass(entity):
+                pred = lambda m: inspect.isroutine(m) and hasattr(
+                    m, constants.TRACER_ATTRIBUTE
                 )
+                for _, mem in inspect.getmembers(entity, predicate=pred):
+                    methods.append((entity, mem))
 
-                tracer: Tracer = getattr(function, constants.TRACER_ATTRIBUTE)
-                output_path: pathlib.Path = tracer.proj_path / substituted_output
-                output_path.parent.mkdir(parents=True, exist_ok=True)
+        for function in functions:
+            substituted_output = cfg.pytypes.output_template.format_map(
+                {"project": cfg.pytypes.project, "func_name": function.__name__}
+            )
 
-                mocks = _load_mocks_for_func(function, searchable)
-                if mocks is None:
-                    sig = inspect.signature(function)
-                    raise ValueError(
-                        f"Failed to load mocks for {function.__name__}{sig}"
-                    )
+            tracer: Tracer = getattr(function, constants.TRACER_ATTRIBUTE)
+            output_path: pathlib.Path = tracer.proj_path / substituted_output
+            output_path.parent.mkdir(parents=True, exist_ok=True)
 
-                with tracer.active_trace():
-                    function(**mocks)
+            mocks = _load_mocks(function, searchable, False)
+            if mocks is None:
+                sig = inspect.signature(function)
+                raise ValueError(f"Failed to load mocks for {function.__name__}{sig}")
 
-                tracer.trace_data.to_pickle(str(output_path))
-                dfs.append(tracer.trace_data)
+            with tracer.active_trace():
+                function(**mocks)
+
+            tracer.trace_data.to_pickle(str(output_path))
+            dfs.append(tracer.trace_data)
+
+        for clazz, method in methods:
+            substituted_output = cfg.pytypes.output_template.format_map(
+                {
+                    "project": cfg.pytypes.project,
+                    "func_name": f"{clazz.__name__}{method.__name__}",
+                }
+            )
+
+            tracer: Tracer = getattr(method, constants.TRACER_ATTRIBUTE)
+            output_path: pathlib.Path = tracer.proj_path / substituted_output
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            mocks = _load_mocks(method, searchable, True)
+            if mocks is None:
+                sig = inspect.signature(method)
+                raise ValueError(f"Failed to load mocks for {method.__name__}{sig}")
+
+            instance = object.__new__(clazz)
+            with tracer.active_trace():
+                method(instance, **mocks)
+
+            tracer.trace_data.to_pickle(str(output_path))
+            dfs.append(tracer.trace_data)
 
         return pd.concat(dfs) if dfs else None
 
