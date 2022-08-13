@@ -11,7 +11,7 @@ def test_mocking_works():
         return 5
 
     @register(DUMMY, DUMMY, DUMMY)
-    def my_test_f(mocked_value) -> int:
+    def my_test_f(mocked_value):
         logging.debug(mocked_value)
         assert mocked_value == 5
         
@@ -28,7 +28,7 @@ def test_fails_when_mock_not_found():
         return 5
 
     @register(DUMMY, DUMMY, DUMMY)
-    def bad_test_f(something_else) -> int:
+    def bad_test_f(something_else):
         assert something_else == 5
 
     def not_working():
