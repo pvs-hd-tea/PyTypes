@@ -24,6 +24,7 @@ class TraceData:
     VARNAME = "VarName"
     VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
+    COLUMN_OFFSET = "ColumnOffset"
     VARTYPE2 = "Type 2"
     COMPLETENESS = "Completeness"
     CORRECTNESS = "Correctness"
@@ -62,7 +63,7 @@ class TraceData:
         FILENAME: pd.StringDtype(),
         CLASS: pd.StringDtype(),
         FUNCNAME: pd.StringDtype(),
-        LINENO: pd.UInt64Dtype(),
+        COLUMN_OFFSET: pd.UInt64Dtype(),
         CATEGORY: pd.Int64Dtype(),
         VARNAME: pd.StringDtype(),
         VARTYPE: pd.StringDtype(),
@@ -72,7 +73,7 @@ class TraceData:
         FILENAME: pd.StringDtype(),
         CLASS: pd.StringDtype(),
         FUNCNAME: pd.StringDtype(),
-        LINENO: pd.UInt64Dtype(),
+        COLUMN_OFFSET: pd.UInt64Dtype(),
         CATEGORY: pd.Int64Dtype(),
         VARNAME: pd.StringDtype(),
         VARTYPE: pd.StringDtype(),

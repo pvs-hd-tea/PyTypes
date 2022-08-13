@@ -27,8 +27,7 @@ class FileTypeHintsCollector:
             relative_path_str = str(file_path.relative_to(self.project_dir))
             visitor = _TypeHintVisitor(relative_path_str)
             module_and_meta.visit(visitor)
-            typehint_data = pd.DataFrame(visitor.typehint_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
-
+            typehint_data = visitor.typehint_data
             self.typehint_data = pd.concat(
                 [self.typehint_data, typehint_data], ignore_index=True
             ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
@@ -40,10 +39,12 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def __init__(self, file_path: str) -> None:
         super().__init__()
         self.file_path = file_path
-        self.typehint_data: list = []
+        self.typehint_data: pd.DataFrame = pd.DataFrame()
+        self.collected_data: list = []
         self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
         self.imports: dict[str, str] = {}
         self.imports_alias: dict[str, str] = {}
+        self.smallest_column_offsets_by_line_number: dict[int, int] = {}
         self.defined_classes: list[str] = list()
 
     def _innermost_class(self) -> cst.ClassDef | None:
@@ -65,7 +66,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         if not isinstance(node.names, cst.ImportStar):
             iterator = iter(node.names)
             for name in iterator:
-                imported_element_name: str = str(name.name.value)
+                assert isinstance(name.name.value, str)
+                imported_element_name: str = name.name.value
                 if imported_element_name in self.imports.keys():
                     # The first import is considered as the module of the imported element.
                     continue
@@ -104,19 +106,17 @@ class _TypeHintVisitor(cst.CSTVisitor):
         if not hasattr(node, "annotation") or node.annotation is None:
             return True
         variable_name = self._get_variable_name(node)
-        line_number = self._get_line_number(node)
         type_hint = self._get_annotation_value(node.annotation)
-        self._add_row(line_number, TraceDataCategory.FUNCTION_PARAMETER, variable_name, type_hint)
+        self._add_row(0, TraceDataCategory.FUNCTION_PARAMETER, variable_name, type_hint)
         return True
 
     def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
         variable_name = self._get_variable_name(node)
-        line_number = self._get_line_number(node)
         if node.returns:
             type_hint = self._get_annotation_value(node.returns)
         else:
             type_hint = None
-        self._add_row(line_number, TraceDataCategory.FUNCTION_RETURN, variable_name, type_hint)
+        self._add_row(0, TraceDataCategory.FUNCTION_RETURN, variable_name, type_hint)
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         line_number = self._get_line_number(node)
@@ -133,13 +133,27 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._add_row(line_number, category, variable_name, type_hint)
         return True
 
-    def _get_variable_name(self, node: cst.FunctionDef | cst.Param):
+    def leave_Module(self, original_node: cst.Module) -> None:
+        self.typehint_data = pd.DataFrame(self.collected_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+
+        # The typehint data contains line numbers instead of column offsets. These are replaced with the column offset.
+        self.typehint_data = self.typehint_data.replace(
+            {constants.TraceData.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number})
+
+    def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
         return node.name.value
 
-    def _get_line_number(self, node: cst.CSTNode):
+    def _get_line_number(self, node: cst.CSTNode) -> int:
         pos = self.get_metadata(PositionProvider, node).start
-        variable_line_number = pos.line
-        return variable_line_number
+        line_number = pos.line
+
+        column_offset = pos.column
+        if line_number in self.smallest_column_offsets_by_line_number.keys():
+            self.smallest_column_offsets_by_line_number[line_number] = min(self.smallest_column_offsets_by_line_number[line_number], column_offset)
+        else:
+            self.smallest_column_offsets_by_line_number[line_number] = column_offset
+
+        return line_number
 
     def _add_row(self, line_number: int, category: TraceDataCategory, variable_name: str | None, type_hint: str | None):
         class_node = self._innermost_class()
@@ -150,7 +164,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         function_name = None
         if function_node:
             function_name = function_node.name.value
-        self.typehint_data.append([
+        self.collected_data.append([
             self.file_path,
             class_name,
             function_name,

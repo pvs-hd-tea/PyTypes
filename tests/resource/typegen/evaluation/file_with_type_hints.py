@@ -30,6 +30,9 @@ class A:
     def function(self, a: pathlib.Path, b: Path) -> bool:
         c: bool; d = a == b, 10
         e: str = str(d)
+        if True:
+            e: int = 12
+        e: bool = False
         f: object = None; g: float = 3.14
         return c
 
