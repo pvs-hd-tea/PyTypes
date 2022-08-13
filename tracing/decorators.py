@@ -1,7 +1,7 @@
 import collections
 import inspect
 import pathlib
-from typing import Callable
+from typing import Callable, Mapping
 
 import pandas as pd
 
@@ -57,7 +57,7 @@ def register(
     return impl
 
 
-def entrypoint(proj_root: pathlib.Path | None = None) -> pd.DataFrame | None:
+def entrypoint(proj_root: pathlib.Path | None = None) -> Callable[..., pd.DataFrame | None]:
     """
     Execute and trace all registered test functions in the same module as the marked function
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
@@ -65,7 +65,7 @@ def entrypoint(proj_root: pathlib.Path | None = None) -> pd.DataFrame | None:
     root = proj_root or pathlib.Path.cwd()
     cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
-    def _load_mocks_for_func(func: callable, lookup: dict) -> dict | None:
+    def _load_mocks_for_func(func: Callable, lookup: Mapping) -> dict | None:
         signature = inspect.signature(func)
         mocks = dict()
 
@@ -94,7 +94,8 @@ def entrypoint(proj_root: pathlib.Path | None = None) -> pd.DataFrame | None:
 
         dfs = list()
 
-        searchable = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)
+        # https://docs.python.org/3/library/collections.html#collections.ChainMap clearly exists?
+        searchable = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
         for fname, function in searchable.items():
             if not inspect.isfunction(function) or not hasattr(
                 function, constants.TRACER_ATTRIBUTE
