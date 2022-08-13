@@ -13,63 +13,72 @@ class MetricDataCalculator:
 
     """Calculates the metric data containing the correctness & completeness."""
     def __init__(self):
-        self.modified_filenames_by_original: Dict[str, str] = {}
+        self.generated_filenames_by_original: Dict[str, str] = {}
 
-    def add_filename_mapping(self, original_filename: str, modified_filename: str) -> None:
-        """Adds a mapping: modified filename -> original filename. Used to calculate the metric data."""
-        self.modified_filenames_by_original[modified_filename] = original_filename
+    def add_filename_mapping(self, original_filename: str, generated_filename: str) -> None:
+        """Adds a mapping: generated filename -> original filename. Used to calculate the metric data."""
+        self.generated_filenames_by_original[generated_filename] = original_filename
 
-    def get_metric_data(self, original_type_hint_data: pd.DataFrame, traced_type_hint_data: pd.DataFrame) \
+    def get_metric_data(self, original_type_hint_data: pd.DataFrame, generated_type_hint_data: pd.DataFrame) \
             -> pd.DataFrame:
         """Calculates the metric data containing the correctness & completeness."""
         # Replaces the filenames of the traced type hint data with the original filename.
-        modified_type_hint_data = traced_type_hint_data.replace(
-            {constants.TraceData.FILENAME: self.modified_filenames_by_original})
+        generated_type_hint_data = generated_type_hint_data.replace(
+            {constants.TraceData.FILENAME: self.generated_filenames_by_original})
 
         subset_merged = list(constants.TraceData.TYPE_HINT_SCHEMA.keys())
         subset_merged = subset_merged.copy()
 
         # Used to sort the values.
         original_type_hint_data[MetricDataCalculator.INDEX] = original_type_hint_data.index
-        modified_type_hint_data[MetricDataCalculator.INDEX2] = modified_type_hint_data.index
+        generated_type_hint_data[MetricDataCalculator.INDEX2] = generated_type_hint_data.index
 
         # Used to treat duplicate rows as separate rows (to merge the dataframes).
         original_type_hint_data[MetricDataCalculator.CUMCOUNT] = original_type_hint_data.groupby(
             subset_merged).cumcount()
-        modified_type_hint_data[MetricDataCalculator.CUMCOUNT] = modified_type_hint_data.groupby(
+        generated_type_hint_data[MetricDataCalculator.CUMCOUNT] = generated_type_hint_data.groupby(
             subset_merged).cumcount()
         subset_merged.append(MetricDataCalculator.CUMCOUNT)
 
-        merged_data = pd.merge(original_type_hint_data, modified_type_hint_data,
+        # Merges rows which match (including type).
+        merged_data = pd.merge(original_type_hint_data, generated_type_hint_data,
                                             on=subset_merged, how='inner')  # type: ignore
         merged_data = merged_data.drop(MetricDataCalculator.CUMCOUNT, axis=1)
-        merged_data[constants.TraceData.VARTYPE2] = merged_data[constants.TraceData.VARTYPE]
+        merged_data[constants.TraceData.VARTYPE_ORIGINAL] = merged_data[constants.TraceData.VARTYPE]
+        merged_data[constants.TraceData.VARTYPE_GENERATED] = merged_data[constants.TraceData.VARTYPE]
+        merged_data = merged_data.drop(constants.TraceData.VARTYPE, axis=1)
         merged_data[constants.TraceData.CORRECTNESS] = True
         merged_data[constants.TraceData.COMPLETENESS] = True
 
         original_type_hint_data = original_type_hint_data[
             ~original_type_hint_data[MetricDataCalculator.INDEX].isin(merged_data[MetricDataCalculator.INDEX])]
-        modified_type_hint_data = modified_type_hint_data[
-            ~modified_type_hint_data[MetricDataCalculator.INDEX2].isin(merged_data[MetricDataCalculator.INDEX2])]
+        generated_type_hint_data = generated_type_hint_data[
+            ~generated_type_hint_data[MetricDataCalculator.INDEX2].isin(merged_data[MetricDataCalculator.INDEX2])]
 
         subset_merged.remove(constants.TraceData.VARTYPE)
 
-        modified_type_hint_data[constants.TraceData.VARTYPE2] = modified_type_hint_data[constants.TraceData.VARTYPE]
-        modified_type_hint_data = modified_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
+        original_type_hint_data[constants.TraceData.VARTYPE_ORIGINAL] = \
+            original_type_hint_data[constants.TraceData.VARTYPE]
+        original_type_hint_data = original_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
+        generated_type_hint_data[constants.TraceData.VARTYPE_GENERATED] = \
+            generated_type_hint_data[constants.TraceData.VARTYPE]
+        generated_type_hint_data = generated_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
 
         original_type_hint_data[MetricDataCalculator.CUMCOUNT] = original_type_hint_data.groupby(
             subset_merged).cumcount()
-        modified_type_hint_data[MetricDataCalculator.CUMCOUNT] = modified_type_hint_data.groupby(
+        generated_type_hint_data[MetricDataCalculator.CUMCOUNT] = generated_type_hint_data.groupby(
             subset_merged).cumcount()
 
-        merged_data2 = pd.merge(original_type_hint_data, modified_type_hint_data,
+        # Merges remaining rows.
+        merged_data2 = pd.merge(original_type_hint_data, generated_type_hint_data,
                                 on=subset_merged, how='outer')  # type: ignore
         merged_data2 = merged_data2.drop(MetricDataCalculator.CUMCOUNT, axis=1)
         merged_data2[constants.TraceData.CORRECTNESS] = False
         merged_data2[constants.TraceData.COMPLETENESS] = False
-        merged_data2[constants.TraceData.COMPLETENESS][~merged_data2[constants.TraceData.VARTYPE2].isna()] = True
-        merged_data2[constants.TraceData.COMPLETENESS][merged_data2[constants.TraceData.VARTYPE].isna()] = None
-        merged_data2[constants.TraceData.CORRECTNESS][merged_data2[constants.TraceData.VARTYPE].isna()] = None
+        merged_data2[constants.TraceData.COMPLETENESS][~merged_data2[constants.TraceData.VARTYPE_GENERATED].isna()] = True
+        indices_original_types_missing = merged_data2[constants.TraceData.VARTYPE_ORIGINAL].isna()
+        merged_data2[constants.TraceData.COMPLETENESS][indices_original_types_missing] = None
+        merged_data2[constants.TraceData.CORRECTNESS][indices_original_types_missing] = None
 
         columns_in_correct_order = list(constants.TraceData.METRICS_SCHEMA.keys())
         columns_in_correct_order.append(MetricDataCalculator.INDEX)

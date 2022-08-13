@@ -25,7 +25,8 @@ class TraceData:
     VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
     COLUMN_OFFSET = "ColumnOffset"
-    VARTYPE2 = "Type 2"
+    VARTYPE_ORIGINAL = "OriginalType"
+    VARTYPE_GENERATED = "GeneratedType"
     COMPLETENESS = "Completeness"
     CORRECTNESS = "Correctness"
 
@@ -76,8 +77,8 @@ class TraceData:
         COLUMN_OFFSET: pd.UInt64Dtype(),
         CATEGORY: pd.Int64Dtype(),
         VARNAME: pd.StringDtype(),
-        VARTYPE: pd.StringDtype(),
-        VARTYPE2: pd.StringDtype(),
+        VARTYPE_ORIGINAL: pd.StringDtype(),
+        VARTYPE_GENERATED: pd.StringDtype(),
         COMPLETENESS: pd.BooleanDtype(),
         CORRECTNESS: pd.BooleanDtype(),
     }
