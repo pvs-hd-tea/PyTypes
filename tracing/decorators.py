@@ -91,10 +91,10 @@ def entrypoint(
         dfs = list()
 
         # https://docs.python.org/3/library/collections.html#collections.ChainMap clearly exists?
-        searchable = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
+        search_space = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
         callables: list[tuple[type | None, types.FunctionType | types.MethodType]] = []
 
-        for entity in searchable.values():
+        for entity in search_space.values():
             if inspect.isfunction(entity) and hasattr(
                 entity, constants.TRACER_ATTRIBUTE
             ):
@@ -103,7 +103,9 @@ def entrypoint(
 
             if inspect.isclass(entity):
                 for _, mem in inspect.getmembers(entity, predicate=_method_predicate):
-                    logging.debug(f"Found registered method {entity.__name__}.{mem.__name__}")
+                    logging.debug(
+                        f"Found registered method {entity.__name__}.{mem.__name__}"
+                    )
                     callables.append((entity, mem))
 
         for clazz, call in callables:
@@ -126,7 +128,7 @@ def entrypoint(
             output_path: pathlib.Path = tracer.proj_path / substituted_output
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            mocks = _load_mocks(call, searchable, clazz is not None)
+            mocks = _load_mocks(call, search_space, clazz is not None)
             if mocks is None:
                 sig = inspect.signature(call)
                 raise ValueError(f"Failed to load mocks for {callable_name}{sig}")
