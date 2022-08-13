@@ -116,7 +116,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         dfs = list()
 
-        search_space: collections.ChainMap = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)
+        # https://docs.python.org/3/library/collections.html#collections.ChainMap clearly exists?
+        search_space = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)  # type: ignore
         classes_with_callables: list[tuple[type | None, types.FunctionType | types.MethodType]] = []
 
         # Searches for registered functions/methods.
