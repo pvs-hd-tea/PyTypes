@@ -22,7 +22,7 @@ def test_full():
         "pytypes-xvtnrWJT-py3.10",
     )
 
-    assert len(config.unifier) == 6
+    assert len(config.unifier) == 8
 
     assert isinstance(config.unifier[0], ptconfig.Dedup)
     assert config.unifier[0].name == "remove_dups"
@@ -52,6 +52,15 @@ def test_full():
     assert config.unifier[5].name == "replace_subtypes_strict"
     assert config.unifier[5].kind == "repl_subty"
     assert config.unifier[5].only_replace_if_base_was_traced == True
+
+    assert isinstance(config.unifier[6], ptconfig.KeepFirst)
+    assert config.unifier[6].name == "keep_first"
+    assert config.unifier[6].kind == "keep_only_first"
+
+    assert isinstance(config.unifier[7], ptconfig.MinThreshold)
+    assert config.unifier[7].name == "min_threshold"
+    assert config.unifier[7].kind == "drop_min_threshold"
+    assert abs(config.unifier[7].min_threshold - 0.3) < 1e-8
 
 
 def test_simple():

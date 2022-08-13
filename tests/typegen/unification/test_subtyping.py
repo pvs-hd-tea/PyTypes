@@ -69,6 +69,7 @@ def test_replace_subtypes_filter_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
     expected_trace_data.loc[:3, constants.TraceData.VARTYPE] = "BaseClass"
     expected_trace_data.loc[3:, constants.TraceData.VARTYPE] = "SubClass1"
+    expected_trace_data.loc[10:, constants.TraceData.VARTYPE] = "BaseClass"
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = get_sample_trace_data()

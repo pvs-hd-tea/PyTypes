@@ -138,6 +138,7 @@ dmypy.json
 
 *.npy_pytype.npy
 
+pytypes/
 # Others
 *_decorators_appended.py
 tests/fetching/repos/*
