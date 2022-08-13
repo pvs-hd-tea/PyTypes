@@ -71,10 +71,14 @@ class Tracer:
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
 
-        tname, fname = Tracer.__name__, self.stop_trace.__name__
+        fnames = [
+            self.stop_trace.__name__,
+            self.start_trace.__name__,
+            self.active_trace.__name__,
+        ]
         drop_masks = [
-            self.trace_data[constants.TraceData.CLASS] == tname,
-            self.trace_data[constants.TraceData.FUNCNAME] == fname,
+            self.trace_data[constants.TraceData.CLASS] == Tracer.__name__,
+            self.trace_data[constants.TraceData.FUNCNAME].isin(fnames),
         ]
         td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
         self.trace_data = self.trace_data.drop(td_drop.index)

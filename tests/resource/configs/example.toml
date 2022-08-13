@@ -31,3 +31,12 @@ kind = "repl_subty"
 name = "replace_subtypes_strict"
 kind = "repl_subty"
 only_replace_if_base_was_traced = true
+
+[[unifier]]
+name = "keep_first"
+kind = "keep_only_first"
+
+[[unifier]]
+name = "min_threshold"
+kind = "drop_min_threshold"
+min_threshold = 0.3

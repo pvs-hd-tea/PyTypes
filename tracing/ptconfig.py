@@ -49,9 +49,22 @@ class ReplaceSubtypes:
     only_replace_if_base_was_traced: bool | None = False
 
 
+@dataclass
+class KeepFirst:
+    name: str
+    kind: typing.Literal["keep_only_first"] = "keep_only_first"
+
+
+@dataclass
+class MinThreshold:
+    name: str
+    kind: typing.Literal["drop_min_threshold"] = "drop_min_threshold"
+    min_threshold: float = 0.25
+
+
 # https://github.com/konradhalas/dacite/pull/184
 # the cooler union syntax is not supported
-Unifier = typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes]
+Unifier = typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes, KeepFirst, MinThreshold]
 
 
 @dataclass
