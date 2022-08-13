@@ -134,7 +134,7 @@ dmypy.json
 *.pytype
 !tests/resource/sample_trace_data_files/*.pytype
 !tests/resource/sample_trace_data_files/*/*.pytype
-
+pytypes/
 # Others
 *_decorators_appended.py
 tests/fetching/repos/*
