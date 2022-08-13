@@ -1,6 +1,7 @@
 import collections
 import inspect
 import itertools
+import logging
 import pathlib
 import types
 from typing import Callable, Mapping
@@ -117,10 +118,12 @@ def entrypoint(
             if inspect.isfunction(entity) and hasattr(
                 entity, constants.TRACER_ATTRIBUTE
             ):
+                logging.debug(f"Found registered function {entity.__name__}")
                 callables.append((None, entity))
 
             if inspect.isclass(entity):
                 for _, mem in inspect.getmembers(entity, predicate=_method_predicate):
+                    logging.debug(f"Found registered method {entity.__name__}.{mem.__name__}")
                     callables.append((entity, mem))
 
         for clazz, call in callables:
