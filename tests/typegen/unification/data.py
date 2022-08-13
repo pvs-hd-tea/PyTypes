@@ -153,5 +153,49 @@ def get_sample_trace_data() -> pd.DataFrame:
         resource_module,
         "SubClass1",
     ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(resource_path),
+        None,
+        "BaseClass",
+        "test_function_name",
+        5,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable",
+        resource_module,
+        "SubClass1",
+    ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(resource_path),
+        None,
+        "BaseClass",
+        "test_function_name",
+        5,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable",
+        resource_module,
+        "SubClass1",
+    ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(resource_path),
+        None,
+        "BaseClass",
+        "test_function_name",
+        5,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable",
+        resource_module,
+        "SubClass1",
+    ]
+    trace_data.loc[len(trace_data.index)] = [
+        str(resource_path),
+        None,
+        "BaseClass",
+        "test_function_name",
+        5,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "local_variable",
+        resource_module,
+        "SubClass2",
+    ]
     trace_data = trace_data.astype(constants.TraceData.SCHEMA)
     return trace_data

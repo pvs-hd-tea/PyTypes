@@ -14,7 +14,7 @@ def test_factory():
 
 def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_data():
     expected_trace_data = (
-        get_sample_trace_data().iloc[[5, 6, 10]].reset_index(drop=True)
+        get_sample_trace_data().iloc[[5, 6]].reset_index(drop=True)
     )
     expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
