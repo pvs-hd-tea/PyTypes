@@ -1,7 +1,8 @@
-import ast
+import libcst as cst
+from libcst.tool import dump
+from libcst.matchers import matches
 import logging
 import pathlib
-from types import NoneType
 
 import constants
 import typing
@@ -13,105 +14,131 @@ from typegen.strats.inline import InlineGenerator
 import pandas as pd
 
 
-class HintTest(ast.NodeVisitor):
+class HintTest(cst.CSTVisitor):
     @typing.no_type_check
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        if node.name == "add":
-            for arg in node.args.args:
-                assert arg.annotation.id == "int", f"{ast.dump(arg)}"
-            assert node.returns.id == "int", f"{ast.dump(node)}"
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        assert False, "no imports expected!"
 
-        elif node.name == "method":
+    @typing.no_type_check
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        if node.name.value == "add":
+            for param in node.params.params:
+                assert (
+                    param.annotation is not None
+                ), f"Missing annotation on {dump(param)}"
+                assert (
+                    param.annotation.annotation.value == "int"
+                ), f"Wrong annotation on {dump(param)}"
+
+            assert (
+                node.returns is not None
+            ), f"Missing return annotation on {dump(node)}"
+            assert node.returns.annotation.value == "int", f"{dump(node)}"
+
+        elif node.name.value == "method":
             # only the function
-            if all(arg.arg in "ans" for arg in node.args.args):
-                for arg in node.args.args:
-                    if arg.arg == "a":
-                        assert arg.annotation is None
+            if all(param.name.value in "ans" for param in node.params.params):
+                for param in node.params.params:
+                    if param.name.value == "a":
+                        assert param.annotation is None
                     else:
-                        assert arg.annotation.id == "str", f"{ast.dump(arg)}"
+                        assert (
+                            param.annotation.annotation.value == "str"
+                        ), f"{dump(param)}"
 
-                assert node.returns.id == "bytes", f"{ast.dump(node)}"
+                assert (
+                    node.returns is not None
+                ), f"Missing return annotation on {dump(node)}"
+                assert node.returns.annotation.value == "bytes", f"{dump(node)}"
             else:
-                for arg in node.args.args:
-                    assert arg.annotation is None, f"{ast.dump(arg)}"
+                for param in node.params.params:
+                    assert (
+                        param.annotation is None
+                    ), f"{dump(param)} should not be hinted"
 
-        elif node.name == "__init__":
+        elif node.name.value == "__init__":
             pass
 
-        elif node.name == "outer":
-            assert node.args.args[1].arg == "b"
-            assert node.args.args[1].annotation.id == "int"
-            assert node.returns.id == "int"
+        elif node.name.value == "outer":
+            assert node.params.params[1].name.value == "b"
+            assert node.params.params[1].annotation.annotation.value == "int"
+            assert node.returns.annotation.value == "int"
 
-        elif node.name == "inner":
-            assert node.args.args[0].arg == "i"
-            assert node.args.args[0].annotation.id == "int"
-            assert node.returns.id == "int"
+        elif node.name.value == "inner":
+            assert node.params.params[0].name.value == "i"
+            assert node.params.params[0].annotation.annotation.value == "int"
+            assert node.returns.annotation.value == "int"
 
         else:
-            assert False, f"Unhandled target: {ast.dump(node)}"
+            assert False, f"Unhandled target: {dump(node)}"
 
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+    @typing.no_type_check
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
         # narrow type for mypy
-        assert isinstance(node.target, ast.Name) or isinstance(
-            node.target, ast.Attribute
+        assert isinstance(node.target, cst.Name) or isinstance(
+            node.target, cst.Attribute
         )
-        assert isinstance(node.annotation, ast.Name)
+        assert isinstance(node.annotation, cst.Annotation)
 
         if node.value is not None:
-            if isinstance(node.target, ast.Name):
-                if node.target.id == "z":
-                    assert node.annotation.id == "int"
-                elif node.target.id == "y":
-                    assert node.annotation.id == "float"
-                elif node.target.id == "d":
-                    assert node.annotation.id == "dict"
-                elif node.target.id == "s":
-                    assert node.annotation.id == "set"
-                elif node.target.id == "l":
-                    assert node.annotation.id == "list"
-                elif node.target.id == "f":
-                    assert node.annotation.id == "int"
+            if isinstance(node.target, cst.Name):
+                if node.target.value == "z":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.value == "y":
+                    assert node.annotation.annotation.value == "float"
+                elif node.target.value == "d":
+                    assert node.annotation.annotation.value == "dict"
+                elif node.target.value == "s":
+                    assert node.annotation.annotation.value == "set"
+                elif node.target.value == "l":
+                    assert node.annotation.annotation.value == "list"
+                elif node.target.value == "f":
+                    assert node.annotation.annotation.value == "int"
                 else:
-                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
-            elif isinstance(node.target, ast.Attribute):
-                if node.target.attr == "a":
-                    assert node.annotation.id == "int"
-                elif node.target.attr == "b":
-                    assert node.annotation.id == "str"
+                    assert False, f"Unhandled ann-assign with target: {dump(node)}"
+            elif isinstance(node.target, cst.Attribute):
+                if node.target.attr.value == "a":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.attr.value == "b":
+                    assert node.annotation.annotation.value == "str"
                 else:
-                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+                    assert False, f"Unhandled ann-assign with target: {dump(node)}"
         else:
-            if isinstance(node.target, ast.Name):
-                if node.target.id == "a":
-                    assert node.annotation.id == "float"
-                elif node.target.id == "b":
-                    assert node.annotation.id == "int"
-                elif node.target.id == "i":
-                    assert node.annotation.id == "float"
-                elif node.target.id == "j":
-                    assert node.annotation.id == "int"
-                elif node.target.id == "f":
-                    assert node.annotation.id == "int"
-                elif node.target.id == "y":
-                    assert node.annotation.id == "int"
-                elif node.target.id == "d":
-                    assert node.annotation.id == "float"
-                elif node.target.id == "e":
-                    assert node.annotation.id == "NoneType"
+            if isinstance(node.target, cst.Name):
+                if node.target.value == "a":
+                    assert node.annotation.annotation.value == "float"
+                elif node.target.value == "b":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.value == "i":
+                    assert node.annotation.annotation.value == "float"
+                elif node.target.value == "j":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.value == "f":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.value == "y":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.value == "d":
+                    assert node.annotation.annotation.value == "float"
+                elif node.target.value == "e":
+                    assert node.annotation.annotation.value == "NoneType"
                 else:
-                    assert (
-                        False
-                    ), f"Unhandled ann-assign without target: {ast.dump(node)}"
-            elif isinstance(node.target, ast.Attribute):
-                if node.target.attr == "a":
-                    assert node.annotation.id == "int"
-                elif node.target.attr == "b":
-                    assert node.annotation.id == "str"
-                elif node.target.attr == "c":
-                    assert node.annotation.id == "bool"
+                    assert False, f"Unhandled ann-assign without target: {dump(node)}"
+            elif isinstance(node.target, cst.Attribute):
+                if node.target.attr.value == "a":
+                    assert node.annotation.annotation.value == "int"
+                elif node.target.attr.value == "b":
+                    assert node.annotation.annotation.value == "str"
+                elif node.target.attr.value == "c":
+                    assert node.annotation.annotation.value == "bool"
                 else:
-                    assert False, f"Unhandled ann-assign with target: {ast.dump(node)}"
+                    assert False, f"Unhandled ann-assign with target: {dump(node)}"
+
+
+def load_with_metadata(path: pathlib.Path) -> cst.MetadataWrapper:
+    module = cst.parse_module(source=path.open().read())
+    module_w_metadata = cst.MetadataWrapper(module)
+
+    return module_w_metadata
 
 
 def test_factory():
@@ -125,180 +152,209 @@ def test_callables():
     resource_path = pathlib.Path("tests", "resource", "typegen", "callable.py")
     assert resource_path.is_file()
 
-    from tests.resource.typegen.callable import C  # type: ignore
-
-    c_clazz = C
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "x",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         "add",
         1,
         TraceDataCategory.FUNCTION_PARAMETER,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
+        None,
         "add",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "add",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "b",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "c",
-        bool,
+        None,
+        "bool",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "n",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         8,
         TraceDataCategory.FUNCTION_PARAMETER,
         "s",
-        str,
+        None,
+        "str",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         10,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        float,
+        None,
+        "float",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "",
         11,
         TraceDataCategory.LOCAL_VARIABLE,
         "e",
-        NoneType,
+        None,
+        "NoneType",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "method",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "method",
-        bytes,
+        None,
+        "bytes",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "outer",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "outer",
         15,
         TraceDataCategory.FUNCTION_PARAMETER,
         "b",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.FUNCTION_RETURN,
         "inner",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         16,
         TraceDataCategory.FUNCTION_PARAMETER,
         "i",
-        int,
+        None,
+        "int",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        c_clazz_module,
         c_clazz,
         "inner",
         0,
         TraceDataCategory.CLASS_MEMBER,
         "a",
-        int,
+        None,
+        "int",
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
-        applicable=traced, nodes=ast.parse(source=resource_path.open().read())
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-
-    logging.debug(f"\n{ast.unparse(hinted)}")
-
-    for node in ast.walk(hinted):
-        HintTest().visit(node)
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
 
 
 def test_assignments():
@@ -313,134 +369,260 @@ def test_assignments():
         str(resource_path),
         None,
         None,
+        None,
         2,
         TraceDataCategory.LOCAL_VARIABLE,
         "z",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         4,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         7,
         TraceDataCategory.LOCAL_VARIABLE,
         "d",
-        dict,
+        None,
+        "dict",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         8,
         TraceDataCategory.LOCAL_VARIABLE,
         "s",
-        set,
+        None,
+        "set",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         9,
         TraceDataCategory.LOCAL_VARIABLE,
         "l",
-        list,
+        None,
+        "list",
     ]
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "a",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "b",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "i",
-        float,
+        None,
+        "float",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "j",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         18,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         20,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
+        None,
         None,
         None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "f",
-        int,
+        None,
+        "int",
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
         None,
+        None,
         21,
         TraceDataCategory.LOCAL_VARIABLE,
         "y",
-        int,
+        None,
+        "int",
     ]
 
     hinted = gen._gen_hinted_ast(
-        applicable=traced, nodes=ast.parse(source=resource_path.open().read())
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
-    logging.debug(ast.unparse(hinted))
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+    imported.visit(HintTest())
 
-    for node in ast.walk(hinted):
-        HintTest().visit(node)
+
+def test_imported():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
+    assert resource_path.is_file()
+
+    c_clazz_module = "tests.resource.typegen.callable"
+    c_clazz = "C"
+
+    anotherc_clazz_module = "tests.resource.typegen.importing"
+    anotherc_clazz = "AnotherC"
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "function",
+        None,
+        "int",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "function",
+        1,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        c_clazz_module,
+        c_clazz,
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "another_function",
+        None,
+        "str",
+    ]
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "another_function",
+        7,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "c",
+        anotherc_clazz_module,
+        anotherc_clazz,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class ImportedHintTest(cst.CSTVisitor):
+        @typing.no_type_check
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            assert isinstance(node.module, cst.Attribute)
+
+            if matches(node.module, cst.parse_expression("tests.resource.typegen.callable")):
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "C"
+
+            else:
+                assert False, f"Unexpected ImportFrom: {node.module.value}"
+
+        @typing.no_type_check
+        def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+            if node.name.value == "function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "C"
+
+                assert node.returns.annotation.value == "int"
+
+            elif node.name.value == "another_function":
+                assert node.params.params[0].name.value == "c"
+                assert node.params.params[0].annotation.annotation.value == "AnotherC"
+
+                assert node.returns.annotation.value == "str"
+
+            else:
+                assert False, f"Unhandled functiondef: {node.name.value}"
+
+    imported.visit(ImportedHintTest())
