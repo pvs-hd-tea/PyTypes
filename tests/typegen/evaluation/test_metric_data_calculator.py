@@ -67,7 +67,7 @@ def get_sample_data():
     return sample_original_data, sample_generated_data
 
 
-def test_metric_calculator_returns_correct_data():
+def test_metric_calculator_returns_correct_metric_data():
     expected_data = pd.DataFrame(columns=constants.TraceData.METRICS_SCHEMA)
     expected_data.loc[len(expected_data.index)] = [
         "sample_original_filename",
@@ -124,3 +124,17 @@ def test_metric_calculator_returns_correct_data():
     test_object.add_filename_mapping("sample_original_filename", "sample_generated_filename")
     actual_data = test_object.get_metric_data(sample_original_data, sample_generated_data)
     assert expected_data.equals(actual_data)
+
+
+def test_metric_calculator_returns_correct_completeness_and_correctness():
+    expected_completeness = 2 / 3
+    expected_correctness = 1 / 2
+    sample_original_data, sample_generated_data = get_sample_data()
+
+    test_object = MetricDataCalculator()
+    test_object.add_filename_mapping("sample_original_filename", "sample_generated_filename")
+    metric_data = test_object.get_metric_data(sample_original_data, sample_generated_data)
+    total_completeness, total_correctness = test_object.get_total_completeness_and_correctness(metric_data)
+
+    assert abs(total_completeness - expected_completeness) < 1e-8
+    assert abs(total_correctness - expected_correctness) < 1e-8
