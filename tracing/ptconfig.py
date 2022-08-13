@@ -18,7 +18,7 @@ class PyTypes:
     venv_path: pathlib.Path
 
     output_template: str = field(
-        default="pytypes/{project}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
     )
 
 
