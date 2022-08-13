@@ -1,7 +1,9 @@
+import collections
 import inspect
 import pathlib
 from typing import Callable
 
+import pandas as pd
 
 from .tracer import Tracer
 from .ptconfig import load_config
@@ -55,7 +57,7 @@ def register(
     return impl
 
 
-def entrypoint(proj_root: pathlib.Path | None = None):
+def entrypoint(proj_root: pathlib.Path | None = None) -> pd.DataFrame | None:
     """
     Execute and trace all registered test functions in the same module as the marked function
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
@@ -63,7 +65,20 @@ def entrypoint(proj_root: pathlib.Path | None = None):
     root = proj_root or pathlib.Path.cwd()
     cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
-    def impl(main: Callable[[], None]):
+    def _load_mocks_for_func(func: callable, lookup: dict) -> dict | None:
+        signature = inspect.signature(func)
+        mocks = dict()
+
+        for param in signature.parameters:
+            glob = lookup.get(param)
+            # Mocks are usually callables
+            if glob is None or not inspect.isfunction(glob):
+                return None
+            mocks[param] = glob()
+
+        return mocks
+
+    def impl(main: Callable[..., None]) -> pd.DataFrame | None:
         main()
         current_frame = inspect.currentframe()
         if current_frame is None:
@@ -77,23 +92,37 @@ def entrypoint(proj_root: pathlib.Path | None = None):
                 "The current stack frame has no predecessor, unable to trace execution!"
             )
 
-        for fname, function in prev_frame.f_globals.items():
+        dfs = list()
+
+        searchable = collections.ChainMap(prev_frame.f_locals, prev_frame.f_globals)
+        for fname, function in searchable.items():
             if not inspect.isfunction(function) or not hasattr(
                 function, constants.TRACER_ATTRIBUTE
             ):
                 continue
 
-            substituted_output = cfg.pytypes.output_template.format_map(
-                {"project": cfg.pytypes.project, "func_name": fname}
-            )
-            tracer: Tracer = getattr(function, constants.TRACER_ATTRIBUTE)
-            # delattr(function, constants.TRACER_ATTRIBUTE)
+            else:
+                substituted_output = cfg.pytypes.output_template.format_map(
+                    {"project": cfg.pytypes.project, "func_name": fname}
+                )
 
-            with tracer.active_trace():
-                function()
+                tracer: Tracer = getattr(function, constants.TRACER_ATTRIBUTE)
+                output_path: pathlib.Path = tracer.proj_path / substituted_output
+                output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            output_path: pathlib.Path = tracer.proj_path / substituted_output
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            tracer.trace_data.to_pickle(str(output_path))
+                mocks = _load_mocks_for_func(function, searchable)
+                if mocks is None:
+                    sig = inspect.signature(function)
+                    raise ValueError(
+                        f"Failed to load mocks for {function.__name__}{sig}"
+                    )
+
+                with tracer.active_trace():
+                    function(**mocks)
+
+                tracer.trace_data.to_pickle(str(output_path))
+                dfs.append(tracer.trace_data)
+
+        return pd.concat(dfs) if dfs else None
 
     return impl

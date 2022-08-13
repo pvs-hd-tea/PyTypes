@@ -12,4 +12,3 @@ def test_tracer_attribute_exists():
 
     assert hasattr(another_test_fn, constants.TRACER_ATTRIBUTE)
     assert isinstance(getattr(another_test_fn, constants.TRACER_ATTRIBUTE), Tracer)
-
