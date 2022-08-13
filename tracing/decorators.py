@@ -100,7 +100,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
     root = proj_root or pathlib.Path.cwd()
     cfg = load_config(root / constants.CONFIG_FILE_NAME)
 
-    def impl(main: Callable[..., None]) -> pd.DataFrame | None:
+    def impl(main: Callable[..., None]) -> tuple[pd.DataFrame | None, np.ndarray | None]:
         main()
         current_frame = inspect.currentframe()
         if current_frame is None:
