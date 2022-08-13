@@ -12,6 +12,8 @@ from typegen.unification.drop_dupes import DropDuplicatesFilter
 from typegen.unification.drop_test_func import DropTestFunctionDataFilter
 from typegen.unification.drop_vars import DropVariablesOfMultipleTypesFilter
 from typegen.unification.subtyping import ReplaceSubTypesFilter
+from typegen.unification.drop_min_threshold import MinThresholdFilter
+from typegen.unification.keep_only_first import KeepOnlyFirstFilter
 from typegen.trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
@@ -23,6 +25,8 @@ __all__ = [
     DropTestFunctionDataFilter.__name__,
     DropVariablesOfMultipleTypesFilter.__name__,
     ReplaceSubTypesFilter.__name__,
+    MinThresholdFilter.__name__,
+    KeepOnlyFirstFilter.__name__,
 ]
 
 
@@ -88,9 +92,11 @@ def main(**params):
     # Load config
     pytypes_cfg = ptconfig.load_config(projpath / constants.CONFIG_FILE_NAME)
 
+    print(unifiers)
     unifier_lookup: dict[str, ptconfig.Unifier]
     if pytypes_cfg.unifier is not None:
         unifier_lookup = {u.name: u for u in pytypes_cfg.unifier}
+        print(pytypes_cfg.unifier)
     else:
         logging.warning(f"No unifiers were found in {constants.CONFIG_FILE_NAME}")
         unifier_lookup = dict()
