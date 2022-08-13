@@ -182,8 +182,8 @@ def test_metric_calculator_returns_correct_metric_data():
 
 
 def test_metric_calculator_returns_correct_completeness_and_correctness():
-    expected_completeness = 2 / 3
-    expected_correctness = 1 / 2
+    expected_completeness = 3 / 5
+    expected_correctness = 2 / 3
     sample_original_data, sample_generated_data = get_sample_data()
 
     test_object = MetricDataCalculator()
