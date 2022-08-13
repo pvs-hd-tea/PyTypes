@@ -4,13 +4,11 @@ import pytest
 
 from tracing import register, entrypoint
 
-DUMMY = pathlib.Path("dummy")
-
 def test_mocking_works():
     def mocked_value() -> int:
         return 5
 
-    @register(DUMMY, DUMMY, DUMMY)
+    @register()
     def my_test_f(mocked_value):
         logging.debug(mocked_value)
         assert mocked_value == 5
@@ -27,7 +25,7 @@ def test_fails_when_mock_not_found():
     def mocked_value() -> int:
         return 5
 
-    @register(DUMMY, DUMMY, DUMMY)
+    @register()
     def bad_test_f(something_else):
         assert something_else == 5
 
