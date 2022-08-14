@@ -9,7 +9,7 @@ from typing import Callable, Mapping
 import pandas as pd
 import numpy as np
 from timeit import default_timer
-from .tracer import Tracer
+from .tracer import Tracer, TracerBase
 from .ptconfig import load_config
 import constants
 
@@ -50,6 +50,11 @@ def register_performance():
         root = pathlib.Path.cwd()
         cfg = load_config(root / constants.CONFIG_FILE_NAME)
         test_function = register_impl(test_function)
+        tracer_base = TracerBase(
+            proj_path=root,
+            stdlib_path=cfg.pytypes.stdlib_path,
+            venv_path=cfg.pytypes.venv_path
+        )
         standard_tracer = Tracer(
             proj_path=root,
             stdlib_path=cfg.pytypes.stdlib_path,
@@ -62,7 +67,7 @@ def register_performance():
             venv_path=cfg.pytypes.venv_path,
             apply_opts=True
         )
-        setattr(test_function, constants.TRACERS_ATTRIBUTE, [standard_tracer, optimized_tracer])
+        setattr(test_function, constants.TRACERS_ATTRIBUTE, [tracer_base, standard_tracer, optimized_tracer])
         return test_function
 
     return impl

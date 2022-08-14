@@ -6,9 +6,9 @@ from typegen.evaluation import PerformanceDataFileCollector
 
 cwd = pathlib.Path.cwd() / "tests" / "resource" / "external" / "PyTypes_BinaryFiles" / "sample_performance_data_files"
 
-sample1 = np.array([0.015, 0.09702, 0.182])
-sample2 = np.array([-0.00103, 2.4912, 4.7])
-sample3 = np.array([2.733, 2.6103, -9.87])
+sample1 = np.array([0.015, 0.23, 0.09702, 0.182])
+sample2 = np.array([-0.00103, -1.9701, 2.4912, 4.7])
+sample3 = np.array([2.733, 3.007, 2.6103, -9.87])
 
 
 def generate_sample_files():

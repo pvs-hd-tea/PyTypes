@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class PerformanceDataFileCollector(DataFileCollector):
     """Collects performance data files in a given path."""
-    TARGET_SHAPE = np.array([3])
+    TARGET_SHAPE = np.array([4])
 
     def __init__(self):
         super().__init__()

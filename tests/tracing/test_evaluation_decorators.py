@@ -25,4 +25,4 @@ def test_everything_is_traced():
     assert "trace_method" in trace_data[TraceData.FUNCNAME].values
     assert "trace_function" in trace_data[TraceData.FUNCNAME].values
 
-    assert (performance_data.shape == np.array([2, 3])).all()
+    assert (performance_data.shape == np.array([2, 4])).all()
