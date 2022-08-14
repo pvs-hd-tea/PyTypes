@@ -15,7 +15,11 @@ import click
     required=True,
 )
 def main(**params):
-    project: pathlib.Path = params["project"]
+    project: pathlib.Path = params["project"].resolve()
+    if not project.is_dir():
+        print(f"Unable to find {project}, aborting!")
+        return
+
     stdlib = pathlib.Path(pathlib.__file__).parent
     venv = pathlib.Path(os.environ["VIRTUAL_ENV"])
 
@@ -24,7 +28,7 @@ def main(**params):
 
     cfg = ptconfig.TomlCfg(
         pytypes=ptconfig.PyTypes(
-            project=project.stem,
+            project=project.name,
             proj_path=project.resolve(),
             stdlib_path=stdlib.resolve(),
             venv_path=venv.resolve(),
@@ -32,4 +36,6 @@ def main(**params):
         unifier=[],
     )
 
-    ptconfig.write_config(project / constants.CONFIG_FILE_NAME, cfg)
+    out = project / constants.CONFIG_FILE_NAME
+    print(f"Writing config to: {out}")
+    ptconfig.write_config(out, cfg)
