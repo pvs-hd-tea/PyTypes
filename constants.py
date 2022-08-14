@@ -24,6 +24,11 @@ class TraceData:
     VARNAME = "VarName"
     VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
+    COLUMN_OFFSET = "ColumnOffset"
+    VARTYPE_ORIGINAL = "OriginalType"
+    VARTYPE_GENERATED = "GeneratedType"
+    COMPLETENESS = "Completeness"
+    CORRECTNESS = "Correctness"
 
     SCHEMA = {
         # relative path to file of variable,
@@ -53,4 +58,27 @@ class TraceData:
         # the name of the variable's type
         # never None
         VARTYPE: pd.StringDtype(),
+    }
+
+    TYPE_HINT_SCHEMA = {
+        FILENAME: pd.StringDtype(),
+        CLASS: pd.StringDtype(),
+        FUNCNAME: pd.StringDtype(),
+        COLUMN_OFFSET: pd.UInt64Dtype(),
+        CATEGORY: pd.Int64Dtype(),
+        VARNAME: pd.StringDtype(),
+        VARTYPE: pd.StringDtype(),
+    }
+
+    METRICS_SCHEMA = {
+        FILENAME: pd.StringDtype(),
+        CLASS: pd.StringDtype(),
+        FUNCNAME: pd.StringDtype(),
+        COLUMN_OFFSET: pd.UInt64Dtype(),
+        CATEGORY: pd.Int64Dtype(),
+        VARNAME: pd.StringDtype(),
+        VARTYPE_ORIGINAL: pd.StringDtype(),
+        VARTYPE_GENERATED: pd.StringDtype(),
+        COMPLETENESS: pd.BooleanDtype(),
+        CORRECTNESS: pd.BooleanDtype(),
     }
