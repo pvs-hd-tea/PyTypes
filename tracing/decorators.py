@@ -14,12 +14,12 @@ from .ptconfig import load_config
 import constants
 
 
-def register():
+def register() -> Callable[..., None]:
     """
     Register a test function for tracing and performance benchmarking.
     """
 
-    def impl(test_function: Callable[[], None]):
+    def impl(test_function: Callable[..., None]) -> None:
         root = pathlib.Path.cwd()
         cfg = load_config(root / constants.CONFIG_FILE_NAME)
         if cfg.pytypes.proj_path != root:
