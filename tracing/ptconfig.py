@@ -21,7 +21,7 @@ class PyTypes:
         default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
     )
     output_npy_template: str = field(
-        default="{project}-{func_name}" + constants.NP_ARRAY_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}" + constants.NP_ARRAY_FILE_ENDING
     )
 
 

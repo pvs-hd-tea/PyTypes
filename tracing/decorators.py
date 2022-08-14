@@ -159,7 +159,8 @@ def entrypoint(proj_root: pathlib.Path | None = None):
                 }
             )
 
-            trace_data = _generate_and_serialize_trace_data(clazz, registered_call, registered_call_mocks, substituted_output)
+            trace_data = _generate_and_serialize_trace_data(
+                clazz, registered_call, registered_call_mocks, substituted_output)
             trace_dataframes.append(trace_data)
 
             if hasattr(registered_call, constants.TRACERS_ATTRIBUTE):
@@ -176,7 +177,11 @@ def entrypoint(proj_root: pathlib.Path | None = None):
     return impl
 
 
-def _generate_and_serialize_trace_data(clazz: type | None, registered_call: Callable, mocks: dict, substituted_output: str) -> pd.DataFrame:
+def _generate_and_serialize_trace_data(
+        clazz: type | None,
+        registered_call: Callable,
+        mocks: dict,
+        substituted_output: str) -> pd.DataFrame:
     tracer: Tracer = getattr(registered_call, constants.TRACER_ATTRIBUTE)
     output_path: pathlib.Path = tracer.proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -191,7 +196,11 @@ def _generate_and_serialize_trace_data(clazz: type | None, registered_call: Call
     return tracer.trace_data
 
 
-def _generate_and_serialize_performance_data(clazz: type | None, registered_call: Callable, mocks: dict, substituted_output: str) -> pd.DataFrame:
+def _generate_and_serialize_performance_data(
+        clazz: type | None,
+        registered_call: Callable,
+        mocks: dict,
+        substituted_output: str) -> pd.DataFrame:
     tracers = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
     measured_times = np.zeros((1 + len(tracers), constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE))
     proj_path = tracers[0].proj_path
@@ -218,5 +227,7 @@ def _generate_and_serialize_performance_data(clazz: type | None, registered_call
             measured_times[1 + j, i] = end_time - start_time
     measured_times_mean = np.mean(measured_times, axis=1)
 
-    np.save(str(proj_path / substituted_output), measured_times_mean)
+    output_path = proj_path / substituted_output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    np.save(output_path, measured_times_mean)
     return measured_times_mean
