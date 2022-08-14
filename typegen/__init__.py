@@ -1,7 +1,7 @@
 import logging
-
 import click
 import pathlib
+from typegen.trace_data_file_collector import TraceDataFileCollector, DataFileCollector
 
 import constants
 
@@ -20,6 +20,7 @@ from .strats.stub import StubFileGenerator
 from .strats.inline import InlineGenerator
 
 __all__ = [
+    DataFileCollector.__name__,
     TraceDataFileCollector.__name__,
     DropDuplicatesFilter.__name__,
     DropTestFunctionDataFilter.__name__,
@@ -30,7 +31,7 @@ __all__ = [
 ]
 
 
-@click.command(name="typegen", help="Collects trace data files in directories")
+@click.command(name="typegen", help="Generate type hinted files using trace data")
 @click.option(
     "-p",
     "--path",
@@ -117,7 +118,7 @@ def main(**params):
 
     traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
     collector = TraceDataFileCollector()
-    collector.collect_trace_data(traced_df_folder, subdirs)
+    collector.collect_data(traced_df_folder, subdirs)
 
     print(collector.trace_data)
     return

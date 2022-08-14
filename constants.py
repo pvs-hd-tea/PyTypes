@@ -7,9 +7,15 @@ CONFIG_FILE_NAME = "pytypes.toml"
 
 TRACER_ATTRIBUTE = "pytype_tracer"
 
+TRACERS_ATTRIBUTE = "pytype_tracers"
+
+AMOUNT_EXECUTIONS_TESTING_PERFORMANCE = 10
+
 SAMPLE_CODE_FOLDER_NAME = "examples"
 
 TRACE_DATA_FILE_ENDING = ".pytype"
+
+NP_ARRAY_FILE_ENDING = ".npy_pytype"
 
 PYTEST_FUNCTION_PATTERN = re.compile(r"test_")
 

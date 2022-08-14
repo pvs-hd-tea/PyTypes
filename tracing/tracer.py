@@ -1,3 +1,4 @@
+import abc
 import contextlib
 import functools
 import logging
@@ -25,14 +26,12 @@ from .optimisation import (
 logger = logging.getLogger(__name__)
 
 
-class Tracer:
+class TracerBase(abc.ABC):
     def __init__(
-        self,
-        proj_path: pathlib.Path,
-        stdlib_path: pathlib.Path,
-        venv_path: pathlib.Path,
-        apply_opts=True,
-    ):
+            self,
+            proj_path: pathlib.Path,
+            stdlib_path: pathlib.Path,
+            venv_path: pathlib.Path):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
@@ -45,45 +44,18 @@ class Tracer:
 
         # Map of a function name to the variables in that functions scope
         self.old_vars: dict[str, dict[str, typing.Any]] = dict()
-        self.apply_opts = apply_opts
 
-        if self.apply_opts:
-            self.optimisation_stack: list[Optimisation] = list()
+        # stack based in order to hold previous line when returning
+        self._prev_line: list[int] = list()
+
+        self.class_names_to_drop = [TracerBase.__name__]
+        self.function_names_to_drop = [self.stop_trace.__name__, self.start_trace.__name__, self.active_trace.__name__]
 
     def start_trace(self) -> None:
         """Starts the trace."""
         logger.info("Starting trace")
         sys.settrace(self._on_trace_is_called)
-        # sys.setprofile(self._on_trace_is_called)
-
-        # stack based in order to hold previous line when returning
-        self._prev_line: list[int] = list()
-
-    def stop_trace(self) -> None:
-        """Stops the trace."""
-        # Clear out all optimisations
-        if self.apply_opts:
-            self.optimisation_stack.clear()
-
-        logger.info("Stopping trace")
-        sys.settrace(None)
-
-        # Drop all references to the tracer
-        self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
-
-        fnames = [
-            self.stop_trace.__name__,
-            self.start_trace.__name__,
-            self.active_trace.__name__,
-        ]
-        drop_masks = [
-            self.trace_data[constants.TraceData.CLASS] == Tracer.__name__,
-            self.trace_data[constants.TraceData.FUNCNAME].isin(fnames),
-        ]
-        td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
-        self.trace_data = self.trace_data.drop(td_drop.index)
-
-        self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
+        self._prev_line.clear()
 
     @contextlib.contextmanager
     def active_trace(self) -> typing.Iterator[None]:
@@ -92,6 +64,55 @@ class Tracer:
             yield None
         finally:
             self.stop_trace()
+
+    def stop_trace(self):
+        logger.info("Stopping trace")
+        sys.settrace(None)
+
+        # Drop all references to the tracer
+        self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
+
+        drop_masks = [
+            self.trace_data[constants.TraceData.CLASS].isin(self.class_names_to_drop),
+            self.trace_data[constants.TraceData.FUNCNAME].isin(self.function_names_to_drop),
+        ]
+        td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
+        self.trace_data = self.trace_data.drop(td_drop.index)
+
+        self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
+
+    @abc.abstractmethod
+    def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
+        pass
+
+
+class NoOperationTracer(TracerBase):
+    def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
+        return self._on_trace_is_called
+
+
+class Tracer(TracerBase):
+    def __init__(
+        self,
+        proj_path: pathlib.Path,
+        stdlib_path: pathlib.Path,
+        venv_path: pathlib.Path,
+        apply_opts=True,
+    ):
+        super().__init__(proj_path, stdlib_path, venv_path)
+        self.class_names_to_drop.append(Tracer.__name__)
+        self.apply_opts = apply_opts
+
+        if self.apply_opts:
+            self.optimisation_stack: list[Optimisation] = list()
+
+    def stop_trace(self) -> None:
+        """Stops the trace."""
+        # Clear out all optimisations
+        if self.apply_opts:
+            self.optimisation_stack.clear()
+
+        super().stop_trace()
 
     def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
         """Remove optimisations that are marked as TriggerStatus.EXITED, and insert new ones as needed."""

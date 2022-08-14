@@ -52,7 +52,7 @@ class PyTestDetector(TestDetector):
         return PyTestStrategy(
             pytest_root=pathlib.Path.cwd(),
             overwrite_tests=overwrite_tests,
-            recurse_into_subdirs=recurse_into_subdirs,
+            recurse_into_subdirs=recurse_into_subdirs
         )
 
     def _has_pytest_ini(self) -> bool:
