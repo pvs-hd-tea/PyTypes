@@ -58,25 +58,15 @@ __all__ = [Repository.__name__]
     default=False,
 )
 
-@click.option(
-    "-p",
-    "--performance",
-    help="Uses register decorators which generate performance data instead of trace data",
-    is_flag=True,
-    callback=lambda ctx, _, val: logging.INFO if val else logging.CRITICAL,
-    required=False,
-    default=False,
-)
 
 def main(**params):
-    url, fmt, out, verb, overwrite, subdirs, use_performance = (
+    url, fmt, out, verb, overwrite, subdirs = (
         params["url"],
         params["format"],
         params["output"],
         params["verbose"],
         not params["nooverwrite"],
-        params["subdirs"],
-        params["performance"],
+        params["subdirs"]
     )
     logging.basicConfig(level=verb)
 
@@ -87,6 +77,6 @@ def main(**params):
 
     detector = TestDetector.factory(proj=project)
     strategy = detector.create_strategy(
-        overwrite_tests=overwrite, recurse_into_subdirs=subdirs, use_performance=use_performance
+        overwrite_tests=overwrite, recurse_into_subdirs=subdirs
     )
     strategy.apply(project)

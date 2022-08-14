@@ -14,42 +14,28 @@ from .ptconfig import load_config
 import constants
 
 
-def register_impl(test_function: Callable[[], None]):
-    root = pathlib.Path.cwd()
-    cfg = load_config(root / constants.CONFIG_FILE_NAME)
-    if cfg.pytypes.proj_path != root:
-        raise RuntimeError(
-            f"Invalid config file: wrong project root: {register.__name__} had \
-            {root} specified, config file has {cfg.pytypes.proj_path} set"
-        )
-
-    tracer = Tracer(
-        proj_path=root,
-        stdlib_path=cfg.pytypes.stdlib_path,
-        venv_path=cfg.pytypes.venv_path,
-    )
-
-    setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
-    return test_function
-
-
 def register():
     """
-    Register a test function for tracing.
-    """
-
-    return register_impl
-
-
-def register_performance():
-    """
-    Register a test function for tracing and performance testing.
+    Register a test function for tracing and performance benchmarking.
     """
 
     def impl(test_function: Callable[[], None]):
         root = pathlib.Path.cwd()
         cfg = load_config(root / constants.CONFIG_FILE_NAME)
-        test_function = register_impl(test_function)
+        if cfg.pytypes.proj_path != root:
+            raise RuntimeError(
+                f"Invalid config file: wrong project root: {register.__name__} had \
+                {root} specified, config file has {cfg.pytypes.proj_path} set"
+            )
+
+        tracer = Tracer(
+            proj_path=root,
+            stdlib_path=cfg.pytypes.stdlib_path,
+            venv_path=cfg.pytypes.venv_path,
+        )
+
+        setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
+
         tracer_base = TracerBase(
             proj_path=root,
             stdlib_path=cfg.pytypes.stdlib_path,
@@ -61,12 +47,7 @@ def register_performance():
             venv_path=cfg.pytypes.venv_path,
             apply_opts=False
         )
-        optimized_tracer = Tracer(
-            proj_path=root,
-            stdlib_path=cfg.pytypes.stdlib_path,
-            venv_path=cfg.pytypes.venv_path,
-            apply_opts=True
-        )
+        optimized_tracer = tracer
         setattr(test_function, constants.TRACERS_ATTRIBUTE, [tracer_base, standard_tracer, optimized_tracer])
         return test_function
 
@@ -99,7 +80,8 @@ def _method_predicate(m: object) -> bool:
 
 def entrypoint(proj_root: pathlib.Path | None = None):
     """
-    Execute and trace all registered test functions in the same module as the marked function
+    Execute and trace all registered test functions in the same module as the marked function.
+    If cfg.benchmark_performance is True, additionally benchmark the performance.
     @param proj_root the path to project's root directory, which contains `pytypes.toml`
     """
     root = proj_root or pathlib.Path.cwd()
@@ -163,7 +145,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
                 clazz, registered_call, registered_call_mocks, substituted_output)
             trace_dataframes.append(trace_data)
 
-            if hasattr(registered_call, constants.TRACERS_ATTRIBUTE):
+            if cfg.pytypes.benchmark_performance:
                 substituted_output_performance_data = cfg.pytypes.output_npy_template.format_map(
                     {"project": cfg.pytypes.project, "test_case": module_name, "func_name": callable_name}
                 )

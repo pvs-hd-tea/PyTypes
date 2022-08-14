@@ -16,6 +16,7 @@ class PyTypes:
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
     venv_path: pathlib.Path
+    benchmark_performance: bool = False
 
     output_template: str = field(
         default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
