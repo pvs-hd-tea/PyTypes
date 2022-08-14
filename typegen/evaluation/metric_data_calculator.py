@@ -1,6 +1,3 @@
-from typing import Dict
-
-import numpy as np
 import pandas as pd
 
 import constants
@@ -13,7 +10,7 @@ class MetricDataCalculator:
 
     """Calculates the metric data containing the correctness & completeness."""
     def __init__(self):
-        self.generated_filenames_by_original: Dict[str, str] = {}
+        self.generated_filenames_by_original: dict[str, str] = {}
 
     def add_filename_mapping(self, original_filename: str, generated_filename: str) -> None:
         """Adds a mapping: generated filename -> original filename. Used to calculate the metric data."""
