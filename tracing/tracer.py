@@ -1,3 +1,4 @@
+import abc
 import contextlib
 import functools
 import logging
@@ -25,7 +26,7 @@ from .optimisation import (
 logger = logging.getLogger(__name__)
 
 
-class TracerBase:
+class TracerBase(abc.ABC):
     def __init__(
             self,
             proj_path: pathlib.Path,
@@ -80,6 +81,12 @@ class TracerBase:
 
         self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
 
+    @abc.abstractmethod
+    def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
+        pass
+
+
+class NoOperationTracer(TracerBase):
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         return self._on_trace_is_called
 

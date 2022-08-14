@@ -9,7 +9,7 @@ from typing import Callable, Mapping
 import pandas as pd
 import numpy as np
 from timeit import default_timer
-from .tracer import Tracer, TracerBase
+from .tracer import Tracer, NoOperationTracer
 from .ptconfig import load_config
 import constants
 
@@ -36,7 +36,7 @@ def register():
 
         setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
 
-        tracer_base = TracerBase(
+        no_operation_tracer = NoOperationTracer(
             proj_path=root,
             stdlib_path=cfg.pytypes.stdlib_path,
             venv_path=cfg.pytypes.venv_path
@@ -48,7 +48,7 @@ def register():
             apply_opts=False
         )
         optimized_tracer = tracer
-        setattr(test_function, constants.TRACERS_ATTRIBUTE, [tracer_base, standard_tracer, optimized_tracer])
+        setattr(test_function, constants.TRACERS_ATTRIBUTE, [no_operation_tracer, standard_tracer, optimized_tracer])
         return test_function
 
     return impl
