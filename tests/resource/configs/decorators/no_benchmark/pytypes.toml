@@ -1,8 +1,0 @@
-[pytypes]
-project = "PyTypes"
-
-stdlib_path = ""
-proj_path = "./tests/resource/configs/decorators"
-venv_path = ""
-
-benchmark_performance = false
