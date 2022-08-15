@@ -5,7 +5,7 @@ import logging
 import pathlib
 import types
 import typing
-from timeit import default_timer
+import timeit
 
 import numpy as np
 import pandas as pd
@@ -154,7 +154,7 @@ def _generate_and_serialize_trace_data(
     substituted_output: str,
 ) -> pd.DataFrame:
     tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
-    
+
     # Find tracer meant for standard benchmarking.
     # According to the implementation of @register, it is always in the last position
     tracer = tracers[-1]
@@ -179,37 +179,34 @@ def _generate_and_serialize_performance_data(
     substituted_output: str,
 ) -> pd.DataFrame:
     tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
-    measured_times = np.zeros(
-        (1 + len(tracers), constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE)
+    measured_times = np.zeros((1 + len(tracers)))
+
+    # test setup
+    if clazz is None:
+        registered_with_mocks = lambda: registered_call(**mocks)
+    else:
+        instance: typing.Any = object.__new__(clazz)
+        registered_with_mocks = lambda: registered_call(instance, **mocks)
+
+    measured_times[0] = timeit.timeit(
+        registered_with_mocks, number=constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE
     )
-    for i in range(constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE):
-        # Normal test execution, no tracing
-        start_time = default_timer()
-        if clazz is None:
-            registered_call(**mocks)
-        else:
-            instance: typing.Any = object.__new__(clazz)
-            registered_call(instance, **mocks)
-        end_time = default_timer()
-        measured_times[0, i] = end_time - start_time
 
-        for j, tracer in enumerate(tracers):
-            # Normal test execution, traced test execution
-            start_time = default_timer()
-            if clazz is None:
-                with tracer.active_trace():
-                    registered_call(**mocks)
-            else:
-                with tracer.active_trace():
-                    registered_call(instance, **mocks)
-            end_time = default_timer()
-            measured_times[1 + j, i] = end_time - start_time
-
-    measured_times_mean = np.mean(measured_times, axis=1)
+    for i, tracer in enumerate(tracers):
+        # setup tracing call
+        tracing = lambda: (
+            tracer.start_trace(),
+            registered_with_mocks(),
+            tracer.stop_trace(),
+        )
+        measured_times[i + 1] = timeit.timeit(
+            tracing,
+            number=constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE,
+        )
 
     proj_path = tracers[0].proj_path
     output_path = proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    np.save(output_path, measured_times_mean)
-    return measured_times_mean
+    np.save(output_path, measured_times)
+    return measured_times
