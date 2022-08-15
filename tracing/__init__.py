@@ -1,7 +1,8 @@
 from .trace_data_category import TraceDataCategory
 from .tracer import Tracer
 
-from .decorators import entrypoint, register
+from .decorators.entrypoint import entrypoint
+from .decorators.register import register
 
 __all__ = [
     Tracer.__name__,
