@@ -1,3 +1,4 @@
+from cgi import test
 import collections
 import inspect
 import itertools
@@ -177,7 +178,7 @@ def _generate_and_serialize_performance_data(
     registered_call: typing.Callable,
     mocks: dict,
     substituted_output: str,
-) -> pd.DataFrame:
+) -> np.array:
     tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
     measured_times = np.zeros((1 + len(tracers)))
 
@@ -193,14 +194,8 @@ def _generate_and_serialize_performance_data(
     )
 
     for i, tracer in enumerate(tracers):
-        # setup tracing call
-        tracing = lambda: (  # noqa: E731
-            tracer.start_trace(),
-            registered_with_mocks(),
-            tracer.stop_trace(),
-        )
         measured_times[i + 1] = timeit.timeit(
-            tracing,
+            _trace_callable(tracer, registered_with_mocks),
             number=constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE,
         )
 
@@ -210,3 +205,8 @@ def _generate_and_serialize_performance_data(
 
     np.save(output_path, measured_times)
     return measured_times
+
+
+def _trace_callable(tracer: Tracer, call: typing.Callable):
+    with tracer.active_trace():
+        call()
