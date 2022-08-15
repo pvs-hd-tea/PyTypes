@@ -42,12 +42,23 @@ class Resolver:
     proj_path: pathlib.Path
     venv_path: pathlib.Path
 
+    def __post_init__(self):
+        for path in (self.stdlib_path, self.proj_path, self.venv_path):
+            if not path.is_dir():
+                raise ValueError(
+                    f"{path} is not a directory; Please check your config file"
+                )
+
     @functools.cached_property
     def site_packages(self) -> pathlib.Path:
         major, minor = sys.version_info[:2]
         site_packages = (
             self.venv_path / "lib" / f"python{major}.{minor}" / "site-packages"
         )
+        if not self.venv_path.is_dir():
+            raise ValueError(
+                f"Could not find site-packages directory at {site_packages}"
+            )
         return site_packages
 
     def type_lookup(
@@ -104,7 +115,9 @@ class Resolver:
 
         # 1. project path
         if module_file.is_relative_to(self.proj_path):
-            logger.debug(f"{(module.__name__, ty.__name__)} is relative to project path")
+            logger.debug(
+                f"{(module.__name__, ty.__name__)} is relative to project path"
+            )
             rel_path = module_file.relative_to(self.proj_path)
 
         # 2. stdlib
