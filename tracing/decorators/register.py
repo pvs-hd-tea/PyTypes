@@ -1,4 +1,3 @@
-from asyncio.log import logger
 import pathlib
 from typing import Callable
 
@@ -17,11 +16,10 @@ def register(*args, **kwargs):
         cfg = ptconfig.load_config(root / constants.CONFIG_FILE_NAME)
         if cfg.pytypes.proj_path != root:
             raise RuntimeError(
-                f"Invalid config file: wrong project root: {register.__name__} had \
-                {root} specified, config file has {cfg.pytypes.proj_path} set"
+                f"Invalid config file: wrong project root: {register.__name__} had "
+                f"{root} specified, config file has {cfg.pytypes.proj_path} set"
             )
 
-        logger.debug(f"Benchmark bool is {cfg.pytypes.benchmark_performance}")
         if not cfg.pytypes.benchmark_performance:
             tracer = Tracer(
                 proj_path=root,
