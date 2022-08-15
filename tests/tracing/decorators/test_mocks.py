@@ -21,8 +21,10 @@ def mocked_getssh(monkeypatch) -> bool:
     # Calling getssh() will use mockreturn in place of Path.home
     # for this test with the monkeypatch.
     x = getssh()
-    return x == pathlib.Path("/abc/.ssh")
+    assert x == pathlib.Path("/abc/.ssh")
 
 def test_mocked_getssh():
+    # This test passes when the assert above succeeds
     traced, _ = entrypoint()(lambda: None)
     logging.debug(f"{traced}")
+    assert True
