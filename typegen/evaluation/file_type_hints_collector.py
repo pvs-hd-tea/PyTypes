@@ -9,29 +9,37 @@ from tracing import TraceDataCategory
 
 class FileTypeHintsCollector:
     """Collects the type hints of multiple .py files."""
-    def __init__(self, project_dir: pathlib.Path):
-        self.project_dir = project_dir
+    typehint_data: pd.DataFrame
+
+    def __init__(self):
         self.typehint_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
 
-    def collect_data(self, file_paths: list[pathlib.Path]) -> None:
+    def collect_file(self, root: pathlib.Path, file: pathlib.Path) -> None:
+        assert file.is_file() # TODO: Add error message / make to raise statement
+        # TODO: call self.collect_data from here
+
+    def collect_folder(self, root: pathlib.Path, folder: pathlib.Path) -> None:
+        assert folder.is_dir() # TODO: Add error message / make to raise statement
+        # TODO: call self.collect_data from here
+
+    def collect_data(self, root: pathlib.Path, file_paths: list[pathlib.Path]) -> None:
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
-            if not file_path.is_relative_to(self.project_dir):
-                raise ValueError(str(file_path) + " is not relative to " + str(self.project_dir) + ".")
+            if not file_path.is_relative_to(root):
+                raise ValueError(f"{file_path} is not relative to {root}")
 
             with file_path.open() as file:
                 file_content = file.read()
 
             module = cst.parse_module(source=file_content)
             module_and_meta = cst.MetadataWrapper(module)
-            relative_path_str = str(file_path.relative_to(self.project_dir))
+            relative_path_str = str(file_path.relative_to(root))
             visitor = _TypeHintVisitor(relative_path_str)
             module_and_meta.visit(visitor)
             typehint_data = visitor.typehint_data
             self.typehint_data = pd.concat(
                 [self.typehint_data, typehint_data], ignore_index=True
             ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
-
 
 class _TypeHintVisitor(cst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
