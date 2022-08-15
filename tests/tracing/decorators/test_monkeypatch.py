@@ -12,7 +12,7 @@ def getssh():
 
 
 @register()
-def mocked_getssh(monkeypatch) -> bool:    
+def mp_getssh(monkeypatch) -> bool:    
     # Application of the monkeypatch to replace Path.home
     # with the behavior to replace Path.home
     # always return '/abc'
