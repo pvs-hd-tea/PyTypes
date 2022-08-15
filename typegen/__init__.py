@@ -93,7 +93,6 @@ def main(**params):
     # Load config
     pytypes_cfg = ptconfig.load_config(projpath / constants.CONFIG_FILE_NAME)
 
-    print(unifiers)
     unifier_lookup: dict[str, ptconfig.Unifier]
     if pytypes_cfg.unifier is not None:
         unifier_lookup = {u.name: u for u in pytypes_cfg.unifier}
