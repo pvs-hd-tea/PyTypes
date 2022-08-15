@@ -21,6 +21,7 @@ def test_full():
         "virtualenvs",
         "pytypes-xvtnrWJT-py3.10",
     )
+    assert config.pytypes.benchmark_performance == True
 
     assert len(config.unifier) == 8
 
@@ -81,5 +82,6 @@ def test_simple():
         "virtualenvs",
         "pytypes-xvtnrWJT-py3.10",
     )
+    assert config.pytypes.benchmark_performance == False
 
     assert len(config.unifier) == 0
