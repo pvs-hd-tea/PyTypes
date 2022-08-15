@@ -53,7 +53,7 @@ class ApplicationStrategy(ABC):
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = constants.PYTEST_FUNCTION_PATTERN
     SYS_IMPORT = "import sys"
-    PYTYPE_IMPORTS = "from tracing import register, register_performance, entrypoint"
+    PYTYPE_IMPORTS = "from tracing import register, entrypoint"
     SUFFIX = "_decorator_appended.py"
     ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
 
