@@ -35,7 +35,7 @@ def _load_mocks(
 
 
 def _method_predicate(m: object) -> bool:
-    return inspect.isroutine(m) and hasattr(m, constants.TRACER_ATTRIBUTE)
+    return inspect.isroutine(m) and hasattr(m, constants.TRACERS_ATTRIBUTE)
 
 
 def entrypoint(proj_root: pathlib.Path | None = None):
@@ -75,7 +75,7 @@ def entrypoint(proj_root: pathlib.Path | None = None):
         # Searches for registered functions/methods.
         for entity in search_space.values():
             if inspect.isfunction(entity) and hasattr(
-                entity, constants.TRACER_ATTRIBUTE
+                entity, constants.TRACERS_ATTRIBUTE
             ):
                 logging.debug(f"Found registered function {entity.__name__}")
                 classes_with_callables.append((None, entity))
@@ -95,13 +95,14 @@ def entrypoint(proj_root: pathlib.Path | None = None):
 
         # Traces each registered function/method.
         for clazz, registered_call in classes_with_callables:
+            registered_call_mocks = _load_mocks(
+                registered_call, search_space, clazz is not None
+            )
+
             callable_name = (
                 registered_call.__name__
                 if not clazz
                 else f"{clazz.__name__}@{registered_call.__name__}"
-            )
-            registered_call_mocks = _load_mocks(
-                registered_call, search_space, clazz is not None
             )
             if registered_call_mocks is None:
                 sig = inspect.signature(registered_call)
@@ -152,12 +153,13 @@ def _generate_and_serialize_trace_data(
     mocks: dict,
     substituted_output: str,
 ) -> pd.DataFrame:
-    tracers: list[Tracer] = getattr(registered_call, constants.TRACER_ATTRIBUTE)
-    assert (
-        len(tracers) == 1
-    ), f"Expected one tracer attached to {registered_call.__name__}, got {len(tracers)}"
+    tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
+    
+    logging.debug(f"Found {len(tracers)} tracers")
 
-    tracer = tracers[0]
+    # Find tracer meant for standard benchmarking.
+    # According to the implementation of @register, it is always in the last position
+    tracer = tracers[-1]
 
     output_path: pathlib.Path = tracer.proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -178,35 +180,38 @@ def _generate_and_serialize_performance_data(
     mocks: dict,
     substituted_output: str,
 ) -> pd.DataFrame:
-    tracers = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
+    tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
     measured_times = np.zeros(
         (1 + len(tracers), constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE)
     )
-    proj_path = tracers[0].proj_path
     for i in range(constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE):
+        # Normal test execution, no tracing
+        start_time = default_timer()
         if clazz is None:
-            start_time = default_timer()
             registered_call(**mocks)
         else:
             instance: typing.Any = object.__new__(clazz)
-            start_time = default_timer()
             registered_call(instance, **mocks)
         end_time = default_timer()
         measured_times[0, i] = end_time - start_time
+
         for j, tracer in enumerate(tracers):
+            # Normal test execution, traced test execution
+            start_time = default_timer()
             if clazz is None:
-                start_time = default_timer()
                 with tracer.active_trace():
                     registered_call(**mocks)
             else:
-                start_time = default_timer()
                 with tracer.active_trace():
                     registered_call(instance, **mocks)
             end_time = default_timer()
             measured_times[1 + j, i] = end_time - start_time
+
     measured_times_mean = np.mean(measured_times, axis=1)
 
+    proj_path = tracers[0].proj_path
     output_path = proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
     np.save(output_path, measured_times_mean)
     return measured_times_mean

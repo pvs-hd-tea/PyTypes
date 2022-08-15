@@ -1,3 +1,4 @@
+from asyncio.log import logger
 import pathlib
 from typing import Callable
 
@@ -20,14 +21,16 @@ def register(*args, **kwargs):
                 {root} specified, config file has {cfg.pytypes.proj_path} set"
             )
 
+        logger.debug(f"Benchmark bool is {cfg.pytypes.benchmark_performance}")
         if not cfg.pytypes.benchmark_performance:
             tracer = Tracer(
                 proj_path=root,
                 stdlib_path=cfg.pytypes.stdlib_path,
                 venv_path=cfg.pytypes.venv_path,
+                apply_opts=True
             )
 
-            setattr(test_function, constants.TRACER_ATTRIBUTE, [tracer])
+            setattr(test_function, constants.TRACERS_ATTRIBUTE, [tracer])
 
         else:
             no_operation_tracer = NoOperationTracer(
