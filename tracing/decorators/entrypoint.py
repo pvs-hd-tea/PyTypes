@@ -155,8 +155,6 @@ def _generate_and_serialize_trace_data(
 ) -> pd.DataFrame:
     tracers: list[Tracer] = getattr(registered_call, constants.TRACERS_ATTRIBUTE)
     
-    logging.debug(f"Found {len(tracers)} tracers")
-
     # Find tracer meant for standard benchmarking.
     # According to the implementation of @register, it is always in the last position
     tracer = tracers[-1]

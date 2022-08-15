@@ -1,5 +1,4 @@
 import pathlib
-from turtle import tracer
 
 from tracing import register, Tracer
 import constants
