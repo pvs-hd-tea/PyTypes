@@ -5,13 +5,14 @@ import logging
 import pathlib
 import types
 import typing
-import pandas as pd
-import numpy as np
 from timeit import default_timer
+
+import numpy as np
+import pandas as pd
+from _pytest.monkeypatch import MonkeyPatch
 
 import constants
 from tracing import ptconfig
-
 from tracing.tracer import Tracer
 
 
@@ -28,12 +29,8 @@ def _load_mocks(
         params = itertools.islice(signature.parameters, None)
 
     for param in params:
-        glob = lookup.get(param)
-        # Mocks are usually callables
-        if glob is None or not inspect.isfunction(glob):
-            return None
-        mocks[param] = glob()
-
+        if param == "monkeypatch":
+            mocks[param] = MonkeyPatch()
     return mocks
 
 
@@ -162,7 +159,7 @@ def _generate_and_serialize_trace_data(
 
     tracer = tracers[0]
 
-    output_path: pathlib.Path = tracers.proj_path / substituted_output
+    output_path: pathlib.Path = tracer.proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if clazz is None:
         with tracer.active_trace():
