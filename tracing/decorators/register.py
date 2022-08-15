@@ -6,7 +6,7 @@ from tracing import ptconfig
 from tracing.tracer import NoOperationTracer, Tracer
 
 
-def register():
+def register(*args, **kwargs):
     """
     Register a test function for tracing and performance benchmarking.
     """
