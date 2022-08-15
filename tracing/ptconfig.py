@@ -19,10 +19,12 @@ class PyTypes:
     benchmark_performance: bool = False
 
     output_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING,
+        repr=False,
     )
     output_npy_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.NP_ARRAY_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}" + constants.NP_ARRAY_FILE_ENDING,
+        repr=False,
     )
 
 
@@ -107,5 +109,6 @@ def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
 
     ad = asdict(pttoml)
     ad["pytypes"].pop("output_template")
+    ad["pytypes"].pop("output_npy_template")
 
     toml.dump(ad, config_path.open("w"))
