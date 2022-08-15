@@ -1,40 +1,28 @@
 import logging
 import pathlib
-import pytest
+
+# Adapted from https://docs.pytest.org/en/6.2.x/monkeypatch.html?highlight=mocking
 
 from tracing import register, entrypoint
 
-def test_mocking_works():
-    def mocked_value() -> int:
-        return 5
+# contents of test_module.py with source code and the test
+def getssh():
+    """Simple function to return expanded homedir ssh path."""
+    return pathlib.Path.home() / ".ssh"
 
-    @register()
-    def my_test_f(mocked_value):
-        logging.debug(mocked_value)
-        assert mocked_value == 5
-        
-    def working():
-        ...
 
-    try:
-        entrypoint(None)(working)
-    except:
-        pytest.fail(f"{working.__name__} should not have failed")
+@register()
+def mocked_getssh(monkeypatch) -> bool:    
+    # Application of the monkeypatch to replace Path.home
+    # with the behavior to replace Path.home
+    # always return '/abc'
+    monkeypatch.setattr(pathlib.Path, "home", lambda: pathlib.Path("/abc"))
 
-def test_fails_when_mock_not_found():
-    def mocked_value() -> int:
-        return 5
+    # Calling getssh() will use mockreturn in place of Path.home
+    # for this test with the monkeypatch.
+    x = getssh()
+    return x == pathlib.Path("/abc/.ssh")
 
-    @register()
-    def bad_test_f(something_else):
-        assert something_else == 5
-
-    def not_working():
-        ...
-
-    try:
-        entrypoint(None)(not_working)
-        pytest.fail(f"{not_working.__name__} should have failed")    
-    except ValueError:
-        pass
-    
+def test_mocked_getssh():
+    traced, _ = entrypoint()(lambda: None)
+    logging.debug(f"{traced}")
