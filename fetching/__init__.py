@@ -57,8 +57,6 @@ __all__ = [Repository.__name__]
     required=False,
     default=False,
 )
-
-
 def main(**params):
     url, fmt, out, verb, overwrite, subdirs = (
         params["url"],
@@ -66,7 +64,7 @@ def main(**params):
         params["output"],
         params["verbose"],
         not params["nooverwrite"],
-        params["subdirs"]
+        params["subdirs"],
     )
     logging.basicConfig(level=verb)
 

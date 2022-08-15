@@ -183,10 +183,10 @@ def _generate_and_serialize_performance_data(
 
     # test setup
     if clazz is None:
-        registered_with_mocks = lambda: registered_call(**mocks)
+        registered_with_mocks = lambda: registered_call(**mocks)  # noqa: E731
     else:
         instance: typing.Any = object.__new__(clazz)
-        registered_with_mocks = lambda: registered_call(instance, **mocks)
+        registered_with_mocks = lambda: registered_call(instance, **mocks)  # noqa: E731
 
     measured_times[0] = timeit.timeit(
         registered_with_mocks, number=constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE
@@ -194,7 +194,7 @@ def _generate_and_serialize_performance_data(
 
     for i, tracer in enumerate(tracers):
         # setup tracing call
-        tracing = lambda: (
+        tracing = lambda: (  # noqa: E731
             tracer.start_trace(),
             registered_with_mocks(),
             tracer.stop_trace(),

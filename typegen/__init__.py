@@ -14,7 +14,6 @@ from typegen.unification.drop_vars import DropVariablesOfMultipleTypesFilter
 from typegen.unification.subtyping import ReplaceSubTypesFilter
 from typegen.unification.drop_min_threshold import MinThresholdFilter
 from typegen.unification.keep_only_first import KeepOnlyFirstFilter
-from typegen.trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
 from .strats.inline import InlineGenerator
