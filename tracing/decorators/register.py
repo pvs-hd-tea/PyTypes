@@ -20,31 +20,38 @@ def register():
                 {root} specified, config file has {cfg.pytypes.proj_path} set"
             )
 
-        tracer = Tracer(
-            proj_path=root,
-            stdlib_path=cfg.pytypes.stdlib_path,
-            venv_path=cfg.pytypes.venv_path,
-        )
+        if not cfg.pytypes.benchmark_performance:
+            tracer = Tracer(
+                proj_path=root,
+                stdlib_path=cfg.pytypes.stdlib_path,
+                venv_path=cfg.pytypes.venv_path,
+            )
 
-        setattr(test_function, constants.TRACER_ATTRIBUTE, tracer)
+            setattr(test_function, constants.TRACER_ATTRIBUTE, [tracer])
 
-        no_operation_tracer = NoOperationTracer(
-            proj_path=root,
-            stdlib_path=cfg.pytypes.stdlib_path,
-            venv_path=cfg.pytypes.venv_path,
-        )
-        standard_tracer = Tracer(
-            proj_path=root,
-            stdlib_path=cfg.pytypes.stdlib_path,
-            venv_path=cfg.pytypes.venv_path,
-            apply_opts=False,
-        )
-        optimized_tracer = tracer
-        setattr(
-            test_function,
-            constants.TRACERS_ATTRIBUTE,
-            [no_operation_tracer, standard_tracer, optimized_tracer],
-        )
+        else:
+            no_operation_tracer = NoOperationTracer(
+                proj_path=root,
+                stdlib_path=cfg.pytypes.stdlib_path,
+                venv_path=cfg.pytypes.venv_path,
+            )
+            standard_tracer = Tracer(
+                proj_path=root,
+                stdlib_path=cfg.pytypes.stdlib_path,
+                venv_path=cfg.pytypes.venv_path,
+                apply_opts=False,
+            )
+            optimized_tracer = Tracer(
+                proj_path=root,
+                stdlib_path=cfg.pytypes.stdlib_path,
+                venv_path=cfg.pytypes.venv_path,
+                apply_opts=True,
+            )
+            setattr(
+                test_function,
+                constants.TRACERS_ATTRIBUTE,
+                [no_operation_tracer, standard_tracer, optimized_tracer],
+            )
         return test_function
 
     return impl

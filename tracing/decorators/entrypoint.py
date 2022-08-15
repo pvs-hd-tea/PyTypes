@@ -155,8 +155,14 @@ def _generate_and_serialize_trace_data(
     mocks: dict,
     substituted_output: str,
 ) -> pd.DataFrame:
-    tracer: Tracer = getattr(registered_call, constants.TRACER_ATTRIBUTE)
-    output_path: pathlib.Path = tracer.proj_path / substituted_output
+    tracers: list[Tracer] = getattr(registered_call, constants.TRACER_ATTRIBUTE)
+    assert (
+        len(tracers) == 1
+    ), f"Expected one tracer attached to {registered_call.__name__}, got {len(tracers)}"
+
+    tracer = tracers[0]
+
+    output_path: pathlib.Path = tracers.proj_path / substituted_output
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if clazz is None:
         with tracer.active_trace():
