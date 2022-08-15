@@ -99,9 +99,9 @@ def entrypoint(proj_root: pathlib.Path | None = None):
         # Traces each registered function/method.
         for clazz, registered_call in classes_with_callables:
             callable_name = (
-                callable.__name__
+                registered_call.__name__
                 if not clazz
-                else f"{clazz.__name__}@{callable.__name__}"
+                else f"{clazz.__name__}@{registered_call.__name__}"
             )
             registered_call_mocks = _load_mocks(
                 registered_call, search_space, clazz is not None
