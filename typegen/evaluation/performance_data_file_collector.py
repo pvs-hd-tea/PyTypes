@@ -15,11 +15,9 @@ class PerformanceDataFileCollector(DataFileCollector):
     TARGET_SHAPE = np.array([4])
 
     def __init__(self):
-        super().__init__()
+        super().__init__(file_pattern=f"*{constants.NP_ARRAY_FILE_ENDING}.npy")
         self.performance_data = np.zeros(PerformanceDataFileCollector.TARGET_SHAPE)
         self.performance_data = np.expand_dims(self.performance_data, axis=0)
-        file_ending = constants.NP_ARRAY_FILE_ENDING
-        self.file_pattern = "*" + file_ending + ".npy"
 
     def collect_data(
             self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
@@ -35,5 +33,5 @@ class PerformanceDataFileCollector(DataFileCollector):
         if (potential_data.shape == PerformanceDataFileCollector.TARGET_SHAPE).all():
             return potential_data
         else:
-            logger.info(f"Invalid array shape for file: {str(file_path)} - Actual shape: {potential_data.shape}")
+            logger.info(f"Invalid array shape for file: {file_path} - Actual shape: {potential_data.shape}")
             return None
