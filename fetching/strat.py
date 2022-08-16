@@ -23,6 +23,7 @@ class ApplicationStrategy(ABC):
 
     def apply(self, project: Project):
         assert project.test_directory is not None
+
         for path in filter(
             self._is_test_file, self.globber(project.test_directory, "*")
         ):
