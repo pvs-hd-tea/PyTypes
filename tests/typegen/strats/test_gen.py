@@ -8,6 +8,7 @@ import constants
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
+from typegen import StubFileGenerator
 from typegen.strats.gen import TypeHintGenerator
 from typegen.strats.inline import InlineGenerator
 
@@ -146,6 +147,11 @@ def test_factory():
     assert isinstance(
         gen, InlineGenerator
     ), f"{type(gen)} should be {InlineGenerator.__name__}"
+
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=pd.DataFrame())
+    assert isinstance(
+        gen, StubFileGenerator
+    ), f"{type(gen)} should be {StubFileGenerator.__name__}"
 
 
 def test_callables():
@@ -344,6 +350,8 @@ def test_callables():
     logging.debug(f"\n{imported.code}")
     imported.visit(HintTest())
 
+    _test_for_stub_file_generator(traced, resource_path)
+
 
 def test_assignments():
     resource_path = pathlib.Path("tests", "resource", "typegen", "assignments.py")
@@ -516,6 +524,8 @@ def test_assignments():
     logging.debug(f"\n{imported.code}")
     imported.visit(HintTest())
 
+    _test_for_stub_file_generator(traced, resource_path)
+
 
 def test_imported():
     resource_path = pathlib.Path("tests", "resource", "typegen", "importing.py")
@@ -626,6 +636,8 @@ def test_imported():
 
     imported.visit(ImportedHintTest())
 
+    _test_for_stub_file_generator(traced, resource_path)
+
 
 def test_present_annotations_are_removed():
     # Nothing was gathered that is in the file
@@ -669,6 +681,8 @@ def test_present_annotations_are_removed():
 
     logging.debug(f"{imported.code}")
     imported.visit(HintLessTest())
+
+    _test_for_stub_file_generator(traced, resource_path)
 
 
 def test_attributes_are_not_annotated_outside_of_classes():
@@ -729,3 +743,18 @@ def test_attributes_are_not_annotated_outside_of_classes():
             return True
 
     imported.visit(ExternalAttributesAreHintLessVisitor())
+
+    _test_for_stub_file_generator(traced, resource_path)
+
+
+def _test_for_stub_file_generator(trace_data: pd.DataFrame, resource_path: pathlib.Path):
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=trace_data)
+    hinted = gen._gen_hinted_ast(
+        applicable=trace_data, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=trace_data, hinted_ast=hinted)
+    absolute_resource_path = pathlib.Path.cwd() / resource_path
+    gen._store_hinted_ast(absolute_resource_path, imported)
+    expected_stub_file_path = resource_path.with_suffix(".pyi")
+    assert expected_stub_file_path.is_file()
+    expected_stub_file_path.unlink()
