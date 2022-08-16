@@ -33,7 +33,9 @@ class FileTypeHintsCollector:
         assert folder.is_dir(), f"{folder} is not a folder path."
         file_pattern = "*.py"
         file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
-        self.collect_data(root, file_paths)
+        # Ensures that the order is deterministic.
+        sorted_file_paths = sorted(file_paths)
+        self.collect_data(root, sorted_file_paths)
 
     def collect_data(self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]) -> None:
         self.typehint_data = self.typehint_data.iloc[0:0]

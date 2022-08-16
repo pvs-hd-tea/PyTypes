@@ -24,7 +24,9 @@ class DataFileCollector(ABC):
             potential_trace_data_file_paths = path.rglob(self.file_pattern)
         else:
             potential_trace_data_file_paths = path.glob(self.file_pattern)
-        for potential_trace_data_file_path in potential_trace_data_file_paths:
+        # Ensures that the order is deterministic.
+        sorted_potential_trace_data_file_paths = sorted(potential_trace_data_file_paths)
+        for potential_trace_data_file_path in sorted_potential_trace_data_file_paths:
             try:
                 potential_data = self._on_potential_file_path_found(potential_trace_data_file_path)
                 if potential_data is not None:

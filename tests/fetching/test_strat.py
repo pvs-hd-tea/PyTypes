@@ -28,9 +28,13 @@ def test_if_test_object_searches_for_test_files_in_subfolders_it_generates_test_
         pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=True
     )
     test_object.apply(project_folder)
+
+    potential_test_file_paths = cwd.rglob("test_*.py")
+    # Ensures that the order is deterministic.
+    sorted_potential_test_file_paths = sorted(potential_test_file_paths)
     test_file_paths = list(
         filter(
-            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.rglob("test_*.py")
+            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), sorted_potential_test_file_paths
         )
     )
     new_test_file_paths = list(
@@ -53,9 +57,12 @@ def test_if_test_object_searches_for_test_files_excluding_subfolders_it_generate
         pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=False
     )
     test_object.apply(project_folder)
+    potential_test_file_paths = cwd.glob("test_*.py")
+    # Ensures that the order is deterministic.
+    sorted_potential_test_file_paths = sorted(potential_test_file_paths)
     test_file_paths = list(
         filter(
-            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.glob("test_*.py")
+            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), sorted_potential_test_file_paths
         )
     )
     new_test_file_paths = list(
@@ -77,7 +84,10 @@ def test_if_test_object_searches_for_test_files_excluding_subfolders_it_generate
 def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_overwrites_test_files(
     project_folder,
 ):
-    files = list(cwd.rglob("test_*.py"))
+    file_paths = cwd.rglob("test_*.py")
+    # Ensures that the order is deterministic.
+    sorted_file_paths = sorted(file_paths)
+    files = list(sorted_file_paths)
     backups = [open(file).read() for file in files]
     test_object = PyTestStrategy(
         pathlib.Path.cwd(), overwrite_tests=True, recurse_into_subdirs=True
@@ -101,7 +111,10 @@ def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_
 def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders_it_overwrites_test_files(
     project_folder,
 ):
-    files = list(cwd.glob("test_*.py"))
+    file_paths = cwd.glob("test_*.py")
+    # Ensures that the order is deterministic.
+    sorted_file_paths = sorted(file_paths)
+    files = list(sorted_file_paths)
     backups = [open(file).read() for file in files]
     test_object = PyTestStrategy(
         pathlib.Path.cwd(), overwrite_tests=True, recurse_into_subdirs=False
