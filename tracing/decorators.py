@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import functools
 import pathlib
 import inspect
-from typing import Callable, TypeVar
+from typing import Any, Callable, Protocol, TypeVar
 import timeit
 
 import pandas as pd
@@ -69,7 +69,11 @@ def _execute_tracing(
             apply_opts=True,
         )
 
-        tracers: list[TracerBase] = [no_operation_tracer, standard_tracer, optimized_tracer]
+        tracers: list[TracerBase] = [
+            no_operation_tracer,
+            standard_tracer,
+            optimized_tracer,
+        ]
         benchmarks = np.zeros((1 + len(tracers)))
 
         # bare bones benchmark execution
@@ -112,7 +116,14 @@ def _execute_tracing(
     return traced, benchmarks
 
 
-def trace(c: Callable[..., RetType]) -> Callable[[], RetType]:
+class _Traceable(Protocol):
+    def __call__(
+        self, *args: Any, **kwds: Any
+    ) -> tuple[pd.DataFrame, np.ndarray | None]:
+        pass
+
+
+def trace(c: Callable[..., RetType]) -> _Traceable:
     """
     Execute the tracer upon a callable marked with this decorator.
     Supports performance benchmarking when specified in the config file
