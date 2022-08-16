@@ -5,8 +5,6 @@ PROJECT_NAME = "PyTypes"
 
 CONFIG_FILE_NAME = "pytypes.toml"
 
-TRACER_ATTRIBUTE = "pytype_tracer"
-
 TRACERS_ATTRIBUTE = "pytype_tracers"
 
 AMOUNT_EXECUTIONS_TESTING_PERFORMANCE = 10
