@@ -1,5 +1,5 @@
-import os.path
 import pathlib
+from typing import Iterable
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -9,22 +9,45 @@ from tracing import TraceDataCategory
 
 class FileTypeHintsCollector:
     """Collects the type hints of multiple .py files."""
-    def __init__(self, project_dir: pathlib.Path):
-        self.project_dir = project_dir
+    typehint_data: pd.DataFrame
+
+    def __init__(self):
         self.typehint_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
 
-    def collect_data(self, file_paths: list[pathlib.Path]) -> None:
+    def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
+        self.collect_data_from_files(root, [filename])
+
+    def collect_data_from_files(self, root: pathlib.Path, filenames: list[str]) -> None:
+        file_paths = []
+        for filename in filenames:
+            file_path = (root / filename).resolve()
+            assert file_path.is_file(), f"{file_path} is not a file path."
+            file_paths.append(file_path)
+        self.collect_data(root, file_paths)
+
+    def collect_data_from_folder(
+            self,
+            root: pathlib.Path,
+            folder: pathlib.Path,
+            include_also_files_in_subdirectories: bool = False) -> None:
+        assert folder.is_dir(), f"{folder} is not a folder path."
+        file_pattern = "*.py"
+        file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
+        self.collect_data(root, file_paths)
+
+    def collect_data(self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]) -> None:
+        self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
-            if not file_path.is_relative_to(self.project_dir):
-                raise ValueError(str(file_path) + " is not relative to " + str(self.project_dir) + ".")
+            if not file_path.is_relative_to(root):
+                raise ValueError(f"{file_path} is not relative to {root}")
 
             with file_path.open() as file:
                 file_content = file.read()
 
             module = cst.parse_module(source=file_content)
             module_and_meta = cst.MetadataWrapper(module)
-            relative_path_str = str(file_path.relative_to(self.project_dir))
+            relative_path_str = str(file_path.relative_to(root))
             visitor = _TypeHintVisitor(relative_path_str)
             module_and_meta.visit(visitor)
             typehint_data = visitor.typehint_data

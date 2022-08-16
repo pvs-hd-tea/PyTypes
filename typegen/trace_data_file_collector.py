@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataFileCollector(ABC):
-    """Collects trace data files in a given path."""
+    """Collects data files in a given path."""
 
     def __init__(self):
         self.file_pattern: str = ""

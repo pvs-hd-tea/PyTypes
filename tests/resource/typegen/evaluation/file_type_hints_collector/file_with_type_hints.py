@@ -3,10 +3,9 @@ from pathlib import Path
 from pathlib import PosixPath, WindowsPath
 import numpy as np
 from typegen import evaluation
-from tests.resource.typegen.evaluation.sample_to_import import FileTypeHintsCollector
+from tests.resource.typegen.evaluation.file_type_hints_collector.sample_to_import import FileTypeHintsCollector
 from typegen.evaluation import FileTypeHintsCollector
-from tests.resource.typegen.evaluation import MetricDataCalculator
-from typegen.evaluation.metric_data_calculator import MetricDataCalculator
+from tests.resource.typegen.evaluation.file_type_hints_collector import MetricDataCalculator
 
 
 class MetricDataCalculator:
