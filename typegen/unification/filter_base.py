@@ -52,5 +52,6 @@ class TraceDataFilterList(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        applied = functools.reduce(lambda acc, f: f.apply(acc), self.filters, trace_data)
-        return applied.reset_index(drop=True)
+        for trace_data_filter in self.filters:
+            trace_data = trace_data_filter.apply(trace_data)
+        return trace_data.reset_index(drop=True)
