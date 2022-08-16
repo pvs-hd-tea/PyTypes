@@ -1,4 +1,5 @@
 import pathlib
+from typing import Iterable
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -34,7 +35,7 @@ class FileTypeHintsCollector:
         file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
         self.collect_data(root, file_paths)
 
-    def collect_data(self, root: pathlib.Path, file_paths: list[pathlib.Path]) -> None:
+    def collect_data(self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]) -> None:
         self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
