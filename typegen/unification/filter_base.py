@@ -1,9 +1,9 @@
 import abc
+import functools
 import logging
 import typing
 
 import pandas as pd
-
 
 class TraceDataFilter(abc.ABC):
     """Base class for different strategies of trace data filtering"""
@@ -52,7 +52,5 @@ class TraceDataFilterList(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        for trace_data_filter in self.filters:
-            trace_data = trace_data_filter.apply(trace_data)
-
-        return trace_data.copy().reset_index(drop=True)
+        applied = functools.reduce(lambda acc, f: f.apply(acc), self.filters, trace_data)
+        return applied.reset_index(drop=True)

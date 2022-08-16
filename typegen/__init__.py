@@ -7,17 +7,19 @@ import constants
 
 from tracing import ptconfig
 
-from typegen.unification import TraceDataFilter
-from typegen.unification.drop_dupes import DropDuplicatesFilter
-from typegen.unification.drop_test_func import DropTestFunctionDataFilter
-from typegen.unification.drop_vars import DropVariablesOfMultipleTypesFilter
-from typegen.unification.subtyping import ReplaceSubTypesFilter
-from typegen.unification.drop_min_threshold import MinThresholdFilter
-from typegen.unification.keep_only_first import KeepOnlyFirstFilter
-from typegen.trace_data_file_collector import TraceDataFileCollector
+from .unification import TraceDataFilter
+from .unification.drop_dupes import DropDuplicatesFilter
+from .unification.drop_test_func import DropTestFunctionDataFilter
+from .unification.drop_vars import DropVariablesOfMultipleTypesFilter
+from .unification.filter_base import TraceDataFilterList
+from .unification.subtyping import ReplaceSubTypesFilter
+from .unification.drop_min_threshold import MinThresholdFilter
+from .unification.keep_only_first import KeepOnlyFirstFilter
+from .trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
 from .strats.inline import InlineGenerator
+from .strats.gen import TypeHintGenerator
 
 __all__ = [
     DataFileCollector.__name__,
@@ -111,4 +113,9 @@ def main(**params):
     collector.collect_data(traced_df_folder, include_also_files_in_subdirectories=True)
 
     print(collector.trace_data)
-    return
+
+    filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)
+    filtered = filter_list.apply(collector.trace_data)
+
+    typegen = TypeHintGenerator(ident=strat_name, types=filtered)
+    typegen.apply(pytypes_cfg.pytypes.proj_path)
