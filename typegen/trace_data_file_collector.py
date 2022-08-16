@@ -24,6 +24,7 @@ class DataFileCollector(ABC):
             potential_trace_data_file_paths = path.rglob(self.file_pattern)
         else:
             potential_trace_data_file_paths = path.glob(self.file_pattern)
+
         # Ensures that the order is deterministic.
         sorted_potential_trace_data_file_paths = sorted(potential_trace_data_file_paths)
         for potential_trace_data_file_path in sorted_potential_trace_data_file_paths:
