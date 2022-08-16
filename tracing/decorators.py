@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import functools
+import os
 import pathlib
 import inspect
 from typing import Any, Callable, Protocol, TypeVar
@@ -110,6 +111,7 @@ def _execute_tracing(
         np.save(benchmark_output_path, benchmarks)
 
     trace_output_path = config.pytypes.proj_path / trace_subst
+    print(trace_output_path)
     trace_output_path.parent.mkdir(parents=True, exist_ok=True)
     traced.to_pickle(str(trace_output_path))
 
@@ -142,7 +144,7 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
 
     module = inspect.getmodule(prev_frame)
     assert module is not None  # we can never come from a builtin
-    module_name = module.__name__
+    module_name = module.__name__.replace(".", os.path.sep)
 
     @functools.wraps(c)
     def wrapper(*args, **kwargs) -> tuple[pd.DataFrame, np.ndarray | None]:
@@ -159,7 +161,6 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
             test_case=module_name,
             func_name=c.__name__,
         )
-
         return _execute_tracing(c, cfg, subst, *args, **kwargs)
 
     return wrapper

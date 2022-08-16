@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 
 class TracerBase(abc.ABC):
     def __init__(
-            self,
-            proj_path: pathlib.Path,
-            stdlib_path: pathlib.Path,
-            venv_path: pathlib.Path):
+        self,
+        proj_path: pathlib.Path,
+        stdlib_path: pathlib.Path,
+        venv_path: pathlib.Path,
+    ):
         self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
             constants.TraceData.SCHEMA
         )
@@ -49,7 +50,11 @@ class TracerBase(abc.ABC):
         self._prev_line: list[int] = list()
 
         self.class_names_to_drop = [TracerBase.__name__]
-        self.function_names_to_drop = [self.stop_trace.__name__, self.start_trace.__name__, self.active_trace.__name__]
+        self.function_names_to_drop = [
+            self.stop_trace.__name__,
+            self.start_trace.__name__,
+            self.active_trace.__name__,
+        ]
 
     def start_trace(self) -> None:
         """Starts the trace."""
@@ -74,7 +79,9 @@ class TracerBase(abc.ABC):
 
         drop_masks = [
             self.trace_data[constants.TraceData.CLASS].isin(self.class_names_to_drop),
-            self.trace_data[constants.TraceData.FUNCNAME].isin(self.function_names_to_drop),
+            self.trace_data[constants.TraceData.FUNCNAME].isin(
+                self.function_names_to_drop
+            ),
         ]
         td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
         self.trace_data = self.trace_data.drop(td_drop.index)

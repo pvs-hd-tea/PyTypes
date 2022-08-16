@@ -110,6 +110,13 @@ class Resolver:
         if module.__name__ == "builtins":
             return None, ty.__name__
 
+        # Special case:
+        # The __file__ attribute is not present for C modules that are statically linked into the interpreter; 
+        # for extension modules loaded dynamically from a shared library, 
+        # it is the pathname of the shared library file.
+        if not hasattr(module, "__file__"):
+            return module.__name__, ty.__name__
+
         assert module.__file__ is not None
         module_file = pathlib.Path(module.__file__)
 
