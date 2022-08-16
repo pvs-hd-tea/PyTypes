@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+import functools
 import pathlib
-from typing import Any, Callable, Protocol, TypeVar
+import inspect
+from typing import Callable, TypeVar
 import timeit
 
 import pandas as pd
@@ -8,25 +10,47 @@ import numpy as np
 
 import constants
 from tracing import ptconfig
-from tracing.tracer import NoOperationTracer, Tracer
+from tracing.tracer import NoOperationTracer, Tracer, TracerBase
 
 RetType = TypeVar("RetType")
 
 
-def _add_tracers_to_callable(
-    c: Callable[..., RetType], config: ptconfig.TomlCfg
-) -> Callable[..., RetType]:
-    if not config.pytypes.benchmark_performance:
-        tracer = Tracer(
-            proj_path=config.pytypes.proj_path,
-            stdlib_path=config.pytypes.stdlib_path,
-            venv_path=config.pytypes.venv_path,
-            apply_opts=True,
+@dataclass
+class _TemplateSubstitutes:
+    project: str
+    test_case: str
+    func_name: str
+
+
+def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]):
+    with tracer.active_trace():
+        call()
+
+
+def _execute_tracing(
+    c: Callable[..., RetType],
+    config: ptconfig.TomlCfg,
+    subst: _TemplateSubstitutes,
+    *args,
+    **kwargs,
+) -> tuple[pd.DataFrame, np.ndarray | None]:
+    trace_subst = config.pytypes.output_template.format_map(
+        {
+            "project": subst.project,
+            "test_case": subst.test_case,
+            "func_name": subst.func_name,
+        }
+    )
+
+    if config.pytypes.benchmark_performance:
+        benchmark_subst = config.pytypes.output_npy_template.format_map(
+            {
+                "project": subst.project,
+                "test_case": subst.test_case,
+                "func_name": subst.func_name,
+            }
         )
 
-        setattr(c, constants.TRACERS_ATTRIBUTE, [tracer])
-
-    else:
         no_operation_tracer = NoOperationTracer(
             proj_path=config.pytypes.proj_path,
             stdlib_path=config.pytypes.stdlib_path,
@@ -44,71 +68,9 @@ def _add_tracers_to_callable(
             venv_path=config.pytypes.venv_path,
             apply_opts=True,
         )
-        setattr(
-            c,
-            constants.TRACERS_ATTRIBUTE,
-            [no_operation_tracer, standard_tracer, optimized_tracer],
-        )
 
-    return c
-
-
-@dataclass
-class TemplateSubstitutes:
-    project: str
-    test_case: str
-    func_name: str
-
-
-def _trace_callable(tracer: Tracer, call: Callable[..., RetType]):
-    with tracer.active_trace():
-        call()
-
-
-def _execute_tracing(
-    c: Callable[..., RetType],
-    config: ptconfig.TomlCfg,
-    subst: TemplateSubstitutes,
-    *args,
-    **kwargs,
-) -> tuple[pd.DataFrame, np.ndarray | None]:
-    # Execute the optimised tracer, which, according to `_add_tracers_to_callable`
-    # is always the last element in the tracer attribute on the marked callable
-    trace_subst = config.pytypes.output_template.format_map(
-        {
-            "project": subst.project,
-            "test_case": subst.test_case,
-            "func_name": subst.func_name,
-        }
-    )
-
-    benchmark_subst = config.pytypes.output_npy_template.format_map(
-        {
-            "project": subst.project,
-            "test_case": subst.test_case,
-            "func_name": subst.func_name,
-        }
-    )
-
-    tracers: list[Tracer] = getattr(c, constants.TRACERS_ATTRIBUTE)
-    tracer: Tracer = tracers[-1]
-
-    _trace_callable(tracer, lambda: c(*args, **kwargs))
-
-    trace_output_path = config.pytypes.proj_path / trace_subst
-    traced = tracer.trace_data.copy()
-    traced.to_pickle(str(trace_output_path))
-
-    if config.pytypes.benchmark_performance:
+        tracers: list[TracerBase] = [no_operation_tracer, standard_tracer, optimized_tracer]
         benchmarks = np.zeros((1 + len(tracers)))
-
-        # Reset optimised tracer
-        tracers[-1] = Tracer(
-            proj_path=config.pytypes.proj_path,
-            stdlib_path=config.pytypes.stdlib_path,
-            venv_path=config.pytypes.venv_path,
-            apply_opts=True,
-        )
 
         # bare bones benchmark execution
         benchmarks[0] = timeit.timeit(
@@ -122,29 +84,56 @@ def _execute_tracing(
                 number=constants.AMOUNT_EXECUTIONS_TESTING_PERFORMANCE,
             )
 
-        benchmark_output_path = config.pytypes.proj_path / benchmark_subst
-        benchmark_output_path.parent.mkdir(parents=True, exist_ok=True)
-        np.save(benchmark_output_path, benchmarks)
+        traced = tracers[-1].trace_data
 
     else:
         benchmarks = None
 
+        tracer = Tracer(
+            proj_path=config.pytypes.proj_path,
+            stdlib_path=config.pytypes.stdlib_path,
+            venv_path=config.pytypes.venv_path,
+            apply_opts=True,
+        )
+
+        _trace_callable(tracer, lambda: c(*args, **kwargs))
+
+        traced = tracer.trace_data
+
+    if benchmarks is not None:
+        benchmark_output_path = config.pytypes.proj_path / benchmark_subst
+        benchmark_output_path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(benchmark_output_path, benchmarks)
+
+    trace_output_path = config.pytypes.proj_path / trace_subst
+    trace_output_path.parent.mkdir(parents=True, exist_ok=True)
+    traced.to_pickle(str(trace_output_path))
+
     return traced, benchmarks
 
 
-class _Callback(Protocol):
-    def __call__(
-        self, *args: Any, **kwds: Any
-    ) -> tuple[pd.DataFrame, np.ndarray | None]:
-        ...
-
-
-def trace(c: Callable[..., RetType]) -> _Callback:
+def trace(c: Callable[..., RetType]) -> Callable[[], RetType]:
     """
     Execute the tracer upon a callable marked with this decorator.
     Supports performance benchmarking when specified in the config file
     """
+    current_frame = inspect.currentframe()
+    if current_frame is None:
+        raise RuntimeError(
+            "inspect.currentframe returned None, unable to trace execution!"
+        )
 
+    prev_frame = current_frame.f_back
+    if prev_frame is None:
+        raise RuntimeError(
+            "The current stack frame has no predecessor, unable to trace execution!"
+        )
+
+    module = inspect.getmodule(prev_frame)
+    assert module is not None  # we can never come from a builtin
+    module_name = module.__name__
+
+    @functools.wraps(c)
     def wrapper(*args, **kwargs) -> tuple[pd.DataFrame, np.ndarray | None]:
         root = pathlib.Path.cwd()
         cfg = ptconfig.load_config(root / constants.CONFIG_FILE_NAME)
@@ -154,7 +143,12 @@ def trace(c: Callable[..., RetType]) -> _Callback:
                 {root} specified, config file has {cfg.pytypes.proj_path} set"
             )
 
-        c = _add_tracers_to_callable(c, cfg)
-        return _execute_tracing(c, cfg, *args, **kwargs)
+        subst = _TemplateSubstitutes(
+            project=cfg.pytypes.project,
+            test_case=module_name,
+            func_name=c.__name__,
+        )
+
+        return _execute_tracing(c, cfg, subst, *args, **kwargs)
 
     return wrapper
