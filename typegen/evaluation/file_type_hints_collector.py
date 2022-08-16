@@ -1,4 +1,3 @@
-import os.path
 import pathlib
 import pandas as pd
 import libcst as cst
@@ -14,15 +13,29 @@ class FileTypeHintsCollector:
     def __init__(self):
         self.typehint_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
 
-    def collect_file(self, root: pathlib.Path, file: pathlib.Path) -> None:
-        assert file.is_file() # TODO: Add error message / make to raise statement
-        # TODO: call self.collect_data from here
+    def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
+        self.collect_data_from_files(root, [filename])
 
-    def collect_folder(self, root: pathlib.Path, folder: pathlib.Path) -> None:
-        assert folder.is_dir() # TODO: Add error message / make to raise statement
-        # TODO: call self.collect_data from here
+    def collect_data_from_files(self, root: pathlib.Path, filenames: list[str]) -> None:
+        file_paths = []
+        for filename in filenames:
+            file_path = (root / filename).resolve()
+            assert file_path.is_file(), f"{file_path} is not a file path."
+            file_paths.append(file_path)
+        self.collect_data(root, file_paths)
+
+    def collect_data_from_folder(
+            self,
+            root: pathlib.Path,
+            folder: pathlib.Path,
+            include_also_files_in_subdirectories: bool = False) -> None:
+        assert folder.is_dir(), f"{folder} is not a folder path."
+        file_pattern = "*.py"
+        file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
+        self.collect_data(root, file_paths)
 
     def collect_data(self, root: pathlib.Path, file_paths: list[pathlib.Path]) -> None:
+        self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
             if not file_path.is_relative_to(root):
@@ -40,6 +53,7 @@ class FileTypeHintsCollector:
             self.typehint_data = pd.concat(
                 [self.typehint_data, typehint_data], ignore_index=True
             ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
+
 
 class _TypeHintVisitor(cst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
