@@ -46,19 +46,11 @@ __all__ = [
     required=True,
 )
 @click.option(
-    "-s",
-    "--subdirs",
-    help="Go down the directory tree of the tests, instead of staying in the first level",
-    is_flag=True,
-    required=False,
-    default=True,
-)
-@click.option(
     "-u",
     "--unifiers",
     help=f"Unifier to apply, as given by `name` in {constants.CONFIG_FILE_NAME} under [[unifier]]",
     multiple=True,
-    required=True,
+    required=False,
 )
 @click.option(
     "-g",
@@ -79,16 +71,15 @@ __all__ = [
     default=False,
 )
 def main(**params):
-    projpath, verb, strat_name, subdirs, unifiers = (
+    projpath, verb, strat_name, unifiers = (
         params["path"],
         params["verbose"],
         params["gen_strat"],
-        params["subdirs"],
         params["unifiers"],
     )
 
     logging.basicConfig(level=verb)
-    logging.debug(f"{projpath=}, {verb=}, {strat_name=} {subdirs=} {unifiers=}")
+    logging.debug(f"{projpath=}, {verb=}, {strat_name=} {unifiers=}")
 
     # Load config
     pytypes_cfg = ptconfig.load_config(projpath / constants.CONFIG_FILE_NAME)
@@ -115,9 +106,9 @@ def main(**params):
 
         filters.append(impl)
 
-    traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.project)
+    traced_df_folder = pathlib.Path(pytypes_cfg.pytypes.proj_path)
     collector = TraceDataFileCollector()
-    collector.collect_data(traced_df_folder, subdirs)
+    collector.collect_data(traced_df_folder, include_also_files_in_subdirectories=True)
 
     print(collector.trace_data)
     return
