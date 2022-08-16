@@ -51,3 +51,31 @@ def test_eval(test_input, expected):
 @decorators.trace
 def test_foo(x, y):
     assert x in (0, 1) and y in (2, 3)
+
+
+##### FIXTURES #####
+
+# Adapted from https://docs.pytest.org/en/6.2.x/fixture.html#fixture-parametrize
+import smtplib
+
+
+@pytest.fixture(scope="module", params=["smtp.gmail.com", "mail.python.org"])
+def smtp_connection(request):
+    smtp_connection = smtplib.SMTP(request.param, 587, timeout=5)
+    yield smtp_connection
+    print("finalizing {}".format(smtp_connection))
+    smtp_connection.close()
+
+
+class App:
+    def __init__(self, smtp_connection):
+        self.smtp_connection = smtp_connection
+
+
+@pytest.fixture(scope="module")
+def app(smtp_connection):
+    return App(smtp_connection)
+
+@decorators.trace
+def test_smtp_connection_exists(app):
+    assert app.smtp_connection
