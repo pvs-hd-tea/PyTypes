@@ -17,8 +17,7 @@ class ApplicationStrategy(ABC):
     functions to be traced upon execution.
     """
 
-    def __init__(self, overwrite_tests: bool = True, recurse_into_subdirs: bool = True):
-        self.overwrite_tests = overwrite_tests
+    def __init__(self, recurse_into_subdirs: bool = True):
         self.globber = pathlib.Path.rglob if recurse_into_subdirs else pathlib.Path.glob
 
     def apply(self, project: Project):
@@ -52,28 +51,17 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = constants.PYTEST_FUNCTION_PATTERN
-    SYS_IMPORT = "import sys"
-    PYTYPE_IMPORTS = "from tracing import register, entrypoint"
-    SUFFIX = "_decorator_appended.py"
-    ENTRYPOINT = "@entrypoint()\ndef main():\n  ...\n"
+    SYS_IMPORT = ast.parse("import sys").body[0]
+    PYTYPE_IMPORTS = ast.parse("from tracing import decorators").body[0]
 
-    def __init__(
-        self,
-        pytest_root: pathlib.Path,
-        overwrite_tests: bool = True,
-        recurse_into_subdirs: bool = True
-    ):
-        super().__init__(overwrite_tests, recurse_into_subdirs)
+    def __init__(self, pytest_root: pathlib.Path, recurse_into_subdirs: bool = True):
+        super().__init__(recurse_into_subdirs)
 
         self.pytest_root = pytest_root
         self.decorator_appended_file_paths: list[pathlib.Path] = []
-        sys_path_ext = f"sys.path.append('{self.pytest_root}')\n"
 
-        self.sys_import_node = ast.parse(PyTestStrategy.SYS_IMPORT)
-        self.pytype_imports_node = ast.parse(PyTestStrategy.PYTYPE_IMPORTS)
-        self.entrypoint_node = ast.parse(PyTestStrategy.ENTRYPOINT)
-        self.sys_path_ext_node = ast.parse(sys_path_ext)
-        self.append_register_decorator_transformer = AppendRegisterDecoratorTransformer(
+        self.sys_path_ext_node = ast.parse(f"sys.path.append('{self.pytest_root}')\n").body[0]
+        self.append_register_decorator_transformer = AppendDecoratorTransformer(
             PyTestStrategy.FUNCTION_PATTERN
         )
 
@@ -83,47 +71,42 @@ class PyTestStrategy(ApplicationStrategy):
 
         file_ast = ast.parse(file_content)
         file_ast = self.append_register_decorator_transformer.visit(file_ast)
-        self._append_nodes_necessary_for_tracing(file_ast)
+        self._add_nodes_necessary_for_tracing(file_ast)
         file_content = ast.unparse(file_ast)
 
-        if self.overwrite_tests:
-            output = path
-        else:
-            output = path.parent / f"{path.stem}{PyTestStrategy.SUFFIX}"
-
-        # logging.debug(f"{path} -> {output}")
-
+        output = path
         with output.open("w") as file:
             file.write(file_content)
 
         self.decorator_appended_file_paths.append(output)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
-        if path.name.startswith("test_") and path.name.endswith(".py"):
-            return not path.name.endswith(PyTestStrategy.SUFFIX)
+        if path.name.startswith("test_"):
+            return path.name.endswith(".py")
 
         return path.name.endswith("_test.py")
 
-    def _append_nodes_necessary_for_tracing(
+    def _add_nodes_necessary_for_tracing(
         self, abstract_syntax_tree: ast.Module
     ) -> None:
         """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
-        abstract_syntax_tree.body.insert(0, self.sys_import_node)  # type: ignore
-        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)  # type: ignore
-        abstract_syntax_tree.body.insert(2, self.pytype_imports_node)  # type: ignore
-        abstract_syntax_tree.body.append(self.entrypoint_node)  # type: ignore
+        abstract_syntax_tree.body.insert(0, PyTestStrategy.SYS_IMPORT)
+        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)
+        abstract_syntax_tree.body.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
 
 
-class AppendRegisterDecoratorTransformer(ast.NodeTransformer):
+class AppendDecoratorTransformer(ast.NodeTransformer):
     """
     Transforms an AST such that the register decorator is appended on each test function.
     """
 
-    REGISTER = "register()"
+    TRACE = "decorators.trace"
 
     def __init__(self, test_function_name_pattern: Pattern[str]):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
-        self.register_decorator_node = ast.Name(AppendRegisterDecoratorTransformer.REGISTER)
+        self.register_decorator_node = ast.Name(
+            AppendDecoratorTransformer.TRACE
+        )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         """
