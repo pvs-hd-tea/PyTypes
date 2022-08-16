@@ -1,6 +1,12 @@
+from json import dump
 import pathlib
+import typing
 import pytest
 from unittest import mock
+
+import libcst as cst
+import libcst.matchers as m
+from libcst.tool import dump
 
 from fetching.projio import Project
 
@@ -21,102 +27,113 @@ def project_folder():
         yield p
 
 
-def test_if_test_object_searches_for_test_files_in_subfolders_it_generates_test_files(
-    project_folder,
-):
-    test_object = PyTestStrategy(
-        pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=True
+class ValidPytestApplicationVisitor(cst.CSTVisitor):
+    # import sys
+    SYS_IMPORT = m.Import(names=[m.ImportAlias(name=m.Name(value="sys"))])
+
+    # from tracing import decorators
+    DECORATOR_IMPORT = m.ImportFrom(
+        module=m.Name("tracing"),
+        names=[m.ImportAlias(name=m.Name(value="decorators"))],
     )
-    test_object.apply(project_folder)
-    test_file_paths = list(
-        filter(
-            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.rglob("test_*.py")
+
+    # @decorators.trace
+    TRACE = m.Decorator(
+        decorator=m.Attribute(value=m.Name("decorators"), attr=m.Name("trace"))
+    )
+
+    def __init__(self) -> None:
+        self.sys_import_exists = False
+        self.decorator_import_exists = False
+        self.all_tests_are_traced = True
+
+        self.import_found = False
+        self.import_from_found = False
+        self.test_found = False
+
+    def __bool__(self) -> bool:
+        return all(
+            [
+                self.sys_import_exists and self.import_found,
+                self.decorator_import_exists and self.import_from_found,
+                self.all_tests_are_traced and self.test_found,
+            ]
         )
-    )
-    new_test_file_paths = list(
-        map(lambda p: p.parent / f"{p.stem}{PyTestStrategy.SUFFIX}", test_file_paths)
-    )
 
-    assert len(new_test_file_paths) == 4
-
-    for new_test_file_path in new_test_file_paths:
-        assert new_test_file_path.exists(), f"{new_test_file_path} does not exist!"
-
-    for new_test_file_path in new_test_file_paths:
-        new_test_file_path.unlink()
-
-
-def test_if_test_object_searches_for_test_files_excluding_subfolders_it_generates_test_files(
-    project_folder,
-):
-    test_object = PyTestStrategy(
-        pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=False
-    )
-    test_object.apply(project_folder)
-    test_file_paths = list(
-        filter(
-            lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.glob("test_*.py")
+    def visit_Import(self, node: cst.Import) -> bool | None:
+        self.import_found = True
+        self.sys_import_exists = self.sys_import_exists or m.matches(
+            node, ValidPytestApplicationVisitor.SYS_IMPORT
         )
-    )
-    new_test_file_paths = list(
-        map(lambda p: p.parent / f"{p.stem}{PyTestStrategy.SUFFIX}", test_file_paths)
-    )
+        return True
 
-    print(test_file_paths)
-    print(new_test_file_paths)
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        self.import_from_found = True
+        self.decorator_import_exists = self.decorator_import_exists or m.matches(
+            node, ValidPytestApplicationVisitor.DECORATOR_IMPORT
+        )
+        return True
 
-    assert len(new_test_file_paths) == 1
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
+        if node.name.value.startswith("test_"):
+            self.test_found = True
+            self.all_tests_are_traced = self.all_tests_are_traced and any(
+                m.matches(d, ValidPytestApplicationVisitor.TRACE)
+                for d in node.decorators
+            )
+        return True
 
-    for new_test_file_path in new_test_file_paths:
-        assert new_test_file_path.exists(), f"{new_test_file_path} does not exist!"
 
-    for new_test_file_path in new_test_file_paths:
-        new_test_file_path.unlink()
+@pytest.fixture(scope="function")
+def recursed_globs() -> typing.Iterator[list[pathlib.Path]]:
+    paths = list(cwd.rglob("test_*.py"))
+    backups = [file.open().read() for file in paths]
+
+    yield paths
+
+    for backup, file in zip(backups, paths):
+        file.open("w").write(backup)
+
+
+@pytest.fixture(scope="function")
+def nonrecursed_globs() -> typing.Iterator[list[pathlib.Path]]:
+    paths = list(cwd.glob("test_*.py"))
+    backups = [file.open().read() for file in paths]
+
+    yield paths
+
+    for backup, file in zip(backups, paths):
+        file.open("w").write(backup)
+
+
+def check_file_is_valid(filepath: pathlib.Path):
+    module = cst.parse_module(filepath.open().read())
+    visitor = ValidPytestApplicationVisitor()
+    module.visit(visitor)
+
+    assert bool(
+        visitor
+    ), f"At least one of these is false! {visitor.sys_import_exists=}, {visitor.decorator_import_exists=}, {visitor.all_tests_are_traced=}\n"
+    f"File: {filepath.open().read()}"
 
 
 def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_overwrites_test_files(
-    project_folder,
+    project_folder, recursed_globs
 ):
-    files = list(cwd.rglob("test_*.py"))
-    backups = [open(file).read() for file in files]
-    test_object = PyTestStrategy(
-        pathlib.Path.cwd(), overwrite_tests=True, recurse_into_subdirs=True
-    )
+    test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
     test_object.apply(project_folder)
-    test_file_paths = list(
-        filter(lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), files)
-    )
 
-    print(test_file_paths)
-
-    assert len(test_file_paths) == 4
-
-    for test_file_paths in test_file_paths:
-        assert test_file_paths.exists()
-
-    for backup, file in zip(backups, files):
-        open(file, "w").write(backup)
+    for test_file_path in recursed_globs:
+        assert test_file_path.exists()
+        check_file_is_valid(test_file_path)
 
 
 def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders_it_overwrites_test_files(
-    project_folder,
+    project_folder, nonrecursed_globs
 ):
-    files = list(cwd.glob("test_*.py"))
-    backups = [open(file).read() for file in files]
-    test_object = PyTestStrategy(
-        pathlib.Path.cwd(), overwrite_tests=True, recurse_into_subdirs=False
-    )
+    test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=False)
     test_object.apply(project_folder)
-    test_file_paths = list(
-        filter(lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), files)
-    )
 
-    print(test_file_paths)
-
-    assert len(test_file_paths) == 1
-
-    for test_file_paths in test_file_paths:
-        assert test_file_paths.exists()
-
-    for backup, file in zip(backups, files):
-        open(file, "w").write(backup)
+    for test_file_path in nonrecursed_globs:
+        assert test_file_path.exists()
+        check_file_is_valid(test_file_path)
