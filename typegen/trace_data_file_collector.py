@@ -14,7 +14,7 @@ class DataFileCollector(ABC):
 
     def __init__(self, file_pattern: str):
         self.file_pattern = file_pattern
-        self.collected_data = list()
+        self.collected_data: list[typing.Any] = list()
 
     def collect_data(
         self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
