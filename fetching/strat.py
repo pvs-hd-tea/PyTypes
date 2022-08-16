@@ -23,12 +23,9 @@ class ApplicationStrategy(ABC):
 
     def apply(self, project: Project):
         assert project.test_directory is not None
-        
-        file_paths = self.globber(project.test_directory, "*")
-        # Ensures that the order is deterministic.
-        sorted_file_paths = sorted(file_paths)
+
         for path in filter(
-            self._is_test_file, sorted_file_paths
+            self._is_test_file, self.globber(project.test_directory, "*")
         ):
             self._apply(path)
 
