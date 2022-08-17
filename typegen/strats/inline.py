@@ -393,6 +393,30 @@ class TypeHintTransformer(cst.CSTTransformer):
             )
 
 
+class RemoveAllTypeHintsTransformer(cst.CSTTransformer):
+    """Transforms the CST by removing all type hints."""
+    def leave_FunctionDef(
+        self, _: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
+        return updated_node.with_changes(returns=None)
+
+    def leave_Param(
+        self, _: cst.Param, updated_node: cst.Param
+    ) -> cst.Param:
+        return updated_node.with_changes(annotation=None)
+
+    def leave_AnnAssign(
+        self, original_node: cst.AnnAssign, _: cst.AnnAssign
+    ) -> cst.Assign | cst.AnnAssign | cst.RemovalSentinel:
+        if original_node.value is None:
+            return cst.RemoveFromParent()
+
+        return cst.Assign(
+            targets=[cst.AssignTarget(original_node.target)],
+            value=original_node.value,
+        )
+
+
 class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
@@ -416,3 +440,4 @@ class InlineGenerator(TypeHintGenerator):
         contents = hinting.code
         with source_file.open("w") as f:
             f.write(contents)
+
