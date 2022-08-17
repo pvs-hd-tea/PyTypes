@@ -5,6 +5,7 @@ import libcst as cst
 from libcst.metadata import PositionProvider
 import constants
 from tracing import TraceDataCategory
+from typegen.evaluation.normalize_unions import union_normalized
 
 
 class FileTypeHintsCollector:
@@ -189,6 +190,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         function_name = None
         if function_node:
             function_name = function_node.name.value
+        if type_hint is not None:
+            type_hint = union_normalized(type_hint)
         self.collected_data.append([
             self.file_path,
             class_name,
