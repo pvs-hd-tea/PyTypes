@@ -26,10 +26,11 @@ class UnionFilter(TraceDataFilter):
             ],
             dropna=False,
             group_keys=False,
-            sort=False
+            sort=False,
         )
 
-        unions = [self._update_group(group) for _, group in grouped]
+        # Update group changes the values of every element in the group; only keep the first occurrence
+        unions = [self._update_group(group).drop_duplicates() for _, group in grouped]
         processed_trace_data = pd.concat(unions)
 
         restored = pd.DataFrame(

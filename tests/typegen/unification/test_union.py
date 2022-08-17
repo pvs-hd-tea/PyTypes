@@ -61,6 +61,7 @@ def test_all_types_are_unified(sample_trace_data):
     )
 
     expected_trace_data.loc[:, AnnotationData.UNION_IMPORT] = True
+    expected_trace_data = expected_trace_data.drop_duplicates(ignore_index=True)
     expected_trace_data: pd.DataFrame = expected_trace_data.astype(AnnotationData.SCHEMA)
 
     actual = sample_trace_data
@@ -139,30 +140,6 @@ def test_all_builtins_get_empty_strings():
     ]
 
     expected_trace_data = pd.DataFrame(columns=AnnotationData.SCHEMA.keys())
-    expected_trace_data.loc[len(expected_trace_data)] = [
-        "",
-        None,
-        None,
-        "stringify",
-        0,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "a",
-        ",,pathlib",
-        f"{int.__name__} | {str.__name__} | {pathlib.Path.__name__}",
-        True,
-    ]
-    expected_trace_data.loc[len(expected_trace_data)] = [
-        "",
-        None,
-        None,
-        "stringify",
-        0,
-        TraceDataCategory.FUNCTION_PARAMETER,
-        "a",
-        ",,pathlib",
-        f"{int.__name__} | {str.__name__} | {pathlib.Path.__name__}",
-        True,
-    ]
     expected_trace_data.loc[len(expected_trace_data)] = [
         "",
         None,
