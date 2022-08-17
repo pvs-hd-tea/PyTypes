@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import sys
-from types import ModuleType
+from types import ModuleType, NoneType
 
 import pandas as pd
 
@@ -70,6 +70,9 @@ class Resolver:
         logger.debug(f"{(module_name, type_name)} as builtin?")
         if not isinstance(module_name, str):
             # __builtins__ is typed as Module by mypy, but is dict in the REPL?
+            # Special case: NoneType
+            if type_name == "NoneType":
+                return NoneType
             builtin_ty: type = __builtins__[type_name]  # type: ignore
             return builtin_ty
 
