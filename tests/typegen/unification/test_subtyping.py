@@ -10,7 +10,7 @@ from tracing.trace_data_category import TraceDataCategory
 from typegen.unification.filter_base import TraceDataFilter
 from typegen.unification.subtyping import ReplaceSubTypesFilter
 
-from .data import get_sample_trace_data
+from .data import sample_trace_data
 
 import constants
 
@@ -42,13 +42,13 @@ def test_factory():
     assert isinstance(relaxed_rstf, ReplaceSubTypesFilter)
 
 
-def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().reset_index(drop=True)
+def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data(sample_trace_data):
+    expected_trace_data = sample_trace_data.copy().reset_index(drop=True)
     expected_trace_data.loc[3, constants.AnnotationData.VARTYPE] = "SubClass1"
     expected_trace_data.loc[9, constants.AnnotationData.VARTYPE] = "SubClass1"
     expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
 
-    trace_data = get_sample_trace_data()
+    trace_data = sample_trace_data.copy()
     actual_trace_data = strict_rstf.apply(trace_data)
 
     exp_types_and_module = expected_trace_data[
@@ -65,14 +65,14 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
     assert expected_trace_data.equals(actual_trace_data)
 
 
-def test_replace_subtypes_filter_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().reset_index(drop=True)
+def test_replace_subtypes_filter_processes_and_returns_correct_data(sample_trace_data):
+    expected_trace_data = sample_trace_data.copy().reset_index(drop=True)
     expected_trace_data.loc[:3, constants.AnnotationData.VARTYPE] = "BaseClass"
     expected_trace_data.loc[3:, constants.AnnotationData.VARTYPE] = "SubClass1"
     expected_trace_data.loc[10:, constants.AnnotationData.VARTYPE] = "BaseClass"
     expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
 
-    trace_data = get_sample_trace_data()
+    trace_data = sample_trace_data.copy()
     actual_trace_data = relaxed_rstf.apply(trace_data)
 
     exp_types_and_module = expected_trace_data[

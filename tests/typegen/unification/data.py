@@ -6,6 +6,7 @@ import pandas as pd
 import constants
 from tracing.trace_data_category import TraceDataCategory
 
+import pytest
 
 class BaseClass(abc.ABC):
     pass
@@ -31,7 +32,8 @@ resource_path = pathlib.Path("tests", "typegen", "unification", "data.py")
 resource_module = "tests.typegen.unification.data"
 
 
-def get_sample_trace_data() -> pd.DataFrame:
+@pytest.fixture()
+def sample_trace_data() -> pd.DataFrame:
     trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     trace_data.loc[len(trace_data.index)] = [
