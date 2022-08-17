@@ -82,6 +82,24 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_file_paths(
         27)
 
 
+def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints():
+    filename = "file_with_complex_type_hints.py"
+    expected_typehints = [
+        "typing.Optional[bool]",
+        "dict[str, typegen.evaluation.FileTypeHintsCollector]",
+        "int | str | float | None",
+        "typing.Union[bool | numpy.ndarray, typing.Optional[str]]",
+        "typing.Union[list[str], dict[None | typegen.evaluation.FileTypeHintsCollector, dict[float, typing.Optional[bool | int]]]]"
+    ]
+    test_object = FileTypeHintsCollector()
+    test_object.collect_data_from_file(sample_folder_path, filename)
+    actual_data = test_object.typehint_data
+    actual_typehints = actual_data[constants.TraceData.VARTYPE].tolist()
+    print(actual_typehints)
+    for actual_typehint, expected_typehint in zip(actual_typehints, expected_typehints):
+        assert actual_typehint == expected_typehint
+
+
 def _test_with(
         expected_data_filenames: list[str],
         test_object: FileTypeHintsCollector,
