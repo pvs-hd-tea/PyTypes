@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import logging
+import os
 import requests
 import pathlib
 import tempfile
@@ -78,7 +79,18 @@ class GitRepository(Repository):
 
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
-        git.Repo.clone_from(self.project_url, td.name, progress=self._progress())
+
+        # https://stackoverflow.com/questions/28291909/gitpython-and-ssh-keys
+        git_ssh_cmd = f"ssh -i {os.path.expanduser('~/.ssh/id_rsa')}"
+
+        with git.Git().custom_environment(GIT_SSH_CMD=git_ssh_cmd):
+            git.Repo.clone_from(
+                self.project_url,
+                td.name,
+                progress=self._progress(),
+                env={"GIT_SSH_COMMAND": git_ssh_cmd},
+                depth=1,
+            )
         return td
 
     def _progress(self) -> typing.Callable:
@@ -134,7 +146,9 @@ class ArchiveRepository(Repository):
 
         return td
 
-    def _handle_singledir(self, temp_output: tempfile.TemporaryDirectory, paths: list[pathlib.Path]):
+    def _handle_singledir(
+        self, temp_output: tempfile.TemporaryDirectory, paths: list[pathlib.Path]
+    ):
         logging.debug("Extracted files from archive")
         if paths and all(paths[0].parts[0] == path.parts[0] for path in paths):
             logging.debug("Detected singular folder in archive; exploding archive")
