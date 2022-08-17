@@ -36,11 +36,17 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         """
         self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
 
-        subset = list(constants.TraceData.SCHEMA.keys())
-        subset.remove(constants.TraceData.VARTYPE_MODULE)
-        subset.remove(constants.TraceData.VARTYPE)
-        subset.remove(constants.TraceData.FILENAME)
-        grouped_trace_data = trace_data.groupby(subset, dropna=False)
+        grouped_trace_data = trace_data.groupby(
+            by=[
+                constants.TraceData.CLASS_MODULE,
+                constants.TraceData.CLASS,
+                constants.TraceData.FUNCNAME,
+                constants.TraceData.LINENO,
+                constants.TraceData.CATEGORY,
+                constants.TraceData.VARNAME,
+            ],
+            dropna=False,
+        )
         processed_trace_data = grouped_trace_data.apply(
             lambda group: self._update_group(trace_data, group)
         )
