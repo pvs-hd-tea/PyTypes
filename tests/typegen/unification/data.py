@@ -25,12 +25,11 @@ class SubClass2(BaseClass):
 class SubClass3(BaseClass):
     pass
 
+resource_path = pathlib.Path("tests", "typegen", "unification", "data.py")
+resource_module = "tests.typegen.unification.data"
 
 def get_sample_trace_data() -> pd.DataFrame:
     trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-
-    resource_path = pathlib.Path("tests", "typegen", "unification", "data.py")
-    resource_module = "tests.typegen.unification.data"
 
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
