@@ -5,7 +5,7 @@ import os
 import libcst as cst
 import pandas as pd
 
-from constants import TraceData
+from constants import Column
 
 
 class _AddImportTransformer(cst.CSTTransformer):
@@ -18,15 +18,15 @@ class _AddImportTransformer(cst.CSTTransformer):
             return os.path.splitext(file.replace(os.path.sep, "."))[0]
 
         # Stupid implementation: make from x import y everywhere
-        self.applicable["modules"] = self.applicable[TraceData.FILENAME].map(
+        self.applicable["modules"] = self.applicable[Column.FILENAME].map(
             lambda f: file2module(f)
         )
 
         # ignore builtins
-        non_builtin = self.applicable[TraceData.VARTYPE_MODULE].notnull()
+        non_builtin = self.applicable[Column.VARTYPE_MODULE].notnull()
         # ignore classes in the same module
         not_in_same_mod = (
-            self.applicable["modules"] != self.applicable[TraceData.VARTYPE_MODULE]
+            self.applicable["modules"] != self.applicable[Column.VARTYPE_MODULE]
         )
         retain_mask = [
             non_builtin,
@@ -37,24 +37,31 @@ class _AddImportTransformer(cst.CSTTransformer):
         if important.empty:
             return updated_node
 
+        assert not important.duplicated().any()
         importables = important.groupby(
-            [TraceData.VARTYPE_MODULE, TraceData.VARTYPE]
-        ).agg({TraceData.VARTYPE: list})
+            by=[Column.VARTYPE_MODULE, Column.VARTYPE], sort=False, dropna=False
+        )
 
         imports_for_type_hints = []
-        for module in importables.index:
+        for _, group in importables:
+            modules = group[Column.VARTYPE_MODULE].values[0]
+            types = group[Column.VARTYPE].values[0]
 
-            mod_name = cst.parse_expression(module[0])
-            assert isinstance(
-                mod_name, cst.Name | cst.Attribute
-            ), f"Accidentally parsed {type(mod_name)}"
-            aliases = []
+            modules = modules.split(",")
+            types = types.split(" | ")
 
-            for ty in importables.loc[module].values[0]:
-                aliases.append(cst.ImportAlias(name=cst.Name(ty)))
+            for module, ty in zip(modules, types):
+                if not module:
+                    continue
 
-            imp_from = cst.ImportFrom(module=mod_name, names=aliases)
-            imports_for_type_hints.append(cst.SimpleStatementLine([imp_from]))
+                mod_name = cst.parse_expression(module)
+                assert isinstance(
+                    mod_name, cst.Name | cst.Attribute
+                ), f"Accidentally parsed {type(mod_name)}"
+
+                aliases = [cst.ImportAlias(name=cst.Name(ty))]
+                imp_from = cst.ImportFrom(module=mod_name, names=aliases)
+                imports_for_type_hints.append(cst.SimpleStatementLine([imp_from]))
 
         typings_import = cst.ImportFrom(
             module=cst.Name(value="typing"),

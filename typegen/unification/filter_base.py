@@ -1,9 +1,9 @@
 import abc
-import functools
 import logging
 import typing
 
 import pandas as pd
+
 
 class TraceDataFilter(abc.ABC):
     """Base class for different strategies of trace data filtering"""
@@ -15,7 +15,9 @@ class TraceDataFilter(abc.ABC):
         super().__init_subclass__(**kwargs)
         TraceDataFilter._REGISTRY[cls.ident] = cls
 
-    def __new__(cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs) -> "TraceDataFilter":
+    def __new__(
+        cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs
+    ) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
             logging.debug(f"Creating {subcls.__name__} with {kwargs}")
             subinst = object.__new__(subcls)

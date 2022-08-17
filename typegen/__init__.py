@@ -3,7 +3,8 @@ import click
 import pathlib
 from typegen.trace_data_file_collector import TraceDataFileCollector, DataFileCollector
 
-import constants
+
+from constants import CONFIG_FILE_NAME
 
 from tracing import ptconfig
 
@@ -15,7 +16,6 @@ from .unification.filter_base import TraceDataFilterList
 from .unification.subtyping import ReplaceSubTypesFilter
 from .unification.drop_min_threshold import MinThresholdFilter
 from .unification.keep_only_first import KeepOnlyFirstFilter
-from .trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
 from .strats.inline import InlineGenerator
@@ -50,7 +50,7 @@ __all__ = [
 @click.option(
     "-u",
     "--unifiers",
-    help=f"Unifier to apply, as given by `name` in {constants.CONFIG_FILE_NAME} under [[unifier]]",
+    help=f"Unifier to apply, as given by `name` in {CONFIG_FILE_NAME} under [[unifier]]",
     multiple=True,
     required=False,
 )
@@ -84,14 +84,14 @@ def main(**params):
     logging.debug(f"{projpath=}, {verb=}, {strat_name=} {unifiers=}")
 
     # Load config
-    pytypes_cfg = ptconfig.load_config(projpath / constants.CONFIG_FILE_NAME)
+    pytypes_cfg = ptconfig.load_config(projpath / CONFIG_FILE_NAME)
 
     unifier_lookup: dict[str, ptconfig.Unifier]
     if pytypes_cfg.unifier is not None:
         unifier_lookup = {u.name: u for u in pytypes_cfg.unifier}
         print(pytypes_cfg.unifier)
     else:
-        logging.warning(f"No unifiers were found in {constants.CONFIG_FILE_NAME}")
+        logging.warning(f"No unifiers were found in {CONFIG_FILE_NAME}")
         unifier_lookup = dict()
 
     filters: list[TraceDataFilter] = list()
@@ -112,7 +112,8 @@ def main(**params):
     collector = TraceDataFileCollector()
     collector.collect_data(traced_df_folder, include_also_files_in_subdirectories=True)
 
-    print(collector.trace_data)
+    td_df = collector.trace_data
+    print(td_df)
 
     filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)
     filtered = filter_list.apply(collector.trace_data)

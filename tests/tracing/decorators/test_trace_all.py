@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 
 from tracing import ptconfig, decorators
-from constants import TraceData
+from constants import Column, Schema
 
 
 def trace_function():
@@ -39,14 +39,14 @@ def test_everything_is_traced(monkeypatch):
     assert fperf is None
     assert ftrace is not None, f"Trace data of {ftrace.__name__} should not be None"
     assert (
-        "trace_function" in ftrace[TraceData.FUNCNAME].values
+        "trace_function" in ftrace[Column.FUNCNAME].values
     ), f"Trace data for 'trace_function' is missing from {ftrace.__name__}"
 
     mtrace, mperf = decorators.trace(Class().trace_method)()
     assert mperf is None
     assert mtrace is not None, f"Trace data of {mtrace.__name__} should not be None"
     assert (
-        "trace_method" in mtrace[TraceData.FUNCNAME].values
+        "trace_method" in mtrace[Column.FUNCNAME].values
     ), f"Trace data for 'trace_method' is missing from {mtrace.__name__}"
 
 
@@ -71,7 +71,7 @@ def test_everything_is_traced_with_benchmark_performance(monkeypatch):
     ftrace, fperf = decorators.trace(trace_function)()
     assert ftrace is not None, f"Trace data of {ftrace.__name__} should not be None"
     assert (
-        "trace_function" in ftrace[TraceData.FUNCNAME].values
+        "trace_function" in ftrace[Column.FUNCNAME].values
     ), f"Trace data for 'trace_function' is missing from {ftrace.__name__}"
 
     assert (
@@ -82,7 +82,7 @@ def test_everything_is_traced_with_benchmark_performance(monkeypatch):
     mtrace, mperf = decorators.trace(Class().trace_method)()
     assert mtrace is not None, f"Trace data of {mtrace.__name__} should not be None"
     assert (
-        "trace_method" in mtrace[TraceData.FUNCNAME].values
+        "trace_method" in mtrace[Column.FUNCNAME].values
     ), f"Trace data for 'trace_method' is missing from {mtrace.__name__}"
 
     assert (

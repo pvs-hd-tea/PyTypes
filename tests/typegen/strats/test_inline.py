@@ -1,10 +1,11 @@
 import libcst as cst
 from libcst.tool import dump
 from libcst.matchers import matches
+import libcst.matchers as m
 import logging
 import pathlib
 
-import constants
+from constants import Column, Schema
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
@@ -156,7 +157,7 @@ def test_callables():
     c_clazz_module = "tests.resource.typegen.callable"
     c_clazz = "C"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -352,7 +353,7 @@ def test_assignments():
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -528,7 +529,7 @@ def test_imported():
     anotherc_clazz_module = "tests.resource.typegen.importing"
     anotherc_clazz = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -633,7 +634,7 @@ def test_present_annotations_are_removed():
     resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
     assert resource_path.is_file()
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -678,7 +679,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
     class_name1 = "AClass"
     class_name2 = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -730,3 +731,68 @@ def test_attributes_are_not_annotated_outside_of_classes():
             return True
 
     imported.visit(ExternalAttributesAreHintLessVisitor())
+
+
+def test_union_import_generation():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "unions.py")
+
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        4,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        ",,pathlib",
+        f"{int.__name__} | {str.__name__} | {pathlib.Path.__name__}",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "stringify",
+        None,
+        str.__name__,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class CheckUnionApplicationVisitor(cst.CSTVisitor):
+        PATHLIB_IMPORT_M = m.ImportFrom(
+            module=m.Name(value="pathlib"), names=[m.ImportAlias(m.Name(value="Path"))]
+        )
+
+        IF_TYPE_CHECKING_M = m.If(test=m.Name("TYPE_CHECKING"))
+
+        def __init__(self) -> None:
+            self.classes: list[cst.ClassDef] = list()
+            self._in_type_matching = False
+
+        def visit_If(self, node: cst.If) -> bool | None:
+            self._in_type_matching = matches(
+                node, CheckUnionApplicationVisitor.IF_TYPE_CHECKING_M
+            )
+            return True
+
+        def leave_If(self, _: cst.If) -> None:
+            self._in_type_matching = False
+
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            if self._in_type_matching:
+                # Only import should be from pathlib import Path
+                assert matches(
+                    node, CheckUnionApplicationVisitor.PATHLIB_IMPORT_M
+                ), f"Did not match {dump(node)}"
+            return True
+
+    imported.visit(CheckUnionApplicationVisitor())
