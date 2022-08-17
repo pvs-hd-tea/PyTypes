@@ -769,7 +769,7 @@ def test_union_import_generation():
 
     class CheckUnionApplicationVisitor(cst.CSTVisitor):
         PATHLIB_IMPORT_M = m.ImportFrom(
-            module=m.Name(value="pathlib"), names=[m.Name(value="Path")]
+            module=m.Name(value="pathlib"), names=[m.ImportAlias(m.Name(value="Path"))]
         )
 
         IF_TYPE_CHECKING_M = m.If(test=m.Name("TYPE_CHECKING"))
@@ -790,5 +790,9 @@ def test_union_import_generation():
         def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
             if self._in_type_matching:
                 # Only import should be from pathlib import Path
-                assert matches(node, CheckUnionApplicationVisitor.PATHLIB_IMPORT_M)
+                assert matches(
+                    node, CheckUnionApplicationVisitor.PATHLIB_IMPORT_M
+                ), f"Did not match {dump(node)}"
             return True
+
+    imported.visit(CheckUnionApplicationVisitor())
