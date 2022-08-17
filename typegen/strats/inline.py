@@ -5,6 +5,7 @@ import logging
 import operator
 import os
 import pathlib
+from typing import NoReturn
 
 import pandas as pd
 import libcst as cst
@@ -197,9 +198,10 @@ class TypeHintTransformer(cst.CSTTransformer):
     ) -> cst.FunctionDef:
         rettypes = self._get_trace_for_rettype(original_node)
 
-        assert (
-            rettypes.shape[0] <= 1
-        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPE].values}"
+        if rettypes.shape[0] > 1:
+            self._on_multiple_hints_found(
+                original_node.name.value, rettypes, original_node
+            )
 
         returns: cst.Annotation | None
 
@@ -228,13 +230,15 @@ class TypeHintTransformer(cst.CSTTransformer):
         self, original_node: cst.Param, updated_node: cst.Param
     ) -> cst.Param:
         params = self._get_trace_for_param(original_node)
-        arg_hints = params[TraceData.VARNAME]
-        assert (
-            arg_hints.shape[0] <= 1
-        ), f"Found multiple hints for the parameter type: {arg_hints}"
+        if params.shape[0] > 1:
+            self._on_multiple_hints_found(
+                updated_node.name.value,
+                params,
+                original_node,
+            )
 
         # no type hint, skip
-        if arg_hints.empty:
+        if params.empty:
             logger.debug(f"No hint found for parameter '{original_node.name.value}'")
             logger.debug("Removing any previous return type annotation on parameter")
             return updated_node.with_changes(annotation=None)
@@ -259,9 +263,8 @@ class TypeHintTransformer(cst.CSTTransformer):
             else:
                 hinted = class_members[class_members[TraceData.VARNAME] == ident]
 
-            assert (
-                hinted.shape[0] <= 1
-            ), f"Found more than one type hint for {ident}: \n{hinted}"
+            if hinted.shape[0] > 1:
+                self._on_multiple_hints_found(ident, hinted, original_node)
 
             if hinted.empty:
                 logger.debug(f"No type hint stored for {ident} in AugAssign")
@@ -297,9 +300,8 @@ class TypeHintTransformer(cst.CSTTransformer):
                     logger.debug(f"Searching for '{ident}' in class attributes")
                     hinted = class_members[class_members[TraceData.VARNAME] == ident]
 
-                assert (
-                    hinted.shape[0] <= 1
-                ), f"Found more than one type hint for {ident}"
+                if hinted.shape[0] > 1:
+                    self._on_multiple_hints_found(ident, hinted, original_node)
 
                 if hinted.empty:
                     if isinstance(var, cst.Attribute):
@@ -335,7 +337,8 @@ class TypeHintTransformer(cst.CSTTransformer):
         else:
             hinted = class_members[class_members[TraceData.VARNAME] == ident]
 
-        assert hinted.shape[0] <= 1, f"Found more than one type hint for '{ident}'"
+        if hinted.shape[0] > 1:
+            self._on_multiple_hints_found(ident, hinted, original_node)
 
         if hinted.empty:
             logger.debug(f"No hints found for '{ident}'")
@@ -369,7 +372,8 @@ class TypeHintTransformer(cst.CSTTransformer):
         logger.debug(f"Searching for hints to '{ident}' for an Assign")
 
         hinted = local_var if isinstance(ident_node, cst.Name) else class_member
-        assert hinted.shape[0] <= 1, f"Found more than one type hint for '{ident}'"
+        if hinted.shape[0] > 1:
+            self._on_multiple_hints_found(ident, hinted, original_node)
 
         if hinted.empty and original_node.value is None:
             logger.debug(
@@ -399,6 +403,19 @@ class TypeHintTransformer(cst.CSTTransformer):
                 target=original_node.target,
                 annotation=cst.Annotation(cst.Name(value=hint_ty)),
                 value=original_node.value,
+            )
+
+    def _on_multiple_hints_found(
+        self, ident: str, hints_found: pd.DataFrame, node: cst.CSTNode
+    ) -> NoReturn:
+        try:
+            stringified = cst.Module([]).code_for_node(node)
+        except AttributeError:
+            stringified = node.__class__.__name__
+        file = self.df[TraceData.FILENAME].values[0]
+        with pd.option_context("display.max_rows", None, "display.max_columns", None):
+            raise ValueError(
+                f"In {file}: found more than one type hint for {ident}\nNode: {stringified}\n{hints_found}"
             )
 
 
