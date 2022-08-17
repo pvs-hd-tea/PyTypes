@@ -47,7 +47,7 @@ class UnionFilter(TraceDataFilter):
             )
             return group
 
-        new_module = ",".join(group[AnnotationData.VARTYPE_MODULE])
+        new_module = ",".join(group[AnnotationData.VARTYPE_MODULE].fillna(""))
         new_type = " | ".join(group[AnnotationData.VARTYPE])
 
         updateable = group.copy()
