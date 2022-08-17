@@ -5,7 +5,7 @@ from typegen.evaluation import MetricDataCalculator
 
 
 def get_sample_data():
-    sample_original_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+    sample_original_data = pd.DataFrame(columns=constants.TypeHintData.TYPE_HINT_SCHEMA.keys())
     sample_original_data.loc[len(sample_original_data.index)] = [
         "sample_original_filename",
         None,
@@ -52,7 +52,7 @@ def get_sample_data():
         float.__name__,
     ]
 
-    sample_generated_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+    sample_generated_data = pd.DataFrame(columns=constants.TypeHintData.TYPE_HINT_SCHEMA.keys())
     sample_generated_data.loc[len(sample_generated_data.index)] = [
         "sample_generated_filename",
         None,
@@ -96,7 +96,7 @@ def get_sample_data():
 
 
 def test_metric_calculator_returns_correct_metric_data():
-    expected_data = pd.DataFrame(columns=constants.TraceData.METRICS_SCHEMA)
+    expected_data = pd.DataFrame(columns=constants.TypeHintData.METRICS_SCHEMA)
     expected_data.loc[len(expected_data.index)] = [
         "sample_original_filename",
         None,
@@ -170,7 +170,7 @@ def test_metric_calculator_returns_correct_metric_data():
         None,
     ]
 
-    expected_data = expected_data.astype(constants.TraceData.METRICS_SCHEMA)
+    expected_data = expected_data.astype(constants.TypeHintData.METRICS_SCHEMA)
     sample_original_data, sample_generated_data = get_sample_data()
     test_object = MetricDataCalculator()
     test_object.add_filename_mapping("sample_original_filename", "sample_generated_filename")

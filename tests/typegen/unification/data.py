@@ -6,6 +6,7 @@ import pandas as pd
 import constants
 from tracing.trace_data_category import TraceDataCategory
 
+
 class BaseClass(abc.ABC):
     pass
 
@@ -25,11 +26,13 @@ class SubClass2(BaseClass):
 class SubClass3(BaseClass):
     pass
 
+
 resource_path = pathlib.Path("tests", "typegen", "unification", "data.py")
 resource_module = "tests.typegen.unification.data"
 
+
 def get_sample_trace_data() -> pd.DataFrame:
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -41,6 +44,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "argument1",
         resource_module,
         "SubClass2",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -52,6 +56,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "argument1",
         resource_module,
         "SubClass2",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -63,6 +68,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "argument1",
         resource_module,
         "SubClass3",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -74,6 +80,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable1",
         resource_module,
         "SubClass11",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -85,6 +92,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable1",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -96,6 +104,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable2",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -107,6 +116,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable2",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -118,6 +128,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "class_member1",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -129,6 +140,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "class_member1",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -140,6 +152,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "class_member1",
         resource_module,
         "SubClass11",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -151,6 +164,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -162,6 +176,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -173,6 +188,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -184,6 +200,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable",
         resource_module,
         "SubClass1",
+        False,
     ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -195,6 +212,7 @@ def get_sample_trace_data() -> pd.DataFrame:
         "local_variable",
         resource_module,
         "SubClass2",
+        False,
     ]
-    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
+    trace_data = trace_data.astype(constants.AnnotationData.SCHEMA)
     return trace_data

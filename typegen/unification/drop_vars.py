@@ -18,10 +18,10 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        subset = list(constants.TraceData.SCHEMA.keys())
-        subset.remove(constants.TraceData.VARTYPE)
+        subset = list(constants.AnnotationData.SCHEMA.keys())
+        subset.remove(constants.AnnotationData.VARTYPE)
         grouped_trace_data_with_unique_count = (
-            trace_data.groupby(subset, dropna=False)[constants.TraceData.VARTYPE]
+            trace_data.groupby(subset, dropna=False)[constants.AnnotationData.VARTYPE]
             .nunique()
             .reset_index(name="amount_types")
         )
@@ -34,4 +34,4 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         processed_data = trace_data_with_dropped_variables.drop(
             ["amount_types"], axis=1
         )
-        return processed_data.reset_index(drop=True).astype(constants.TraceData.SCHEMA)
+        return processed_data.reset_index(drop=True).astype(constants.AnnotationData.SCHEMA)

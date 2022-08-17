@@ -62,7 +62,7 @@ class TraceData:
 
 class AnnotationData(TraceData):
     # Extra attribute to tack on in case the union filter is applied
-    UNION_IMPORT = "union_import"
+    UNION_IMPORT = "UnionImport"
 
     SCHEMA = TraceData.SCHEMA | {UNION_IMPORT: pd.BooleanDtype()}
 

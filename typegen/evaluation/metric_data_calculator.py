@@ -23,7 +23,7 @@ class MetricDataCalculator:
         generated_type_hint_data = generated_type_hint_data.replace(
             {constants.TraceData.FILENAME: self.generated_filenames_by_original})
 
-        subset_merged = list(constants.TraceData.TYPE_HINT_SCHEMA.keys())
+        subset_merged = list(constants.TypeHintData.TYPE_HINT_SCHEMA.keys())
         subset_merged = subset_merged.copy()
 
         # Used to sort the values.
@@ -41,11 +41,11 @@ class MetricDataCalculator:
         merged_data = pd.merge(original_type_hint_data, generated_type_hint_data,
                                             on=subset_merged, how='inner')  # type: ignore
         merged_data = merged_data.drop(MetricDataCalculator.CUMCOUNT, axis=1)
-        merged_data[constants.TraceData.VARTYPE_ORIGINAL] = merged_data[constants.TraceData.VARTYPE]
-        merged_data[constants.TraceData.VARTYPE_GENERATED] = merged_data[constants.TraceData.VARTYPE]
+        merged_data[constants.TypeHintData.VARTYPE_ORIGINAL] = merged_data[constants.TraceData.VARTYPE]
+        merged_data[constants.TypeHintData.VARTYPE_GENERATED] = merged_data[constants.TraceData.VARTYPE]
         merged_data = merged_data.drop(constants.TraceData.VARTYPE, axis=1)
-        merged_data[constants.TraceData.CORRECTNESS] = True
-        merged_data[constants.TraceData.COMPLETENESS] = True
+        merged_data[constants.TypeHintData.CORRECTNESS] = True
+        merged_data[constants.TypeHintData.COMPLETENESS] = True
 
         original_type_hint_data = original_type_hint_data[
             ~original_type_hint_data[MetricDataCalculator.INDEX].isin(merged_data[MetricDataCalculator.INDEX])]
@@ -55,9 +55,9 @@ class MetricDataCalculator:
         subset_merged.remove(constants.TraceData.VARTYPE)
 
         original_type_hint_data = original_type_hint_data.rename(
-            {constants.TraceData.VARTYPE: constants.TraceData.VARTYPE_ORIGINAL}, axis=1)
+            {constants.TraceData.VARTYPE: constants.TypeHintData.VARTYPE_ORIGINAL}, axis=1)
         generated_type_hint_data = generated_type_hint_data.rename(
-            {constants.TraceData.VARTYPE: constants.TraceData.VARTYPE_GENERATED}, axis=1)
+            {constants.TraceData.VARTYPE: constants.TypeHintData.VARTYPE_GENERATED}, axis=1)
 
         original_type_hint_data[MetricDataCalculator.CUMCOUNT] = original_type_hint_data.groupby(
             subset_merged).cumcount()
@@ -68,15 +68,15 @@ class MetricDataCalculator:
         merged_data2 = pd.merge(original_type_hint_data, generated_type_hint_data,
                                 on=subset_merged, how='outer')  # type: ignore
         merged_data2 = merged_data2.drop(MetricDataCalculator.CUMCOUNT, axis=1)
-        merged_data2[constants.TraceData.CORRECTNESS] = False
-        merged_data2[constants.TraceData.COMPLETENESS] = False
+        merged_data2[constants.TypeHintData.CORRECTNESS] = False
+        merged_data2[constants.TypeHintData.COMPLETENESS] = False
         merged_data2.loc[
-            ~merged_data2[constants.TraceData.VARTYPE_GENERATED].isna(), constants.TraceData.COMPLETENESS] = True
-        indices_original_types_missing = merged_data2[constants.TraceData.VARTYPE_ORIGINAL].isna()
-        merged_data2.loc[indices_original_types_missing, constants.TraceData.COMPLETENESS] = None
-        merged_data2.loc[indices_original_types_missing, constants.TraceData.CORRECTNESS] = None
+            ~merged_data2[constants.TypeHintData.VARTYPE_GENERATED].isna(), constants.TypeHintData.COMPLETENESS] = True
+        indices_original_types_missing = merged_data2[constants.TypeHintData.VARTYPE_ORIGINAL].isna()
+        merged_data2.loc[indices_original_types_missing, constants.TypeHintData.COMPLETENESS] = None
+        merged_data2.loc[indices_original_types_missing, constants.TypeHintData.CORRECTNESS] = None
 
-        columns_in_correct_order = list(constants.TraceData.METRICS_SCHEMA.keys())
+        columns_in_correct_order = list(constants.TypeHintData.METRICS_SCHEMA.keys())
         columns_in_correct_order.append(MetricDataCalculator.INDEX)
         columns_in_correct_order.append(MetricDataCalculator.INDEX2)
         merged_data2 = merged_data2[columns_in_correct_order]
@@ -87,14 +87,14 @@ class MetricDataCalculator:
         processed_data = processed_data.sort_values(by=[MetricDataCalculator.INDEX, MetricDataCalculator.INDEX2])\
             .reset_index(drop=True)
         processed_data = processed_data.drop([MetricDataCalculator.INDEX, MetricDataCalculator.INDEX2], axis=1)
-        processed_data = processed_data.astype(constants.TraceData.METRICS_SCHEMA)
+        processed_data = processed_data.astype(constants.TypeHintData.METRICS_SCHEMA)
 
         return processed_data
 
     def get_total_completeness_and_correctness(self, metric_data: pd.DataFrame) -> tuple[float, float]:
         """Gets the total completeness & correctness of a given metric data."""
-        completeness_column = metric_data[constants.TraceData.COMPLETENESS]
-        correctness_column = metric_data[constants.TraceData.CORRECTNESS]
+        completeness_column = metric_data[constants.TypeHintData.COMPLETENESS]
+        correctness_column = metric_data[constants.TypeHintData.CORRECTNESS]
 
         total_completeness_count = completeness_column[~completeness_column.isna()].shape[0]
         total_completeness_is_true_count = completeness_column[completeness_column].shape[0]

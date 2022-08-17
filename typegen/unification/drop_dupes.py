@@ -18,5 +18,5 @@ class DropDuplicatesFilter(TraceDataFilter):
         """
         processed_trace_data = trace_data.drop_duplicates(ignore_index=True)
         return processed_trace_data.reset_index(drop=True).astype(
-            constants.TraceData.SCHEMA
+            constants.AnnotationData.SCHEMA
         )

@@ -44,18 +44,18 @@ def test_factory():
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[3, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data.loc[9, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data.loc[3, constants.AnnotationData.VARTYPE] = "SubClass1"
+    expected_trace_data.loc[9, constants.AnnotationData.VARTYPE] = "SubClass1"
+    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
 
     trace_data = get_sample_trace_data()
     actual_trace_data = strict_rstf.apply(trace_data)
 
     exp_types_and_module = expected_trace_data[
-        [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
+        [constants.AnnotationData.VARTYPE_MODULE, constants.AnnotationData.VARTYPE]
     ]
     act_types_and_module = actual_trace_data[
-        [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
+        [constants.AnnotationData.VARTYPE_MODULE, constants.AnnotationData.VARTYPE]
     ]
 
     logging.debug(f"expected: \n{exp_types_and_module}")
@@ -67,19 +67,19 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
 
 def test_replace_subtypes_filter_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().reset_index(drop=True)
-    expected_trace_data.loc[:3, constants.TraceData.VARTYPE] = "BaseClass"
-    expected_trace_data.loc[3:, constants.TraceData.VARTYPE] = "SubClass1"
-    expected_trace_data.loc[10:, constants.TraceData.VARTYPE] = "BaseClass"
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data.loc[:3, constants.AnnotationData.VARTYPE] = "BaseClass"
+    expected_trace_data.loc[3:, constants.AnnotationData.VARTYPE] = "SubClass1"
+    expected_trace_data.loc[10:, constants.AnnotationData.VARTYPE] = "BaseClass"
+    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
 
     trace_data = get_sample_trace_data()
     actual_trace_data = relaxed_rstf.apply(trace_data)
 
     exp_types_and_module = expected_trace_data[
-        [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
+        [constants.AnnotationData.VARTYPE_MODULE, constants.AnnotationData.VARTYPE]
     ]
     act_types_and_module = actual_trace_data[
-        [constants.TraceData.VARTYPE_MODULE, constants.TraceData.VARTYPE]
+        [constants.AnnotationData.VARTYPE_MODULE, constants.AnnotationData.VARTYPE]
     ]
 
     logging.debug(f"expected: \n{exp_types_and_module}")
@@ -96,7 +96,7 @@ def test_replace_subtypes_filter_processes_and_returns_correct_data():
 # Attempt to unify types with nothing in common apart from "object"
 # Nothing should change in the traced data, as this type hint is better suited for a union type
 def test_ignore_object_base_type():
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_subtyping.py")
     resource_module = "tests.typegen.unification.test_subtyping"
@@ -111,6 +111,7 @@ def test_ignore_object_base_type():
         "vname",
         None,
         "int",
+        False,
     ]
 
     trace_data.loc[len(trace_data.index)] = [
@@ -123,9 +124,10 @@ def test_ignore_object_base_type():
         "vname",
         None,
         "str",
+        False,
     ]
 
-    expected = trace_data.copy().astype(constants.TraceData.SCHEMA)
+    expected = trace_data.copy().astype(constants.AnnotationData.SCHEMA)
 
     # once for strict
     strict_actual = strict_rstf.apply(trace_data)
@@ -142,7 +144,7 @@ class Wacky(int):
 
 
 def test_inherit_from_builtin_type():
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_subtyping.py")
     resource_module = "tests.typegen.unification.test_subtyping"
@@ -157,6 +159,7 @@ def test_inherit_from_builtin_type():
         "vname",
         None,
         "int",
+        False,
     ]
 
     trace_data.loc[len(trace_data.index)] = [
@@ -169,12 +172,13 @@ def test_inherit_from_builtin_type():
         "vname",
         resource_module,
         "Wacky",
+        False,
     ]
 
     expected = trace_data.copy()
-    expected.loc[len(trace_data.index) - 1, constants.TraceData.VARTYPE_MODULE] = None
-    expected.loc[len(trace_data.index) - 1, constants.TraceData.VARTYPE] = "int"
-    expected = expected.astype(constants.TraceData.SCHEMA)
+    expected.loc[len(trace_data.index) - 1, constants.AnnotationData.VARTYPE_MODULE] = None
+    expected.loc[len(trace_data.index) - 1, constants.AnnotationData.VARTYPE] = "int"
+    expected = expected.astype(constants.AnnotationData.SCHEMA)
     # once for strict
     strict_actual = strict_rstf.apply(trace_data)
 
@@ -194,7 +198,7 @@ def test_inherit_from_builtin_type():
 
 
 def test_unify_stdlib_types():
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_subtyping.py")
 
@@ -208,6 +212,7 @@ def test_unify_stdlib_types():
         "vname",
         "pathlib",
         "PosixPath",
+        False,
     ]
 
     trace_data.loc[len(trace_data.index)] = [
@@ -220,8 +225,9 @@ def test_unify_stdlib_types():
         "vname",
         "pathlib",
         "WindowsPath",
+        False,
     ]
-    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
+    trace_data = trace_data.astype(constants.AnnotationData.SCHEMA)
 
     # once for strict
     # strict will not pick this up, as Path is not in the trace data
@@ -236,8 +242,8 @@ def test_unify_stdlib_types():
     relaxed_actual = relaxed_rstf.apply(trace_data)
 
     expected = trace_data.copy()
-    expected.loc[:, constants.TraceData.VARTYPE] = "Path"
-    expected = expected.astype(constants.TraceData.SCHEMA)
+    expected.loc[:, constants.AnnotationData.VARTYPE] = "Path"
+    expected = expected.astype(constants.AnnotationData.SCHEMA)
 
     logging.debug(f"expected: \n{expected}")
     logging.debug(f"actual: \n{relaxed_actual}")
@@ -256,7 +262,7 @@ def test_no_subtype_pandas_builtin():
     # Considering we use this DataFrame solely for typegenning, this should not be a problem.
     # If any error message like "TypeError: can only compare 'DataFrame' (not 'DataFrame') with 'DataFrame'
     # appears, revisit this test!
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_subtyping.py")
 
@@ -270,6 +276,7 @@ def test_no_subtype_pandas_builtin():
         "vname",
         "pandas.core.frame",
         "DataFrame",
+        False,
     ]
 
     trace_data.loc[len(trace_data.index)] = [
@@ -282,8 +289,9 @@ def test_no_subtype_pandas_builtin():
         "vname",
         None,
         "int",
+        False,
     ]
-    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
+    trace_data = trace_data.astype(constants.AnnotationData.SCHEMA)
 
     # once for strict
     # strict will not pick this up, as there is no common type
@@ -299,7 +307,7 @@ def test_no_subtype_pandas_builtin():
     # relaxed will not pick this up, as there is no common type
     relaxed_actual = relaxed_rstf.apply(trace_data)
     logging.debug(f"Columns: {relaxed_actual.columns}")
-    relaxed_actual = relaxed_actual.astype(constants.TraceData.SCHEMA)
+    relaxed_actual = relaxed_actual.astype(constants.AnnotationData.SCHEMA)
 
     logging.debug(f"\nexpected: \n{trace_data}")
     logging.debug(f"\nactual: \n{relaxed_actual}")

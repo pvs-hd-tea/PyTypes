@@ -17,10 +17,10 @@ class KeepOnlyFirstFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
 
-        subset = list(constants.TraceData.SCHEMA.keys())
-        subset.remove(constants.TraceData.VARTYPE_MODULE)
-        subset.remove(constants.TraceData.VARTYPE)
+        subset = list(constants.AnnotationData.SCHEMA.keys())
+        subset.remove(constants.AnnotationData.VARTYPE_MODULE)
+        subset.remove(constants.AnnotationData.VARTYPE)
 
         grouped_data = trace_data.groupby(subset, as_index=False, dropna=False)
         processed_data = grouped_data.nth(0)
-        return processed_data.reset_index(drop=True).astype(constants.TraceData.SCHEMA)
+        return processed_data.reset_index(drop=True).astype(constants.AnnotationData.SCHEMA)

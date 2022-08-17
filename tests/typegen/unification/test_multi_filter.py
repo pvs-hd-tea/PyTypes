@@ -25,7 +25,7 @@ def test_factory():
 
 def test_trace_data_filter_list_processes_and_returns_correct_data():
     expected_trace_data = get_sample_trace_data().iloc[[4, 5, 7]].reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
 
     drop_test_function_data_filter = TraceDataFilter(
         ident=DropTestFunctionDataFilter.ident, test_name_pat="test_"

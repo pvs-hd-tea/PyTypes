@@ -3,7 +3,7 @@ from typegen.unification.filter_base import TraceDataFilter
 
 import pandas as pd
 
-from constants import TraceData
+from constants import AnnotationData
 
 
 logger = logging.getLogger(__name__)
@@ -17,35 +17,37 @@ class UnionFilter(TraceDataFilter):
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         grouped = trace_data.groupby(
             by=[
-                TraceData.CLASS_MODULE,
-                TraceData.CLASS,
-                TraceData.FUNCNAME,
-                TraceData.LINENO,
-                TraceData.CATEGORY,
-                TraceData.VARNAME,
-                
+                AnnotationData.CLASS_MODULE,
+                AnnotationData.CLASS,
+                AnnotationData.FUNCNAME,
+                AnnotationData.LINENO,
+                AnnotationData.CATEGORY,
+                AnnotationData.VARNAME,
             ],
             dropna=False,
         )
 
         processed_trace_data = grouped.apply(lambda group: self._update_group(group))
-        typed = processed_trace_data.reset_index(drop=True).astype(TraceData.SCHEMA)
-        typed.columns = list(TraceData.SCHEMA.keys()) + [TraceData.UNION_IMPORT]
-        return typed
+
+        logger.debug(f"Calculated:\n{processed_trace_data}")
+        restored = processed_trace_data.reset_index(drop=True).astype(
+            AnnotationData.SCHEMA
+        )
+        restored.columns = list(AnnotationData.SCHEMA.keys())
+        return restored
 
     def _update_group(self, group):
-        to_group = group[[TraceData.VARTYPE, TraceData.VARTYPE_MODULE]]
         if group.shape[0] == 1:
             logger.debug(
-                f"No union to build from {to_group[TraceData.VARTYPE_MODULE].values[0]}.{to_group[TraceData.VARTYPE].values[0]}"
+                f"No union to build from {group[AnnotationData.VARTYPE_MODULE].values[0]}.{group[AnnotationData.VARTYPE].values[0]}"
                 "Only one value in this group"
             )
             return group
 
-        new_module = ",".join(to_group[TraceData.VARTYPE_MODULE])
-        new_type = " | ".join(to_group[TraceData.VARTYPE])
+        new_module = ",".join(group[AnnotationData.VARTYPE_MODULE])
+        new_type = " | ".join(group[AnnotationData.VARTYPE])
 
-        group[TraceData.VARTYPE_MODULE] = new_module
-        group[TraceData.VARTYPE] = new_type
-        group[TraceData.UNION_IMPORT] = True
+        group[AnnotationData.VARTYPE_MODULE] = new_module
+        group[AnnotationData.VARTYPE] = new_type
+        group[AnnotationData.UNION_IMPORT] = True
         return group
