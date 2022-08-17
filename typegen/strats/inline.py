@@ -55,7 +55,16 @@ class TypeHintTransformer(cst.CSTTransformer):
 
     def __init__(self, module: str, relevant: pd.DataFrame) -> None:
         super().__init__()
-        self.df = relevant
+
+        # corner case: NoneType can be hinted with None to avoid needing an import
+        self.df = relevant.copy()
+
+        builtin_mask = self.df[TraceData.VARTYPE_MODULE].isnull()
+        nonetype_mask = self.df[TraceData.VARTYPE] == "NoneType"
+
+        mask = functools.reduce(operator.and_, [builtin_mask, nonetype_mask])
+        self.df.loc[mask, TraceData.VARTYPE] = "None"
+
         self._module = module
         self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
 

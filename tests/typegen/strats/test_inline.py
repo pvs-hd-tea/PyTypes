@@ -120,7 +120,8 @@ class HintTest(cst.CSTVisitor):
                 elif node.target.value == "d":
                     assert node.annotation.annotation.value == "float"
                 elif node.target.value == "e":
-                    assert node.annotation.annotation.value == "NoneType"
+                    # corner case: NoneType is replaced by None
+                    assert node.annotation.annotation.value == "None"
                 else:
                     assert False, f"Unhandled ann-assign without target: {dump(node)}"
             elif isinstance(node.target, cst.Attribute):
