@@ -51,9 +51,9 @@ class UnionFilter(TraceDataFilter):
         new_module = ",".join(group[TraceData.VARTYPE_MODULE].fillna(""))
         new_type = " | ".join(group[TraceData.VARTYPE])
 
-        updateable = group.copy()
+        updated_group = group.copy()
 
-        updateable[TraceData.VARTYPE_MODULE] = new_module
-        updateable[TraceData.VARTYPE] = new_type
+        updated_group[TraceData.VARTYPE_MODULE] = new_module
+        updated_group[TraceData.VARTYPE] = new_type
 
-        return updateable
+        return updated_group

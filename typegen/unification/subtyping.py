@@ -80,11 +80,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 logger.debug(f"Discarding {common}; type was not found in trace data")
                 return group
 
-        updateable = group.copy()
+        updated_group = group.copy()
 
-        updateable[TraceData.VARTYPE_MODULE] = basetype_module
-        updateable[TraceData.VARTYPE] = basetype
-        return updateable
+        updated_group[TraceData.VARTYPE_MODULE] = basetype_module
+        updated_group[TraceData.VARTYPE] = basetype
+        return updated_group
 
     def _get_common_base_type(
         self, modules_with_types: pd.DataFrame
