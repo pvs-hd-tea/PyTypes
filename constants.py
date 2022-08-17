@@ -28,11 +28,6 @@ class TraceData:
     VARNAME = "VarName"
     VARTYPE_MODULE = "TypeModule"
     VARTYPE = "Type"
-    COLUMN_OFFSET = "ColumnOffset"
-    VARTYPE_ORIGINAL = "OriginalType"
-    VARTYPE_GENERATED = "GeneratedType"
-    COMPLETENESS = "Completeness"
-    CORRECTNESS = "Correctness"
 
     SCHEMA = {
         # relative path to file of variable,
@@ -63,6 +58,23 @@ class TraceData:
         # never None
         VARTYPE: pd.StringDtype(),
     }
+
+class TypeHintData:
+    FILENAME = "Filename"
+    CLASS_MODULE = "ClassModule"
+    CLASS = "Class"
+    FUNCNAME = "FunctionName"
+    LINENO = "LineNo"
+    CATEGORY = "Category"
+    VARNAME = "VarName"
+    VARTYPE_MODULE = "TypeModule"
+    VARTYPE = "Type"
+
+    COLUMN_OFFSET = "ColumnOffset"
+    VARTYPE_ORIGINAL = "OriginalType"
+    VARTYPE_GENERATED = "GeneratedType"
+    COMPLETENESS = "Completeness"
+    CORRECTNESS = "Correctness"
 
     TYPE_HINT_SCHEMA = {
         FILENAME: pd.StringDtype(),
