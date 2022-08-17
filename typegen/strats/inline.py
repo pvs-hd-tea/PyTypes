@@ -50,6 +50,23 @@ def _find_targets(
     return extractor.targets
 
 
+def _create_annotation_from_vartype(vartype: str) -> cst.Annotation:
+    # handle union types
+    vartypes = vartype.split(" | ")
+    if len(vartypes) == 1:
+        return cst.Annotation(annotation=cst.Name(vartype))
+
+    as_types = list(map(cst.Name, vartypes))
+
+    lhs, rhs, remaining = *as_types[:2], as_types[2:]
+
+    initial = cst.BinaryOperation(left=lhs, operator=cst.BitOr(), right=rhs)
+    combined = functools.reduce(
+        lambda acc, curr: cst.BinaryOperation(left=acc, operator=cst.BitOr(), right=curr), remaining, initial
+    )
+    return cst.Annotation(annotation=combined)
+
+
 class TypeHintTransformer(cst.CSTTransformer):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
@@ -245,7 +262,9 @@ class TypeHintTransformer(cst.CSTTransformer):
         logger.debug(
             f"Applying hint '{argtype}' to parameter '{original_node.name.value}'"
         )
-        return updated_node.with_changes(annotation=cst.Annotation(cst.Name(argtype)))
+        return updated_node.with_changes(
+            annotation=_create_annotation_from_vartype(argtype)
+        )
 
     def leave_AugAssign(
         self, original_node: cst.AugAssign, _: cst.AugAssign
@@ -274,7 +293,7 @@ class TypeHintTransformer(cst.CSTTransformer):
             hinted_targets.append(
                 cst.AnnAssign(
                     target=original_node.target,
-                    annotation=cst.Annotation(cst.Name(value=hint)),
+                    annotation=_create_annotation_from_vartype(hint),
                     value=None,
                 )
             )
@@ -321,7 +340,7 @@ class TypeHintTransformer(cst.CSTTransformer):
                     hinted_targets.append(
                         cst.AnnAssign(
                             target=var,
-                            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                            annotation=_create_annotation_from_vartype(hint_ty),
                             value=None,
                         )
                     )
@@ -352,7 +371,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         # Replace simple assignment with annotated assignment
         return cst.AnnAssign(
             target=original_node.targets[0].target,
-            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+            annotation=_create_annotation_from_vartype(hint_ty),
             value=original_node.value,
         )
 
@@ -397,7 +416,7 @@ class TypeHintTransformer(cst.CSTTransformer):
             # Replace simple assignment with annotated assignment
             return updated_node.with_changes(
                 target=original_node.target,
-                annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                annotation=_create_annotation_from_vartype(hint_ty),
                 value=original_node.value,
             )
 

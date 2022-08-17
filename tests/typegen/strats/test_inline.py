@@ -1,6 +1,7 @@
 import libcst as cst
 from libcst.tool import dump
 from libcst.matchers import matches
+import libcst.matchers as m
 import logging
 import pathlib
 
@@ -156,7 +157,7 @@ def test_callables():
     c_clazz_module = "tests.resource.typegen.callable"
     c_clazz = "C"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -167,6 +168,7 @@ def test_callables():
         "x",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -179,6 +181,7 @@ def test_callables():
         "y",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -191,6 +194,7 @@ def test_callables():
         "add",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -203,6 +207,7 @@ def test_callables():
         "a",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -215,6 +220,7 @@ def test_callables():
         "b",
         None,
         "str",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -227,6 +233,7 @@ def test_callables():
         "c",
         None,
         "bool",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -239,6 +246,7 @@ def test_callables():
         "n",
         None,
         "str",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -251,6 +259,7 @@ def test_callables():
         "s",
         None,
         "str",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -263,6 +272,7 @@ def test_callables():
         "d",
         None,
         "float",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -275,6 +285,7 @@ def test_callables():
         "e",
         None,
         "NoneType",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -287,6 +298,7 @@ def test_callables():
         "method",
         None,
         "bytes",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -299,6 +311,7 @@ def test_callables():
         "outer",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -311,6 +324,7 @@ def test_callables():
         "b",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -323,6 +337,7 @@ def test_callables():
         "inner",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -335,6 +350,7 @@ def test_callables():
         "i",
         None,
         "int",
+        False,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
@@ -352,7 +368,7 @@ def test_assignments():
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -364,6 +380,7 @@ def test_assignments():
         "z",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -375,6 +392,7 @@ def test_assignments():
         "y",
         None,
         "float",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -386,6 +404,7 @@ def test_assignments():
         "d",
         None,
         "dict",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -397,6 +416,7 @@ def test_assignments():
         "s",
         None,
         "set",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -408,6 +428,7 @@ def test_assignments():
         "l",
         None,
         "list",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -420,6 +441,7 @@ def test_assignments():
         "a",
         None,
         "float",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -431,6 +453,7 @@ def test_assignments():
         "b",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -442,6 +465,7 @@ def test_assignments():
         "i",
         None,
         "float",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -453,6 +477,7 @@ def test_assignments():
         "j",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -464,6 +489,7 @@ def test_assignments():
         "f",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -475,6 +501,7 @@ def test_assignments():
         "f",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -486,6 +513,7 @@ def test_assignments():
         "y",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -497,6 +525,7 @@ def test_assignments():
         "f",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -508,6 +537,7 @@ def test_assignments():
         "y",
         None,
         "int",
+        False,
     ]
 
     hinted = gen._gen_hinted_ast(
@@ -528,7 +558,7 @@ def test_imported():
     anotherc_clazz_module = "tests.resource.typegen.importing"
     anotherc_clazz = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -540,6 +570,7 @@ def test_imported():
         "function",
         None,
         "int",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -552,6 +583,7 @@ def test_imported():
         "c",
         c_clazz_module,
         c_clazz,
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -564,6 +596,7 @@ def test_imported():
         "another_function",
         None,
         "str",
+        False,
     ]
 
     traced.loc[len(traced.index)] = [
@@ -576,6 +609,7 @@ def test_imported():
         "c",
         anotherc_clazz_module,
         anotherc_clazz,
+        False,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -633,7 +667,7 @@ def test_present_annotations_are_removed():
     resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
     assert resource_path.is_file()
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -644,6 +678,7 @@ def test_present_annotations_are_removed():
         "",
         None,
         "",
+        False,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -678,7 +713,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
     class_name1 = "AClass"
     class_name2 = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -690,6 +725,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
         "aclass_attr",
         None,
         "int",
+        False,
     ]
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -701,6 +737,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
         "aclass",
         class_module,
         class_name1,
+        False,
     ]
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
@@ -730,3 +767,65 @@ def test_attributes_are_not_annotated_outside_of_classes():
             return True
 
     imported.visit(ExternalAttributesAreHintLessVisitor())
+
+
+def test_union_import_generation():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "unions.py")
+
+    traced = pd.DataFrame(columns=constants.AnnotationData.SCHEMA.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        4,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        ",,pathlib",
+        f"{int.__name__} | {str.__name__} | {pathlib.Path.__name__}",
+        True,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "stringify",
+        None,
+        str.__name__,
+        False,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class CheckUnionApplicationVisitor(cst.CSTVisitor):
+        PATHLIB_IMPORT_M = m.ImportFrom(
+            module=m.Name(value="pathlib"),
+            names=[m.Name(value="Path")]
+        )
+
+        IF_TYPE_CHECKING_M = m.If(test=m.Name("TYPE_CHECKING"))
+
+        def __init__(self) -> None:
+            self.classes: list[cst.ClassDef] = list()
+            self._in_type_matching = False
+
+        def visit_If(self, node: cst.If) -> bool | None:
+            self._in_type_matching = matches(node, CheckUnionApplicationVisitor.IF_TYPE_CHECKING_M)
+            return True
+
+        def leave_If(self, _: cst.If) -> None:
+            self._in_type_matching = False
+
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            if self._in_type_matching:
+                # Only import should be from pathlib import Path
+                assert matches(node, CheckUnionApplicationVisitor.PATHLIB_IMPORT_M)
+            return True
