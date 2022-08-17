@@ -25,29 +25,35 @@ class UnionFilter(TraceDataFilter):
                 AnnotationData.VARNAME,
             ],
             dropna=False,
+            group_keys=False,
+            sort=False
         )
 
-        processed_trace_data = grouped.apply(lambda group: self._update_group(group))
+        unions = [self._update_group(group) for _, group in grouped]
+        processed_trace_data = pd.concat(unions)
 
-        logger.debug(f"Calculated:\n{processed_trace_data}")
-        restored = processed_trace_data.reset_index(drop=True).astype(
-            AnnotationData.SCHEMA
-        )
-        restored.columns = list(AnnotationData.SCHEMA.keys())
+        restored = pd.DataFrame(
+            processed_trace_data.reset_index(drop=True),
+            columns=list(AnnotationData.SCHEMA.keys()),
+        ).astype(AnnotationData.SCHEMA)
         return restored
 
     def _update_group(self, group):
         if group.shape[0] == 1:
+            module = group[AnnotationData.VARTYPE_MODULE].values[0]
+            vartype = group[AnnotationData.VARTYPE].values[0]
             logger.debug(
-                f"No union to build from {group[AnnotationData.VARTYPE_MODULE].values[0]}.{group[AnnotationData.VARTYPE].values[0]}"
-                "Only one value in this group"
+                f"No union to build from module {module}, type {vartype}: Only one value in this group"
             )
             return group
 
         new_module = ",".join(group[AnnotationData.VARTYPE_MODULE])
         new_type = " | ".join(group[AnnotationData.VARTYPE])
 
-        group[AnnotationData.VARTYPE_MODULE] = new_module
-        group[AnnotationData.VARTYPE] = new_type
-        group[AnnotationData.UNION_IMPORT] = True
-        return group
+        updateable = group.copy()
+
+        updateable[AnnotationData.VARTYPE_MODULE] = new_module
+        updateable[AnnotationData.VARTYPE] = new_type
+        updateable[AnnotationData.UNION_IMPORT] = True
+
+        return updateable
