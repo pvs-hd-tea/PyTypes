@@ -4,7 +4,7 @@ import pathlib
 
 import pandas as pd
 import constants
-from constants import Column, Schema
+from constants import Schema
 import logging
 
 logger = logging.getLogger(__name__)

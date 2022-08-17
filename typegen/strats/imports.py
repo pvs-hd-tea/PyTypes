@@ -39,16 +39,14 @@ class _AddImportTransformer(cst.CSTTransformer):
 
         assert not important.duplicated().any()
         importables = important.groupby(
-            by=[Column.VARTYPE_MODULE, Column.VARTYPE],
-            sort=False,
-            dropna=False
+            by=[Column.VARTYPE_MODULE, Column.VARTYPE], sort=False, dropna=False
         )
 
         imports_for_type_hints = []
         for _, group in importables:
             modules = group[Column.VARTYPE_MODULE].values[0]
             types = group[Column.VARTYPE].values[0]
-            
+
             modules = modules.split(",")
             types = types.split(" | ")
 

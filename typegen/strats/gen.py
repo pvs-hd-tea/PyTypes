@@ -11,6 +11,7 @@ from .imports import _AddImportTransformer
 
 logger = logging.getLogger(__name__)
 
+
 class TypeHintGenerator(abc.ABC):
     """Base class for different generation styles of type hints"""
 
