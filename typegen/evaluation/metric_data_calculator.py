@@ -54,12 +54,10 @@ class MetricDataCalculator:
 
         subset_merged.remove(constants.TraceData.VARTYPE)
 
-        original_type_hint_data[constants.TraceData.VARTYPE_ORIGINAL] = \
-            original_type_hint_data[constants.TraceData.VARTYPE]
-        original_type_hint_data = original_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
-        generated_type_hint_data[constants.TraceData.VARTYPE_GENERATED] = \
-            generated_type_hint_data[constants.TraceData.VARTYPE]
-        generated_type_hint_data = generated_type_hint_data.drop(constants.TraceData.VARTYPE, axis=1)
+        original_type_hint_data = original_type_hint_data.rename(
+            {constants.TraceData.VARTYPE: constants.TraceData.VARTYPE_ORIGINAL}, axis=1)
+        generated_type_hint_data = generated_type_hint_data.rename(
+            {constants.TraceData.VARTYPE: constants.TraceData.VARTYPE_GENERATED}, axis=1)
 
         original_type_hint_data[MetricDataCalculator.CUMCOUNT] = original_type_hint_data.groupby(
             subset_merged).cumcount()
@@ -72,10 +70,11 @@ class MetricDataCalculator:
         merged_data2 = merged_data2.drop(MetricDataCalculator.CUMCOUNT, axis=1)
         merged_data2[constants.TraceData.CORRECTNESS] = False
         merged_data2[constants.TraceData.COMPLETENESS] = False
-        merged_data2[constants.TraceData.COMPLETENESS][~merged_data2[constants.TraceData.VARTYPE_GENERATED].isna()] = True
+        merged_data2.loc[
+            ~merged_data2[constants.TraceData.VARTYPE_GENERATED].isna(), constants.TraceData.COMPLETENESS] = True
         indices_original_types_missing = merged_data2[constants.TraceData.VARTYPE_ORIGINAL].isna()
-        merged_data2[constants.TraceData.COMPLETENESS][indices_original_types_missing] = None
-        merged_data2[constants.TraceData.CORRECTNESS][indices_original_types_missing] = None
+        merged_data2.loc[indices_original_types_missing, constants.TraceData.COMPLETENESS] = None
+        merged_data2.loc[indices_original_types_missing, constants.TraceData.CORRECTNESS] = None
 
         columns_in_correct_order = list(constants.TraceData.METRICS_SCHEMA.keys())
         columns_in_correct_order.append(MetricDataCalculator.INDEX)

@@ -28,6 +28,7 @@ def test_if_test_object_searches_for_test_files_in_subfolders_it_generates_test_
         pathlib.Path.cwd(), overwrite_tests=False, recurse_into_subdirs=True
     )
     test_object.apply(project_folder)
+
     test_file_paths = list(
         filter(
             lambda s: not s.name.endswith(PyTestStrategy.SUFFIX), cwd.rglob("test_*.py")
