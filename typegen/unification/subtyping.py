@@ -46,10 +46,12 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 AnnotationData.VARNAME,
             ],
             dropna=False,
+            sort=False,
         )
         processed_trace_data = grouped_trace_data.apply(
             lambda group: self._update_group(trace_data, group)
         )
+
         typed = processed_trace_data.reset_index(drop=True).astype(
             AnnotationData.SCHEMA
         )
@@ -78,9 +80,11 @@ class ReplaceSubTypesFilter(TraceDataFilter):
                 logger.debug(f"Discarding {common}; type was not found in trace data")
                 return group
 
-        group[AnnotationData.VARTYPE_MODULE] = basetype_module
-        group[AnnotationData.VARTYPE] = basetype
-        return group
+        updateable = group.copy()
+
+        updateable[AnnotationData.VARTYPE_MODULE] = basetype_module
+        updateable[AnnotationData.VARTYPE] = basetype
+        return updateable
 
     def _get_common_base_type(
         self, modules_with_types: pd.DataFrame
