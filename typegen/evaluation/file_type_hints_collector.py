@@ -202,7 +202,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
             type_hint,
         ])
 
-    def _get_annotation_value(self, annotation: cst.BinaryOperation | cst.Subscript | cst.Attribute | cst.Name | None) -> str | None:
+    def _get_annotation_value(self, annotation: cst.CSTNode) -> str | None:
         if annotation is None:
             return None
         if isinstance(annotation, cst.BinaryOperation):
@@ -211,7 +211,6 @@ class _TypeHintVisitor(cst.CSTVisitor):
         elif isinstance(annotation, cst.Subscript):
             # It is a type with an inner type.
             return self._get_annotation_value_of_subscript(annotation)
-
         elif isinstance(annotation, cst.Attribute):
             assert isinstance(annotation.value, cst.Name)
             return self._get_annotation_value_of_attribute(annotation)
@@ -234,7 +233,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return self._add_full_module_name_to_annotation(current_annotation)
 
     def _get_annotation_value_of_attribute(self, annotation: cst.Attribute) -> str:
+        assert isinstance(annotation.value, cst.Name)
         module_name = annotation.value.value
+        assert isinstance(annotation.attr, cst.Name)
         type_name = annotation.attr.value
         current_annotation = module_name + "." + type_name
         return self._add_full_module_name_to_annotation(current_annotation)
@@ -244,10 +245,12 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
         left_node = annotation.left
         full_type_name = self._get_annotation_value(left_node)
+        assert full_type_name is not None
         types_in_union.append(full_type_name)
 
         right_node = annotation.right
         full_type_name = self._get_annotation_value(right_node)
+        assert full_type_name is not None
         types_in_union.append(full_type_name)
 
         return " | ".join(types_in_union)
@@ -255,14 +258,18 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def _get_annotation_value_of_subscript(self, actual_annotation: cst.Subscript) -> str:
         outer_type_node = actual_annotation.value
         full_outer_type_name = self._get_annotation_value(outer_type_node)
+        assert isinstance(full_outer_type_name, str)
         inner_type_nodes = actual_annotation.slice
         inner_value = None
         for inner_type_node in inner_type_nodes:
+            assert isinstance(inner_type_node.slice, cst.Index)
             full_inner_type_name = self._get_annotation_value(inner_type_node.slice.value)
+            assert isinstance(full_inner_type_name, str)
             if inner_value is None:
                 inner_value = full_inner_type_name
             else:
                 inner_value += ", " + full_inner_type_name
+        assert isinstance(inner_value, str)
         return full_outer_type_name + '[' + inner_value + ']'
 
     def _add_full_module_name_to_annotation(self, current_annotation: str) -> str:
@@ -299,3 +306,4 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return module_name
         else:
             raise NotImplementedError(type(module_node))
+

@@ -24,7 +24,7 @@ def test_file_type_hints_collector_returns_correct_data_for_filename():
         ["sample_data_of_one_file_root.pytype", "sample_data_of_one_file_sample_folder.pytype"],
         test_object,
         method_to_tests_to_test,
-        24)
+        25)
 
 
 def test_file_type_hints_collector_returns_correct_data_for_filenames():
@@ -39,7 +39,7 @@ def test_file_type_hints_collector_returns_correct_data_for_filenames():
         ["sample_data_of_two_files_root.pytype", "sample_data_of_two_files_sample_folder.pytype"],
         test_object,
         method_to_tests_to_test,
-        27)
+        28)
 
 
 def test_file_type_hints_collector_returns_correct_data_for_folder():
@@ -52,7 +52,7 @@ def test_file_type_hints_collector_returns_correct_data_for_folder():
         ["sample_data_of_folder_root.pytype", "sample_data_of_folder_sample_folder.pytype"],
         test_object,
         method_to_tests_to_test,
-        29)
+        35)
 
 
 def test_file_type_hints_collector_returns_correct_data_for_folder_including_subdirs():
@@ -66,7 +66,7 @@ def test_file_type_hints_collector_returns_correct_data_for_folder_including_sub
          "sample_data_of_folder_sample_folder_including_subdirs.pytype"],
         test_object,
         method_to_tests_to_test,
-        32)
+        38)
 
 
 def test_file_type_hints_collector_returns_correct_data_for_multiple_file_paths():
@@ -79,7 +79,7 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_file_paths(
         ["sample_data_of_two_files_root.pytype", "sample_data_of_two_files_sample_folder.pytype"],
         test_object,
         method_to_tests_to_test,
-        27)
+        28)
 
 
 def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints():
