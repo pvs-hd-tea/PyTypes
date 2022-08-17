@@ -113,6 +113,12 @@ def main(**params):
     collector.collect_data(traced_df_folder, include_also_files_in_subdirectories=True)
 
     print(collector.trace_data)
+    td_df = collector.trace_data
+
+    td_df.trace_data[constants.AnnotationData.UNION_IMPORT] = False
+    td_df = td_df.astype(constants.AnnotationData.SCHEMA)
+    
+
 
     filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)
     filtered = filter_list.apply(collector.trace_data)

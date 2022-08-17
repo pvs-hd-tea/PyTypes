@@ -15,7 +15,6 @@ class UnionFilter(TraceDataFilter):
     ident = "union"
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        trace_data["union_import"] = False
         grouped = trace_data.groupby(
             by=[
                 TraceData.CLASS_MODULE,
@@ -24,14 +23,14 @@ class UnionFilter(TraceDataFilter):
                 TraceData.LINENO,
                 TraceData.CATEGORY,
                 TraceData.VARNAME,
-                "union_import"
+                
             ],
             dropna=False,
         )
 
         processed_trace_data = grouped.apply(lambda group: self._update_group(group))
         typed = processed_trace_data.reset_index(drop=True).astype(TraceData.SCHEMA)
-        typed.columns = list(TraceData.SCHEMA.keys()) + ["union_import"]
+        typed.columns = list(TraceData.SCHEMA.keys()) + [TraceData.UNION_IMPORT]
         return typed
 
     def _update_group(self, group):
@@ -48,5 +47,5 @@ class UnionFilter(TraceDataFilter):
 
         group[TraceData.VARTYPE_MODULE] = new_module
         group[TraceData.VARTYPE] = new_type
-        group["union_import"] = True
+        group[TraceData.UNION_IMPORT] = True
         return group
