@@ -59,14 +59,6 @@ class TraceData:
         VARTYPE: pd.StringDtype(),
     }
 
-
-class AnnotationData(TraceData):
-    # Extra attribute to tack on in case the union filter is applied
-    UNION_IMPORT = "UnionImport"
-
-    SCHEMA = TraceData.SCHEMA | {UNION_IMPORT: pd.BooleanDtype()}
-
-
 class TypeHintData:
     FILENAME = "Filename"
     CLASS_MODULE = "ClassModule"

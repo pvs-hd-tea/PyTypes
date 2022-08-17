@@ -6,7 +6,7 @@ import os
 import libcst as cst
 import pandas as pd
 
-from constants import AnnotationData
+from constants import TraceData
 
 
 class _AddImportTransformer(cst.CSTTransformer):
@@ -19,15 +19,15 @@ class _AddImportTransformer(cst.CSTTransformer):
             return os.path.splitext(file.replace(os.path.sep, "."))[0]
 
         # Stupid implementation: make from x import y everywhere
-        self.applicable["modules"] = self.applicable[AnnotationData.FILENAME].map(
+        self.applicable["modules"] = self.applicable[TraceData.FILENAME].map(
             lambda f: file2module(f)
         )
 
         # ignore builtins
-        non_builtin = self.applicable[AnnotationData.VARTYPE_MODULE].notnull()
+        non_builtin = self.applicable[TraceData.VARTYPE_MODULE].notnull()
         # ignore classes in the same module
         not_in_same_mod = (
-            self.applicable["modules"] != self.applicable[AnnotationData.VARTYPE_MODULE]
+            self.applicable["modules"] != self.applicable[TraceData.VARTYPE_MODULE]
         )
         retain_mask = [
             non_builtin,
@@ -40,16 +40,15 @@ class _AddImportTransformer(cst.CSTTransformer):
 
         assert not important.duplicated().any()
         importables = important.groupby(
-            by=[AnnotationData.VARTYPE_MODULE, AnnotationData.VARTYPE],
+            by=[TraceData.VARTYPE_MODULE, TraceData.VARTYPE],
             sort=False,
             dropna=False
         )
 
         imports_for_type_hints = []
         for _, group in importables:
-            modules = group[AnnotationData.VARTYPE_MODULE].values[0]
-            types = group[AnnotationData.VARTYPE].values[0]
-            is_union_import = group[AnnotationData.UNION_IMPORT].values[0]
+            modules = group[TraceData.VARTYPE_MODULE].values[0]
+            types = group[TraceData.VARTYPE].values[0]
             
             modules = modules.split(",")
             types = types.split(" | ")

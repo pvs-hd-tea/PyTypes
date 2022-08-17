@@ -16,7 +16,7 @@ def test_drop_variables_of_multiple_types_filter_processes_and_returns_correct_d
     sample_trace_data,
 ):
     expected_trace_data = sample_trace_data.copy().iloc[[5, 6]].reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = sample_trace_data.copy()
     actual_trace_data = multi_var_filter.apply(trace_data)

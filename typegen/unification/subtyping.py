@@ -5,7 +5,7 @@ import pathlib
 from tracing.resolver import Resolver
 
 from .filter_base import TraceDataFilter
-from constants import AnnotationData
+from constants import TraceData
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +38,12 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
         grouped_trace_data = trace_data.groupby(
             by=[
-                AnnotationData.CLASS_MODULE,
-                AnnotationData.CLASS,
-                AnnotationData.FUNCNAME,
-                AnnotationData.LINENO,
-                AnnotationData.CATEGORY,
-                AnnotationData.VARNAME,
+                TraceData.CLASS_MODULE,
+                TraceData.CLASS,
+                TraceData.FUNCNAME,
+                TraceData.LINENO,
+                TraceData.CATEGORY,
+                TraceData.VARNAME,
             ],
             dropna=False,
             sort=False,
@@ -53,17 +53,17 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         )
 
         typed = processed_trace_data.reset_index(drop=True).astype(
-            AnnotationData.SCHEMA
+            TraceData.SCHEMA
         )
-        typed.columns = list(AnnotationData.SCHEMA.keys())
+        typed.columns = list(TraceData.SCHEMA.keys())
         return typed
 
     def _update_group(self, entire: pd.DataFrame, group):
         modules_with_types_in_group = group[
             [
-                AnnotationData.FILENAME,
-                AnnotationData.VARTYPE_MODULE,
-                AnnotationData.VARTYPE,
+                TraceData.FILENAME,
+                TraceData.VARTYPE_MODULE,
+                TraceData.VARTYPE,
             ]
         ]
         common = self._get_common_base_type(modules_with_types_in_group)
@@ -72,18 +72,18 @@ class ReplaceSubTypesFilter(TraceDataFilter):
 
         basetype_module, basetype = common
         if self.only_replace_if_base_was_traced:
-            if basetype_module not in entire[AnnotationData.VARTYPE_MODULE].values:
+            if basetype_module not in entire[TraceData.VARTYPE_MODULE].values:
                 logger.debug(f"Discarding {common}; module was not found in trace data")
                 return group
 
-            if basetype not in entire[AnnotationData.VARTYPE].values:
+            if basetype not in entire[TraceData.VARTYPE].values:
                 logger.debug(f"Discarding {common}; type was not found in trace data")
                 return group
 
         updateable = group.copy()
 
-        updateable[AnnotationData.VARTYPE_MODULE] = basetype_module
-        updateable[AnnotationData.VARTYPE] = basetype
+        updateable[TraceData.VARTYPE_MODULE] = basetype_module
+        updateable[TraceData.VARTYPE] = basetype
         return updateable
 
     def _get_common_base_type(
@@ -92,8 +92,8 @@ class ReplaceSubTypesFilter(TraceDataFilter):
         type2bases = {}
         for _, row in modules_with_types.iterrows():
             varmodule, vartyp = (
-                row[AnnotationData.VARTYPE_MODULE],
-                row[AnnotationData.VARTYPE],
+                row[TraceData.VARTYPE_MODULE],
+                row[TraceData.VARTYPE],
             )
             types_topologically_sorted = self._get_type_and_mro(varmodule, vartyp)
 

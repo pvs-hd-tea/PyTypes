@@ -22,10 +22,10 @@ def test_drop_test_function_data_filter_processes_and_returns_correct_data(sampl
     expected_trace_data = expected_trace_data.drop(index=[10, 11, 12, 13, 14]).reset_index(
         drop=True
     )
-    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = sample_trace_data.copy()
-    trace_data = trace_data.astype(constants.AnnotationData.SCHEMA)
+    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
     actual_trace_data = drop_test_filter.apply(trace_data)
 
     assert expected_trace_data.equals(

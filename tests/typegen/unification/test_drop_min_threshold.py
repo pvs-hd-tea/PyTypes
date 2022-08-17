@@ -17,7 +17,7 @@ def test_drop_duplicates_filter_processes_and_returns_correct_data_and_differenc
 ):
     expected_trace_data = sample_trace_data.copy().reset_index(drop=True)
     expected_trace_data = expected_trace_data.drop(index=14).reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.AnnotationData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
 
     trace_data = sample_trace_data.copy()
     actual_trace_data = drop_min_threshold.apply(trace_data)
