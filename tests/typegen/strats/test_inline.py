@@ -5,7 +5,7 @@ import libcst.matchers as m
 import logging
 import pathlib
 
-import constants
+from constants import Column, Schema
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
@@ -157,7 +157,7 @@ def test_callables():
     c_clazz_module = "tests.resource.typegen.callable"
     c_clazz = "C"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -353,7 +353,7 @@ def test_assignments():
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -529,7 +529,7 @@ def test_imported():
     anotherc_clazz_module = "tests.resource.typegen.importing"
     anotherc_clazz = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -634,7 +634,7 @@ def test_present_annotations_are_removed():
     resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
     assert resource_path.is_file()
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -679,7 +679,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
     class_name1 = "AClass"
     class_name2 = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -736,7 +736,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
 def test_union_import_generation():
     resource_path = pathlib.Path("tests", "resource", "typegen", "unions.py")
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,

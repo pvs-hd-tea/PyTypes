@@ -6,7 +6,7 @@ import typing
 import libcst as cst
 import pandas as pd
 
-from constants import TraceData
+from constants import Column
 from .imports import _AddImportTransformer
 
 logger = logging.getLogger(__name__)
@@ -42,11 +42,11 @@ class TypeHintGenerator(abc.ABC):
         return True
 
     def apply(self, root: pathlib.Path):
-        files = self.types[TraceData.FILENAME].unique()
+        files = self.types[Column.FILENAME].unique()
         as_paths = map(pathlib.Path, files)
         for path in filter(self._is_hintable_file, as_paths):
             # Get type hints relevant to this file
-            applicable = self.types[self.types[TraceData.FILENAME] == str(path)]
+            applicable = self.types[self.types[Column.FILENAME] == str(path)]
             if not applicable.empty:
                 logger.info(f"Generating type hints for {path}")
 

@@ -2,7 +2,7 @@ import pandas as pd
 
 from .filter_base import TraceDataFilter
 
-import constants
+from constants import Column, Schema
 
 
 class MinThresholdFilter(TraceDataFilter):
@@ -22,17 +22,17 @@ class MinThresholdFilter(TraceDataFilter):
 
         @param trace_data The provided trace data to process.
         """
-        subset = list(constants.TraceData.SCHEMA.keys())
+        subset = list(Schema.TraceData.keys())
         grouped_trace_data = (
-            trace_data.groupby(subset, dropna=False)[constants.TraceData.VARTYPE]
+            trace_data.groupby(subset, dropna=False)[Column.VARTYPE]
             .count()
             .reset_index(name=MinThresholdFilter.COUNT_COLUMN)
         )
         joined_trace_data = pd.merge(
             trace_data, grouped_trace_data, on=subset, how="inner"
         )
-        subset.remove(constants.TraceData.VARTYPE_MODULE)
-        subset.remove(constants.TraceData.VARTYPE)
+        subset.remove(Column.VARTYPE_MODULE)
+        subset.remove(Column.VARTYPE)
 
         grouped_trace_data = (
             joined_trace_data.groupby(subset, dropna=False)[
@@ -56,6 +56,4 @@ class MinThresholdFilter(TraceDataFilter):
             [MinThresholdFilter.COUNT_COLUMN, MinThresholdFilter.MAX_COUNT_COLUMN],
             axis=1,
         )
-        return processed_data.reset_index(drop=True).astype(
-            constants.TraceData.SCHEMA
-        )
+        return processed_data.reset_index(drop=True).astype(Schema.TraceData)

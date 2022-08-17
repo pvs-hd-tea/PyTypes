@@ -1,4 +1,3 @@
-import grp
 import operator
 import functools
 import os
@@ -6,7 +5,7 @@ import os
 import libcst as cst
 import pandas as pd
 
-from constants import TraceData
+from constants import Column
 
 
 class _AddImportTransformer(cst.CSTTransformer):
@@ -19,15 +18,15 @@ class _AddImportTransformer(cst.CSTTransformer):
             return os.path.splitext(file.replace(os.path.sep, "."))[0]
 
         # Stupid implementation: make from x import y everywhere
-        self.applicable["modules"] = self.applicable[TraceData.FILENAME].map(
+        self.applicable["modules"] = self.applicable[Column.FILENAME].map(
             lambda f: file2module(f)
         )
 
         # ignore builtins
-        non_builtin = self.applicable[TraceData.VARTYPE_MODULE].notnull()
+        non_builtin = self.applicable[Column.VARTYPE_MODULE].notnull()
         # ignore classes in the same module
         not_in_same_mod = (
-            self.applicable["modules"] != self.applicable[TraceData.VARTYPE_MODULE]
+            self.applicable["modules"] != self.applicable[Column.VARTYPE_MODULE]
         )
         retain_mask = [
             non_builtin,
@@ -40,15 +39,15 @@ class _AddImportTransformer(cst.CSTTransformer):
 
         assert not important.duplicated().any()
         importables = important.groupby(
-            by=[TraceData.VARTYPE_MODULE, TraceData.VARTYPE],
+            by=[Column.VARTYPE_MODULE, Column.VARTYPE],
             sort=False,
             dropna=False
         )
 
         imports_for_type_hints = []
         for _, group in importables:
-            modules = group[TraceData.VARTYPE_MODULE].values[0]
-            types = group[TraceData.VARTYPE].values[0]
+            modules = group[Column.VARTYPE_MODULE].values[0]
+            types = group[Column.VARTYPE].values[0]
             
             modules = modules.split(",")
             types = types.split(" | ")

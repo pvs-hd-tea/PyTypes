@@ -112,7 +112,7 @@ def main(**params):
     collector = TraceDataFileCollector()
     collector.collect_data(traced_df_folder, include_also_files_in_subdirectories=True)
 
-    td_df = collector.trace_data.astype(constants.TraceData.SCHEMA)
+    td_df = collector.trace_data.astype(Schema.TraceData)
     print(td_df)
 
     filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)

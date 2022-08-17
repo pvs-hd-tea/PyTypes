@@ -3,10 +3,11 @@ import pathlib
 
 import pandas as pd
 
-import constants
+from constants import Schema
 from tracing.trace_data_category import TraceDataCategory
 
 import pytest
+
 
 class BaseClass(abc.ABC):
     pass
@@ -34,7 +35,7 @@ resource_module = "tests.typegen.unification.data"
 
 @pytest.fixture()
 def sample_trace_data() -> pd.DataFrame:
-    trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -45,7 +46,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         resource_module,
-        "SubClass2",]
+        "SubClass2",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -55,7 +57,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         resource_module,
-        "SubClass2",]
+        "SubClass2",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -65,7 +68,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.FUNCTION_PARAMETER,
         "argument1",
         resource_module,
-        "SubClass3",]
+        "SubClass3",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -75,7 +79,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
         resource_module,
-        "SubClass11",]
+        "SubClass11",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -85,7 +90,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable1",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -95,7 +101,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -105,7 +112,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable2",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -115,7 +123,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -125,7 +134,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -135,7 +145,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.CLASS_MEMBER,
         "class_member1",
         resource_module,
-        "SubClass11",]
+        "SubClass11",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -145,7 +156,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -155,7 +167,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -165,7 +178,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -175,7 +189,8 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
         resource_module,
-        "SubClass1",]
+        "SubClass1",
+    ]
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
         None,
@@ -185,6 +200,7 @@ def sample_trace_data() -> pd.DataFrame:
         TraceDataCategory.LOCAL_VARIABLE,
         "local_variable",
         resource_module,
-        "SubClass2",]
-    trace_data = trace_data.astype(constants.TraceData.SCHEMA)
+        "SubClass2",
+    ]
+    trace_data = trace_data.astype(Schema.TraceData)
     return trace_data

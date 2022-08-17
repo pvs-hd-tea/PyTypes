@@ -3,7 +3,8 @@ from re import Pattern
 import pandas as pd
 
 from .filter_base import TraceDataFilter
-import constants
+
+from constants import Column, Schema
 
 
 class DropTestFunctionDataFilter(TraceDataFilter):
@@ -21,8 +22,6 @@ class DropTestFunctionDataFilter(TraceDataFilter):
             )
 
         processed_trace_data = trace_data[
-            ~trace_data[constants.TraceData.FUNCNAME].str.match(
-                self.test_name_pat
-            )
+            ~trace_data[Column.FUNCNAME].str.match(self.test_name_pat)
         ]
-        return processed_trace_data.astype(constants.TraceData.SCHEMA)
+        return processed_trace_data.astype(Schema.TraceData)

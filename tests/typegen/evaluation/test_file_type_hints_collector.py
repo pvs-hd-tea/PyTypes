@@ -2,7 +2,7 @@ import pathlib
 import typing
 
 import pandas as pd
-import constants
+from constants import Column, Schema
 from typegen.evaluation import FileTypeHintsCollector
 
 root = pathlib.Path.cwd()
@@ -144,7 +144,7 @@ def _test_with(
         )
 
         actual_typehint_data = actual_typehint_data.drop(
-            constants.TypeHintData.FILENAME, axis=1
+            Column.FILENAME, axis=1
         )
         actual_data_elements.append(actual_typehint_data)
 
@@ -164,7 +164,7 @@ def _test_and_get_actual_data(
     expected_trace_data_file_path = sample_data_folder_path / expected_data_filename
     expected_typehint_data = pd.read_pickle(expected_trace_data_file_path)
     expected_typehint_data = expected_typehint_data.astype(
-        constants.TypeHintData.TYPE_HINT_SCHEMA
+        Schema.TypeHintData
     )
 
     method_to_test()

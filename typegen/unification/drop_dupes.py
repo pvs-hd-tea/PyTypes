@@ -2,7 +2,7 @@ import pandas as pd
 
 from .filter_base import TraceDataFilter
 
-import constants
+from constants import Schema
 
 
 class DropDuplicatesFilter(TraceDataFilter):
@@ -17,6 +17,4 @@ class DropDuplicatesFilter(TraceDataFilter):
         @param trace_data The provided trace data to process.
         """
         processed_trace_data = trace_data.drop_duplicates(ignore_index=True)
-        return processed_trace_data.reset_index(drop=True).astype(
-            constants.TraceData.SCHEMA
-        )
+        return processed_trace_data.reset_index(drop=True).astype(Schema.TraceData)

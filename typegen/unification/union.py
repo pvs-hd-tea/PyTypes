@@ -3,7 +3,7 @@ from typegen.unification.filter_base import TraceDataFilter
 
 import pandas as pd
 
-from constants import TraceData
+from constants import Column, Schema
 
 
 logger = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ class UnionFilter(TraceDataFilter):
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         grouped = trace_data.groupby(
             by=[
-                TraceData.CLASS_MODULE,
-                TraceData.CLASS,
-                TraceData.FUNCNAME,
-                TraceData.LINENO,
-                TraceData.CATEGORY,
-                TraceData.VARNAME,
+                Column.CLASS_MODULE,
+                Column.CLASS,
+                Column.FUNCNAME,
+                Column.LINENO,
+                Column.CATEGORY,
+                Column.VARNAME,
             ],
             dropna=False,
             group_keys=False,
@@ -35,25 +35,25 @@ class UnionFilter(TraceDataFilter):
 
         restored = pd.DataFrame(
             processed_trace_data.reset_index(drop=True),
-            columns=list(TraceData.SCHEMA.keys()),
-        ).astype(TraceData.SCHEMA)
+            columns=list(Schema.TraceData.keys()),
+        ).astype(Schema.TraceData)
         return restored
 
     def _update_group(self, group):
         if group.shape[0] == 1:
-            module = group[TraceData.VARTYPE_MODULE].values[0]
-            vartype = group[TraceData.VARTYPE].values[0]
+            module = group[Column.VARTYPE_MODULE].values[0]
+            vartype = group[Column.VARTYPE].values[0]
             logger.debug(
                 f"No union to build from module {module}, type {vartype}: Only one value in this group"
             )
             return group
 
-        new_module = ",".join(group[TraceData.VARTYPE_MODULE].fillna(""))
-        new_type = " | ".join(group[TraceData.VARTYPE])
+        new_module = ",".join(group[Column.VARTYPE_MODULE].fillna(""))
+        new_type = " | ".join(group[Column.VARTYPE])
 
         updated_group = group.copy()
 
-        updated_group[TraceData.VARTYPE_MODULE] = new_module
-        updated_group[TraceData.VARTYPE] = new_type
+        updated_group[Column.VARTYPE_MODULE] = new_module
+        updated_group[Column.VARTYPE] = new_type
 
         return updated_group

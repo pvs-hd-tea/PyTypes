@@ -10,7 +10,8 @@ from typegen.unification.subtyping import ReplaceSubTypesFilter
 
 from .data import sample_trace_data
 
-import constants
+from constants import Schema, Column
+
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
@@ -25,7 +26,7 @@ def test_factory():
 
 def test_trace_data_filter_list_processes_and_returns_correct_data(sample_trace_data):
     expected_trace_data = sample_trace_data.copy().iloc[[4, 5, 7]].reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     drop_test_function_data_filter = TraceDataFilter(
         ident=DropTestFunctionDataFilter.ident, test_name_pat="test_"
