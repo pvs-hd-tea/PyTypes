@@ -115,7 +115,6 @@ def main(**params):
     td_df = collector.trace_data.astype(constants.TraceData.SCHEMA)
     print(td_df)
 
-
     filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)
     filtered = filter_list.apply(collector.trace_data)
 
