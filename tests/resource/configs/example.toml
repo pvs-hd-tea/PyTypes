@@ -42,5 +42,5 @@ kind = "drop_min_threshold"
 min_threshold = 0.3
 
 [[unifier]]
-name = "union-name"
+name = "union_name"
 kind = "union"

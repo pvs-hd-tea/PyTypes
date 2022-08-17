@@ -63,7 +63,7 @@ def test_full():
     assert abs(config.unifier[7].min_threshold - 0.3) < 1e-8
 
     assert isinstance(config.unifier[8], ptconfig.Unify)
-    assert config.unifier[8].name == "union-name"
+    assert config.unifier[8].name == "union_name"
     assert config.unifier[8].kind == "union"
 
 
