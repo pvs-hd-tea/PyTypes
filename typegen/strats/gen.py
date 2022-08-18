@@ -49,14 +49,14 @@ class TypeHintGenerator(abc.ABC):
                 module_and_meta = cst.MetadataWrapper(module)
 
                 typed = self._gen_hinted_ast(
-                    df=applicable, hintless_ast=module_and_meta
+                    df=applicable, ast_with_metadata=module_and_meta
                 )
                 imported = self._add_all_imports(applicable, typed)
                 self._store_hinted_ast(source_file=path, hinting=imported)
 
     @abc.abstractmethod
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         """
         Perform operations to generate types for the given file

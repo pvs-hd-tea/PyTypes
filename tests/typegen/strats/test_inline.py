@@ -338,7 +338,7 @@ def test_callables():
 
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -510,7 +510,7 @@ def test_assignments():
     ]
 
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -579,7 +579,7 @@ def test_imported():
 
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -647,7 +647,7 @@ def test_present_annotations_are_removed():
 
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
 
@@ -762,14 +762,14 @@ def function(parameter: Clazz):
 
     evaluation_inline_gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
     hinted = evaluation_inline_gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     assert imported.code == expected_generated_evaluation_inline_code
 
     evaluation_inline_gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = evaluation_inline_gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     assert imported.code == expected_generated_inline_code
@@ -808,7 +808,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
 
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")

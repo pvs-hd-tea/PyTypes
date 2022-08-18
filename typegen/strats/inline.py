@@ -402,7 +402,7 @@ class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         # Access is safe, as check in base class guarantees at least one element
         filename = applicable[TraceData.FILENAME].values[0]
@@ -412,7 +412,7 @@ class InlineGenerator(TypeHintGenerator):
         as_module = path.replace(os.path.sep, ".")
 
         transformer = TypeHintTransformer(as_module, applicable)
-        hinted = hintless_ast.visit(transformer)
+        hinted = ast_with_metadata.visit(transformer)
 
         return hinted
 
@@ -427,7 +427,7 @@ class EvaluationInlineGenerator(InlineGenerator):
     ident = "eval_inline"
 
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         # Access is safe, as check in base class guarantees at least one element
         filename = applicable[TraceData.FILENAME].values[0]
@@ -436,12 +436,12 @@ class EvaluationInlineGenerator(InlineGenerator):
         path = os.path.splitext(filename)[0]
         as_module = path.replace(os.path.sep, ".")
 
-        transformer = RemoveAllTypeHintsTransformer()
-        hintless_ast = hintless_ast.visit(transformer)
+        remove_hints_transformer = RemoveAllTypeHintsTransformer()
+        hintless_ast = ast_with_metadata.visit(remove_hints_transformer)
 
-        hintless_ast = cst.MetadataWrapper(hintless_ast)
-        transformer = TypeHintTransformer(as_module, applicable)
-        hinted = hintless_ast.visit(transformer)
+        hintless_ast_with_metadata = cst.MetadataWrapper(hintless_ast)
+        typehint_transformer = TypeHintTransformer(as_module, applicable)
+        hinted = hintless_ast_with_metadata.visit(typehint_transformer)
 
         return hinted
 
