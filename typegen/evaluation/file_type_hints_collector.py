@@ -5,15 +5,18 @@ import libcst as cst
 from libcst.metadata import PositionProvider
 import constants
 from tracing import TraceDataCategory
-from typegen.evaluation.normalize_unions import union_normalized
+from typegen.evaluation.normalize_types import normalize_type
 
 
 class FileTypeHintsCollector:
     """Collects the type hints of multiple .py files."""
+
     typehint_data: pd.DataFrame
 
     def __init__(self):
-        self.typehint_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+        self.typehint_data = pd.DataFrame(
+            columns=constants.TraceData.TYPE_HINT_SCHEMA.keys()
+        )
 
     def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
         self.collect_data_from_files(root, [filename])
@@ -27,18 +30,25 @@ class FileTypeHintsCollector:
         self.collect_data(root, file_paths)
 
     def collect_data_from_folder(
-            self,
-            root: pathlib.Path,
-            folder: pathlib.Path,
-            include_also_files_in_subdirectories: bool = False) -> None:
+        self,
+        root: pathlib.Path,
+        folder: pathlib.Path,
+        include_also_files_in_subdirectories: bool = False,
+    ) -> None:
         assert folder.is_dir(), f"{folder} is not a folder path."
         file_pattern = "*.py"
-        file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
+        file_paths = (
+            folder.rglob(file_pattern)
+            if include_also_files_in_subdirectories
+            else folder.glob(file_pattern)
+        )
         # Ensures that the order is deterministic.
         sorted_file_paths = sorted(file_paths)
         self.collect_data(root, sorted_file_paths)
 
-    def collect_data(self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]) -> None:
+    def collect_data(
+        self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]
+    ) -> None:
         self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
@@ -155,16 +165,23 @@ class _TypeHintVisitor(cst.CSTVisitor):
             category = TraceDataCategory.LOCAL_VARIABLE
             variable_name = node.target.value
         else:
-            raise TypeError("Unhandled case for: " + type(node.annotation.annotation).__name__)
+            raise TypeError(
+                "Unhandled case for: " + type(node.annotation.annotation).__name__
+            )
         self._add_row(line_number, category, variable_name, type_hint)
         return True
 
     def leave_Module(self, original_node: cst.Module) -> None:
-        self.typehint_data = pd.DataFrame(self.collected_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+        self.typehint_data = pd.DataFrame(
+            self.collected_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys()
+        )
 
         # The typehint data contains line numbers instead of column offsets. These are replaced with the column offset.
         self.typehint_data = self.typehint_data.replace(
-            {constants.TraceData.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number})
+            {
+                constants.TraceData.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number
+            }
+        )
 
     def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
         return node.name.value
@@ -175,13 +192,21 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
         column_offset = pos.column
         if line_number in self.smallest_column_offsets_by_line_number.keys():
-            self.smallest_column_offsets_by_line_number[line_number] = min(self.smallest_column_offsets_by_line_number[line_number], column_offset)
+            self.smallest_column_offsets_by_line_number[line_number] = min(
+                self.smallest_column_offsets_by_line_number[line_number], column_offset
+            )
         else:
             self.smallest_column_offsets_by_line_number[line_number] = column_offset
 
         return line_number
 
-    def _add_row(self, line_number: int, category: TraceDataCategory, variable_name: str | None, type_hint: str | None):
+    def _add_row(
+        self,
+        line_number: int,
+        category: TraceDataCategory,
+        variable_name: str | None,
+        type_hint: str | None,
+    ):
         class_node = self._innermost_class()
         class_name = None
         if class_node:
@@ -190,17 +215,19 @@ class _TypeHintVisitor(cst.CSTVisitor):
         function_name = None
         if function_node:
             function_name = function_node.name.value
-        # if type_hint is not None:
-        #    type_hint = union_normalized(type_hint)
-        self.collected_data.append([
-            self.file_path,
-            class_name,
-            function_name,
-            line_number,
-            category,
-            variable_name,
-            type_hint,
-        ])
+        if type_hint is not None:
+            type_hint = normalize_type(type_hint)
+        self.collected_data.append(
+            [
+                self.file_path,
+                class_name,
+                function_name,
+                line_number,
+                category,
+                variable_name,
+                type_hint,
+            ]
+        )
 
     def _get_annotation_value(self, annotation: cst.CSTNode) -> str | None:
         if annotation is None:
@@ -240,7 +267,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         current_annotation = module_name + "." + type_name
         return self._add_full_module_name_to_annotation(current_annotation)
 
-    def _get_annotation_value_of_binary_operation_union(self, annotation: cst.BinaryOperation) -> str:
+    def _get_annotation_value_of_binary_operation_union(
+        self, annotation: cst.BinaryOperation
+    ) -> str:
         types_in_union = []
 
         left_node = annotation.left
@@ -255,7 +284,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
         return " | ".join(types_in_union)
 
-    def _get_annotation_value_of_subscript(self, actual_annotation: cst.Subscript) -> str:
+    def _get_annotation_value_of_subscript(
+        self, actual_annotation: cst.Subscript
+    ) -> str:
         outer_type_node = actual_annotation.value
         full_outer_type_name = self._get_annotation_value(outer_type_node)
         assert isinstance(full_outer_type_name, str)
@@ -263,14 +294,16 @@ class _TypeHintVisitor(cst.CSTVisitor):
         inner_value = None
         for inner_type_node in inner_type_nodes:
             assert isinstance(inner_type_node.slice, cst.Index)
-            full_inner_type_name = self._get_annotation_value(inner_type_node.slice.value)
+            full_inner_type_name = self._get_annotation_value(
+                inner_type_node.slice.value
+            )
             assert isinstance(full_inner_type_name, str)
             if inner_value is None:
                 inner_value = full_inner_type_name
             else:
                 inner_value += ", " + full_inner_type_name
         assert isinstance(inner_value, str)
-        return full_outer_type_name + '[' + inner_value + ']'
+        return full_outer_type_name + "[" + inner_value + "]"
 
     def _add_full_module_name_to_annotation(self, current_annotation: str) -> str:
         if "." not in current_annotation:
@@ -306,4 +339,3 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return module_name
         else:
             raise NotImplementedError(type(module_node))
-

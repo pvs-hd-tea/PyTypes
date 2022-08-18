@@ -53,8 +53,10 @@ def _normalize_union(union_type_hint: str) -> list[str]:
     return returned_types
 
 
-def _normalize_type_with_inner_types(type_with_inner_types_hint: str) -> str:
-    type_with_inner_types_hint_without_spaces = type_with_inner_types_hint.replace(" ", "")
+def _normalize_type_with_inner_types(type_with_inner_types_hint: str) -> list[str]:
+    type_with_inner_types_hint_without_spaces = type_with_inner_types_hint.replace(
+        " ", ""
+    )
     is_invalid_type_with_inner_types = (
         type_with_inner_types_hint_without_spaces.startswith("typing.Union[")
         or type_with_inner_types_hint_without_spaces.startswith("Union[")
