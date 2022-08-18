@@ -132,14 +132,14 @@ class _TypeHintVisitor(cst.CSTVisitor):
         if not hasattr(node, "annotation") or node.annotation is None:
             return True
         variable_name = self._get_variable_name(node)
-        type_hint = self._get_annotation_value(node.annotation)
+        type_hint = self._get_annotation_value(node.annotation.annotation)
         self._add_row(0, TraceDataCategory.FUNCTION_PARAMETER, variable_name, type_hint)
         return True
 
     def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
         variable_name = self._get_variable_name(node)
         if node.returns:
-            type_hint = self._get_annotation_value(node.returns)
+            type_hint = self._get_annotation_value(node.returns.annotation)
         else:
             type_hint = None
         self._add_row(0, TraceDataCategory.FUNCTION_RETURN, variable_name, type_hint)
@@ -147,7 +147,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         line_number = self._get_line_number(node)
 
-        type_hint = self._get_annotation_value(node.annotation)
+        type_hint = self._get_annotation_value(node.annotation.annotation)
         if isinstance(node.target, cst.Attribute):
             category = TraceDataCategory.CLASS_MEMBER
             variable_name = node.target.attr.value
@@ -190,8 +190,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         function_name = None
         if function_node:
             function_name = function_node.name.value
-        if type_hint is not None:
-            type_hint = union_normalized(type_hint)
+        # if type_hint is not None:
+        #    type_hint = union_normalized(type_hint)
         self.collected_data.append([
             self.file_path,
             class_name,
@@ -202,32 +202,79 @@ class _TypeHintVisitor(cst.CSTVisitor):
             type_hint,
         ])
 
-    def _get_annotation_value(self, annotation: cst.Annotation | None) -> str | None:
+    def _get_annotation_value(self, annotation: cst.CSTNode) -> str | None:
         if annotation is None:
             return None
-
-        actual_annotation = annotation.annotation
-        if isinstance(actual_annotation, cst.Attribute) and isinstance(actual_annotation.value, cst.Name):
-            module_name = actual_annotation.value.value
-            type_name = actual_annotation.attr.value
-        elif isinstance(actual_annotation, cst.Name):
-            module_name = None
-            type_name = actual_annotation.value
-            if type_name in self.defined_classes:
-                # If an import imports a class but a class with the same name is defined in the file,
-                # the class in the file is used.
-                return type_name
-            if type_name in self.imports.keys():
-                module_name = self.imports[type_name]
+        if isinstance(annotation, cst.BinaryOperation):
+            # It is a union using | .
+            return self._get_annotation_value_of_binary_operation_union(annotation)
+        elif isinstance(annotation, cst.Subscript):
+            # It is a type with an inner type.
+            return self._get_annotation_value_of_subscript(annotation)
+        elif isinstance(annotation, cst.Attribute):
+            assert isinstance(annotation.value, cst.Name)
+            return self._get_annotation_value_of_attribute(annotation)
+        elif isinstance(annotation, cst.Name):
+            return self._get_annotation_value_of_name(annotation)
         else:
-            raise TypeError("Unhandled case for: " + type(actual_annotation).__name__)
+            raise TypeError("Unhandled case for: " + type(annotation).__name__)
 
-        if module_name is None:
-            current_annotation = type_name
-            if "." not in current_annotation:
-                return current_annotation
-        else:
+    def _get_annotation_value_of_name(self, annotation: cst.Name) -> str:
+        type_name = annotation.value
+        if type_name in self.defined_classes:
+            # If an import imports a class but a class with the same name is defined in the file,
+            # the class in the file is used.
+            return type_name
+        if type_name in self.imports.keys():
+            module_name = self.imports[type_name]
             current_annotation = module_name + "." + type_name
+        else:
+            current_annotation = type_name
+        return self._add_full_module_name_to_annotation(current_annotation)
+
+    def _get_annotation_value_of_attribute(self, annotation: cst.Attribute) -> str:
+        assert isinstance(annotation.value, cst.Name)
+        module_name = annotation.value.value
+        assert isinstance(annotation.attr, cst.Name)
+        type_name = annotation.attr.value
+        current_annotation = module_name + "." + type_name
+        return self._add_full_module_name_to_annotation(current_annotation)
+
+    def _get_annotation_value_of_binary_operation_union(self, annotation: cst.BinaryOperation) -> str:
+        types_in_union = []
+
+        left_node = annotation.left
+        full_type_name = self._get_annotation_value(left_node)
+        assert full_type_name is not None
+        types_in_union.append(full_type_name)
+
+        right_node = annotation.right
+        full_type_name = self._get_annotation_value(right_node)
+        assert full_type_name is not None
+        types_in_union.append(full_type_name)
+
+        return " | ".join(types_in_union)
+
+    def _get_annotation_value_of_subscript(self, actual_annotation: cst.Subscript) -> str:
+        outer_type_node = actual_annotation.value
+        full_outer_type_name = self._get_annotation_value(outer_type_node)
+        assert isinstance(full_outer_type_name, str)
+        inner_type_nodes = actual_annotation.slice
+        inner_value = None
+        for inner_type_node in inner_type_nodes:
+            assert isinstance(inner_type_node.slice, cst.Index)
+            full_inner_type_name = self._get_annotation_value(inner_type_node.slice.value)
+            assert isinstance(full_inner_type_name, str)
+            if inner_value is None:
+                inner_value = full_inner_type_name
+            else:
+                inner_value += ", " + full_inner_type_name
+        assert isinstance(inner_value, str)
+        return full_outer_type_name + '[' + inner_value + ']'
+
+    def _add_full_module_name_to_annotation(self, current_annotation: str) -> str:
+        if "." not in current_annotation:
+            return current_annotation
 
         splits = current_annotation.split(".", 1)
         first_module_element = splits[0]
