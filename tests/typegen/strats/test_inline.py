@@ -5,7 +5,7 @@ import libcst.matchers as m
 import logging
 import pathlib
 
-from constants import Column, Schema
+from constants import Schema
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
@@ -710,7 +710,7 @@ def function(parameter: Clazz):
     assert isinstance(parameter, Clazz)
 """
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     class_module = "tests.resource.typegen.file_with_existing_type_hints"
     class_name = "Clazz"
     traced.loc[len(traced.index)] = [
@@ -879,7 +879,7 @@ def test_union_import_generation():
 
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")

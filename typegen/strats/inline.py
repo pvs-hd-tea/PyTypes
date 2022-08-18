@@ -458,7 +458,7 @@ class EvaluationInlineGenerator(InlineGenerator):
         self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         # Access is safe, as check in base class guarantees at least one element
-        filename = applicable[TraceData.FILENAME].values[0]
+        filename = applicable[Column.FILENAME].values[0]
         assert filename is not None
 
         path = os.path.splitext(filename)[0]
