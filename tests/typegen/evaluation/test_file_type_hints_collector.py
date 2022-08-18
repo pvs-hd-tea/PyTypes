@@ -2,7 +2,7 @@ import pathlib
 import typing
 
 import pandas as pd
-import constants
+from constants import Column, Schema
 from typegen.evaluation import FileTypeHintsCollector
 from typegen.evaluation.normalize_types import normalize_type
 
@@ -163,7 +163,7 @@ def _test_with(
         )
 
         actual_typehint_data = actual_typehint_data.drop(
-            constants.TraceData.FILENAME, axis=1
+            Column.FILENAME, axis=1
         )
         actual_data_elements.append(actual_typehint_data)
 
@@ -183,7 +183,7 @@ def _test_and_get_actual_data(
     expected_trace_data_file_path = sample_data_folder_path / expected_data_filename
     expected_typehint_data = pd.read_pickle(expected_trace_data_file_path)
     expected_typehint_data = expected_typehint_data.astype(
-        constants.TraceData.TYPE_HINT_SCHEMA
+        Schema.TypeHintData
     )
 
     method_to_test()
@@ -202,7 +202,7 @@ def _test_and_get_actual_data(
 
     assert expected_typehint_data.equals(actual_typehint_data)
 
-    for type_name in actual_typehint_data[constants.TraceData.VARTYPE].dropna():
+    for type_name in actual_typehint_data[Column.VARTYPE].dropna():
         normalized_type_name = normalize_type(type_name)
         assert type_name == normalized_type_name
 

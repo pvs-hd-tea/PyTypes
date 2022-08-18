@@ -8,9 +8,10 @@ from typegen.unification.filter_base import TraceDataFilter, TraceDataFilterList
 from typegen.unification.drop_test_func import DropTestFunctionDataFilter
 from typegen.unification.subtyping import ReplaceSubTypesFilter
 
-from .data import get_sample_trace_data
+from .data import sample_trace_data
 
-import constants
+from constants import Schema, Column
+
 
 proj_path = pathlib.Path.cwd()
 venv_path = pathlib.Path(os.environ["VIRTUAL_ENV"])
@@ -23,9 +24,9 @@ def test_factory():
     assert isinstance(container, TraceDataFilterList)
 
 
-def test_trace_data_filter_list_processes_and_returns_correct_data():
-    expected_trace_data = get_sample_trace_data().iloc[[4, 5, 7]].reset_index(drop=True)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+def test_trace_data_filter_list_processes_and_returns_correct_data(sample_trace_data):
+    expected_trace_data = sample_trace_data.copy().iloc[[4, 5, 7]].reset_index(drop=True)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     drop_test_function_data_filter = TraceDataFilter(
         ident=DropTestFunctionDataFilter.ident, test_name_pat="test_"
@@ -51,7 +52,7 @@ def test_trace_data_filter_list_processes_and_returns_correct_data():
     multi_filter.append(drop_duplicates_filter)
     multi_filter.append(drop_variables_of_multiple_types_filter)
 
-    trace_data = get_sample_trace_data()
+    trace_data = sample_trace_data.copy()
     actual_trace_data = multi_filter.apply(trace_data)
 
     assert expected_trace_data.equals(actual_trace_data)

@@ -22,7 +22,7 @@ def test_full():
         "pytypes-xvtnrWJT-py3.10",
     )
 
-    assert len(config.unifier) == 8
+    assert len(config.unifier) == 9
 
     assert isinstance(config.unifier[0], ptconfig.Dedup)
     assert config.unifier[0].name == "remove_dups"
@@ -61,6 +61,10 @@ def test_full():
     assert config.unifier[7].name == "min_threshold"
     assert config.unifier[7].kind == "drop_min_threshold"
     assert abs(config.unifier[7].min_threshold - 0.3) < 1e-8
+
+    assert isinstance(config.unifier[8], ptconfig.Unify)
+    assert config.unifier[8].name == "union_name"
+    assert config.unifier[8].kind == "union"
 
 
 def test_simple():

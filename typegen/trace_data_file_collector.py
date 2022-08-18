@@ -4,6 +4,7 @@ import pathlib
 
 import pandas as pd
 import constants
+from constants import Schema
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,8 +53,8 @@ class TraceDataFileCollector(DataFileCollector):
 
     def __init__(self):
         super().__init__(f"*{constants.TRACE_DATA_FILE_ENDING}")
-        self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
-        self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
+        self.trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
+        self.trace_data = self.trace_data.astype(Schema.TraceData)
 
     def collect_data(
         self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False

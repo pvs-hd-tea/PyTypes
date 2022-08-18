@@ -3,9 +3,10 @@ from typing import Iterable
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
-import constants
 from tracing import TraceDataCategory
 from typegen.evaluation.normalize_types import normalize_type
+
+from constants import Column, Schema
 
 
 class FileTypeHintsCollector:
@@ -14,9 +15,7 @@ class FileTypeHintsCollector:
     typehint_data: pd.DataFrame
 
     def __init__(self):
-        self.typehint_data = pd.DataFrame(
-            columns=constants.TraceData.TYPE_HINT_SCHEMA.keys()
-        )
+        self.typehint_data = pd.DataFrame(columns=Schema.TypeHintData.keys())
 
     def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
         self.collect_data_from_files(root, [filename])
@@ -66,7 +65,7 @@ class FileTypeHintsCollector:
             typehint_data = visitor.typehint_data
             self.typehint_data = pd.concat(
                 [self.typehint_data, typehint_data], ignore_index=True
-            ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
+            ).astype(Schema.TypeHintData)
 
 
 class _TypeHintVisitor(cst.CSTVisitor):
@@ -173,13 +172,13 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
     def leave_Module(self, original_node: cst.Module) -> None:
         self.typehint_data = pd.DataFrame(
-            self.collected_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys()
+            self.collected_data, columns=Schema.TypeHintData.keys()
         )
 
         # The typehint data contains line numbers instead of column offsets. These are replaced with the column offset.
         self.typehint_data = self.typehint_data.replace(
             {
-                constants.TraceData.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number
+                Column.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number
             }
         )
 
