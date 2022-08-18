@@ -143,7 +143,7 @@ def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints()
     test_object = FileTypeHintsCollector()
     test_object.collect_data_from_file(sample_folder_path, filename)
     actual_data = test_object.typehint_data
-    actual_typehints = actual_data[constants.TraceData.VARTYPE].tolist()
+    actual_typehints = actual_data[Column.VARTYPE].tolist()
     print(actual_typehints)
     for actual_typehint, expected_typehint in zip(actual_typehints, expected_typehints):
         assert actual_typehint == expected_typehint
