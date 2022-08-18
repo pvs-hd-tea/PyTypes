@@ -19,11 +19,14 @@ class PyTypes:
     benchmark_performance: bool = False
 
     output_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING,
-        repr=False
+        default="pytypes/{project}/{test_case}/{func_name}"
+        + constants.TRACE_DATA_FILE_ENDING,
+        repr=False,
     )
     output_npy_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.NP_ARRAY_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}"
+        + constants.NP_ARRAY_FILE_ENDING,
+        repr=False,
     )
 
 
@@ -55,6 +58,12 @@ class ReplaceSubtypes:
 
 
 @dataclass
+class Unify:
+    name: str
+    kind: typing.Literal["union"] = "union"
+
+
+@dataclass
 class KeepFirst:
     name: str
     kind: typing.Literal["keep_only_first"] = "keep_only_first"
@@ -69,7 +78,9 @@ class MinThreshold:
 
 # https://github.com/konradhalas/dacite/pull/184
 # the cooler union syntax is not supported
-Unifier = typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes, KeepFirst, MinThreshold]
+Unifier = typing.Union[
+    Dedup, DropTest, DropVars, ReplaceSubtypes, Unify, KeepFirst, MinThreshold
+]
 
 
 @dataclass
@@ -108,5 +119,6 @@ def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
 
     ad = asdict(pttoml)
     ad["pytypes"].pop("output_template")
+    ad["pytypes"].pop("output_npy_template")
 
     toml.dump(ad, config_path.open("w"))

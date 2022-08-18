@@ -40,3 +40,7 @@ kind = "keep_only_first"
 name = "min_threshold"
 kind = "drop_min_threshold"
 min_threshold = 0.3
+
+[[unifier]]
+name = "union_name"
+kind = "union"

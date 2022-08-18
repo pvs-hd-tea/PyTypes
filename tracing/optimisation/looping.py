@@ -1,11 +1,10 @@
 import logging
 
 from . import Optimisation, TriggerStatus, utils
-import constants
 from .utils import FrameWithMetadata
 
 import pandas as pd
-
+from constants import Column
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ class TypeStableLoop(Optimisation):
         else:
             if self._is_loop_head(current_frame):
                 new_loop_traced_count = (
-                    traced[constants.TraceData.LINENO]
+                    traced[Column.LINENO]
                     .between(*self._relevant_lines, inclusive="both")  # type: ignore
                     .shape[0]
                 )

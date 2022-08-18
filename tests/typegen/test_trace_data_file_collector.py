@@ -1,6 +1,6 @@
 import pathlib
 import pandas as pd
-import constants
+from constants import Column, Schema
 from typegen import TraceDataFileCollector
 
 cwd = pathlib.Path.cwd() / "tests" / "resource" / "external" / "PyTypes_BinaryFiles" / "sample_trace_data_files"
@@ -9,7 +9,7 @@ cwd = pathlib.Path.cwd() / "tests" / "resource" / "external" / "PyTypes_BinaryFi
 def test_if_test_object_collects_generated_trace_data_in_folder_and_subfolders_and_keeps_files_it_returns_correct_trace_data():
     expected_trace_data_file_path = cwd / "samples_rglob.test_pytype"
     expected_trace_data = pd.read_pickle(expected_trace_data_file_path)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_object = TraceDataFileCollector()
     test_object.collect_data(cwd, True)
@@ -26,7 +26,7 @@ def test_if_test_object_collects_generated_trace_data_in_folder_and_subfolders_a
 def test_if_test_object_collects_generated_trace_data_in_folder_it_returns_correct_trace_data():
     expected_trace_data_file_path = cwd / "samples_glob.test_pytype"
     expected_trace_data = pd.read_pickle(expected_trace_data_file_path)
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_object = TraceDataFileCollector()
     test_object.collect_data(cwd, False)

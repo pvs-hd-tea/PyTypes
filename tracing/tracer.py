@@ -10,7 +10,7 @@ import pandas as pd
 import typing
 import pathlib
 
-import constants
+from constants import Column, Schema
 from tracing.resolver import Resolver
 from tracing.trace_data_category import TraceDataCategory
 
@@ -28,12 +28,13 @@ logger = logging.getLogger(__name__)
 
 class TracerBase(abc.ABC):
     def __init__(
-            self,
-            proj_path: pathlib.Path,
-            stdlib_path: pathlib.Path,
-            venv_path: pathlib.Path):
-        self.trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA).astype(
-            constants.TraceData.SCHEMA
+        self,
+        proj_path: pathlib.Path,
+        stdlib_path: pathlib.Path,
+        venv_path: pathlib.Path,
+    ):
+        self.trace_data = pd.DataFrame(columns=Schema.TraceData.keys()).astype(
+            Schema.TraceData
         )
 
         self.proj_path = proj_path
@@ -49,7 +50,11 @@ class TracerBase(abc.ABC):
         self._prev_line: list[int] = list()
 
         self.class_names_to_drop = [TracerBase.__name__]
-        self.function_names_to_drop = [self.stop_trace.__name__, self.start_trace.__name__, self.active_trace.__name__]
+        self.function_names_to_drop = [
+            self.stop_trace.__name__,
+            self.start_trace.__name__,
+            self.active_trace.__name__,
+        ]
 
     def start_trace(self) -> None:
         """Starts the trace."""
@@ -73,13 +78,13 @@ class TracerBase(abc.ABC):
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
 
         drop_masks = [
-            self.trace_data[constants.TraceData.CLASS].isin(self.class_names_to_drop),
-            self.trace_data[constants.TraceData.FUNCNAME].isin(self.function_names_to_drop),
+            self.trace_data[Column.CLASS].isin(self.class_names_to_drop),
+            self.trace_data[Column.FUNCNAME].isin(self.function_names_to_drop),
         ]
         td_drop = self.trace_data[functools.reduce(operator.and_, drop_masks)]
         self.trace_data = self.trace_data.drop(td_drop.index)
 
-        self.trace_data = self.trace_data.astype(constants.TraceData.SCHEMA)
+        self.trace_data = self.trace_data.astype(Schema.TraceData)
 
     @abc.abstractmethod
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
@@ -339,21 +344,21 @@ class Tracer(TracerBase):
         vartypes = list(map(operator.itemgetter(1), names2types.values()))
 
         d = {
-            constants.TraceData.FILENAME: [str(file_name)] * len(varnames),
-            constants.TraceData.CLASS_MODULE: [class_module] * len(varnames),
-            constants.TraceData.CLASS: [class_name] * len(varnames),
-            constants.TraceData.FUNCNAME: [function_name] * len(varnames),
-            constants.TraceData.LINENO: [line_number] * len(varnames),
-            constants.TraceData.CATEGORY: [category] * len(varnames),
-            constants.TraceData.VARNAME: varnames,
-            constants.TraceData.VARTYPE_MODULE: vartype_modules,
-            constants.TraceData.VARTYPE: vartypes,
+            Column.FILENAME: [str(file_name)] * len(varnames),
+            Column.CLASS_MODULE: [class_module] * len(varnames),
+            Column.CLASS: [class_name] * len(varnames),
+            Column.FUNCNAME: [function_name] * len(varnames),
+            Column.LINENO: [line_number] * len(varnames),
+            Column.CATEGORY: [category] * len(varnames),
+            Column.VARNAME: varnames,
+            Column.VARTYPE_MODULE: vartype_modules,
+            Column.VARTYPE: vartypes,
         }
-        update = pd.DataFrame(d).astype(constants.TraceData.SCHEMA)
+        update = pd.DataFrame(d).astype(Schema.TraceData)
 
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
-        ).astype(constants.TraceData.SCHEMA)
+        ).astype(Schema.TraceData)
 
     def _get_new_defined_local_variables_with_types(
         self,

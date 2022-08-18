@@ -34,19 +34,11 @@ __all__ = [Repository.__name__]
 )
 @click.option(
     "-n",
-    "--nooverwrite",
-    help="Instead of overwriting tests, create new ones with a new suffix",
+    "--no-traverse",
+    help="Do not go down the directory tree of the tests, instead stay in the first level",
     is_flag=True,
     required=False,
     default=False,
-)
-@click.option(
-    "-s",
-    "--subdirs",
-    help="Go down the directory tree of the tests, instead of staying in the first level",
-    is_flag=True,
-    required=False,
-    default=True,
 )
 @click.option(
     "-v",
@@ -60,23 +52,20 @@ __all__ = [Repository.__name__]
 
 
 def main(**params):
-    url, fmt, out, verb, overwrite, subdirs = (
+    url, fmt, out, verb, notraverse = (
         params["url"],
         params["format"],
         params["output"],
         params["verbose"],
-        not params["nooverwrite"],
-        params["subdirs"]
+        params["no_traverse"]
     )
     logging.basicConfig(level=verb)
 
-    logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {overwrite=}, {subdirs=}")
+    logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {notraverse=}")
 
     repo = Repository.factory(project_url=url, fmt=fmt)
     project = repo.fetch(out)
 
     detector = TestDetector.factory(proj=project)
-    strategy = detector.create_strategy(
-        overwrite_tests=overwrite, recurse_into_subdirs=subdirs
-    )
+    strategy = detector.create_strategy(recurse_into_subdirs=not notraverse)
     strategy.apply(project)
