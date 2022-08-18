@@ -142,9 +142,14 @@ def load_with_metadata(path: pathlib.Path) -> cst.MetadataWrapper:
 
 
 def test_factory():
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    assert (
+        type(gen) is InlineGenerator
+    ), f"{type(gen)} should be {InlineGenerator.__name__}"
+
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
-    assert isinstance(
-        gen, EvaluationInlineGenerator
+    assert (
+        type(gen) is EvaluationInlineGenerator
     ), f"{type(gen)} should be {EvaluationInlineGenerator.__name__}"
 
 
@@ -672,7 +677,9 @@ def test_present_annotations_are_removed():
 
 
 def test_inline_and_evaluation_in_line_generator_generate_file_correctly():
-    resource_path = pathlib.Path("tests", "resource", "typegen", "file_with_existing_type_hints.py")
+    resource_path = pathlib.Path(
+        "tests", "resource", "typegen", "file_with_existing_type_hints.py"
+    )
     expected_generated_evaluation_inline_code = """class Clazz:
     def __init__(self):
         self.class_member: int = 5
@@ -760,18 +767,24 @@ def function(parameter: Clazz):
         class_name,
     ]
 
-    evaluation_inline_gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
+    evaluation_inline_gen = TypeHintGenerator(
+        ident=EvaluationInlineGenerator.ident, types=traced
+    )
     hinted = evaluation_inline_gen._gen_hinted_ast(
         applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
-    imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    imported = evaluation_inline_gen._add_all_imports(
+        applicable=traced, hinted_ast=hinted
+    )
     assert imported.code == expected_generated_evaluation_inline_code
 
     evaluation_inline_gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
     hinted = evaluation_inline_gen._gen_hinted_ast(
         applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
-    imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    imported = evaluation_inline_gen._add_all_imports(
+        applicable=traced, hinted_ast=hinted
+    )
     assert imported.code == expected_generated_inline_code
 
 
