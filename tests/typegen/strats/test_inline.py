@@ -9,7 +9,7 @@ import typing
 
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
-from typegen.strats.inline import InlineGenerator
+from typegen.strats.inline import InlineGenerator, EvaluationInlineGenerator
 
 import pandas as pd
 
@@ -142,10 +142,10 @@ def load_with_metadata(path: pathlib.Path) -> cst.MetadataWrapper:
 
 
 def test_factory():
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     assert isinstance(
-        gen, InlineGenerator
-    ), f"{type(gen)} should be {InlineGenerator.__name__}"
+        gen, EvaluationInlineGenerator
+    ), f"{type(gen)} should be {EvaluationInlineGenerator.__name__}"
 
 
 def test_callables():
@@ -336,7 +336,7 @@ def test_callables():
         "int",
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
@@ -349,7 +349,7 @@ def test_assignments():
     resource_path = pathlib.Path("tests", "resource", "typegen", "assignments.py")
     assert resource_path.is_file()
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
 
     traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
 
@@ -577,7 +577,7 @@ def test_imported():
         anotherc_clazz,
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
@@ -645,7 +645,7 @@ def test_present_annotations_are_removed():
         "",
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )
@@ -669,6 +669,110 @@ def test_present_annotations_are_removed():
 
     logging.debug(f"{imported.code}")
     imported.visit(HintLessTest())
+
+
+def test_inline_and_evaluation_in_line_generator_generate_file_correctly():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "file_with_existing_type_hints.py")
+    expected_generated_evaluation_inline_code = """class Clazz:
+    def __init__(self):
+        self.class_member: int = 5
+
+    def change_value(self, parameter1: str, parameter2: str) -> bool:
+        local_variable = parameter1 == parameter2
+        self.class_member: int = int(local_variable)
+        return local_variable
+
+
+def function(parameter: Clazz):
+    assert isinstance(parameter, Clazz)
+"""
+
+    expected_generated_inline_code = """class Clazz:
+    def __init__(self):
+        self.class_member: int = 5
+
+    def change_value(self, parameter1: int, parameter2: str) -> None:
+        local_variable = parameter1 == parameter2
+        self.class_member: int = int(local_variable)
+        return local_variable
+
+
+def function(parameter: Clazz):
+    assert isinstance(parameter, Clazz)
+"""
+
+    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    class_module = "tests.resource.typegen.file_with_existing_type_hints"
+    class_name = "Clazz"
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "class_member",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        5,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter1",
+        None,
+        "str",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        5,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter2",
+        None,
+        "str",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "change_value",
+        None,
+        "bool",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "function",
+        11,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter",
+        class_module,
+        class_name,
+    ]
+
+    evaluation_inline_gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
+    hinted = evaluation_inline_gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    assert imported.code == expected_generated_evaluation_inline_code
+
+    evaluation_inline_gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
+    hinted = evaluation_inline_gen._gen_hinted_ast(
+        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+    )
+    imported = evaluation_inline_gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    assert imported.code == expected_generated_inline_code
 
 
 def test_attributes_are_not_annotated_outside_of_classes():
@@ -702,7 +806,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
         class_name1,
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
         applicable=traced, hintless_ast=load_with_metadata(resource_path)
     )

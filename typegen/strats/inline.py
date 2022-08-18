@@ -411,10 +411,6 @@ class InlineGenerator(TypeHintGenerator):
         path = os.path.splitext(filename)[0]
         as_module = path.replace(os.path.sep, ".")
 
-        transformer = RemoveAllTypeHintsTransformer()
-        hintless_ast = hintless_ast.visit(transformer)
-
-        hintless_ast = cst.MetadataWrapper(hintless_ast)
         transformer = TypeHintTransformer(as_module, applicable)
         hinted = hintless_ast.visit(transformer)
 
@@ -425,3 +421,27 @@ class InlineGenerator(TypeHintGenerator):
         contents = hinting.code
         with source_file.open("w") as f:
             f.write(contents)
+
+
+class EvaluationInlineGenerator(InlineGenerator):
+    ident = "eval_inline"
+
+    def _gen_hinted_ast(
+        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+    ) -> cst.Module:
+        # Access is safe, as check in base class guarantees at least one element
+        filename = applicable[TraceData.FILENAME].values[0]
+        assert filename is not None
+
+        path = os.path.splitext(filename)[0]
+        as_module = path.replace(os.path.sep, ".")
+
+        transformer = RemoveAllTypeHintsTransformer()
+        hintless_ast = hintless_ast.visit(transformer)
+
+        hintless_ast = cst.MetadataWrapper(hintless_ast)
+        transformer = TypeHintTransformer(as_module, applicable)
+        hinted = hintless_ast.visit(transformer)
+
+        return hinted
+

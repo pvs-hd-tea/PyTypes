@@ -17,7 +17,7 @@ from typegen.unification.keep_only_first import KeepOnlyFirstFilter
 from typegen.trace_data_file_collector import TraceDataFileCollector
 
 from .strats.stub import StubFileGenerator
-from .strats.inline import InlineGenerator
+from .strats.inline import InlineGenerator, EvaluationInlineGenerator
 
 __all__ = [
     DataFileCollector.__name__,
@@ -65,7 +65,7 @@ __all__ = [
     "--gen-strat",
     help="Select a strategy for generating type hints",
     type=click.Choice(
-        [StubFileGenerator.ident, InlineGenerator.ident], case_sensitive=False
+        [StubFileGenerator.ident, InlineGenerator.ident, EvaluationInlineGenerator.ident], case_sensitive=False
     ),
     required=True,
 )
