@@ -188,6 +188,9 @@ class TypeHintTransformer(cst.CSTTransformer):
     def leave_FunctionDef(
         self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
+        logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
+        self._scope_stack.pop()
+
         rettypes = self._get_trace_for_rettype(original_node)
 
         assert (
@@ -213,10 +216,8 @@ class TypeHintTransformer(cst.CSTTransformer):
             logger.debug(
                 f"Applying return type hint '{rettype}' to '{original_node.name.value}'"
             )
-            logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
             returns = cst.Annotation(cst.Name(rettype))
 
-        self._scope_stack.pop()
         return updated_node.with_changes(returns=returns)
 
     def leave_Param(
@@ -410,8 +411,12 @@ class InlineGenerator(TypeHintGenerator):
         path = os.path.splitext(filename)[0]
         as_module = path.replace(os.path.sep, ".")
 
-        visitor = TypeHintTransformer(as_module, applicable)
-        hinted = hintless_ast.visit(visitor)
+        transformer = RemoveAllTypeHintsTransformer()
+        hintless_ast = hintless_ast.visit(transformer)
+
+        hintless_ast = cst.MetadataWrapper(hintless_ast)
+        transformer = TypeHintTransformer(as_module, applicable)
+        hinted = hintless_ast.visit(transformer)
 
         return hinted
 

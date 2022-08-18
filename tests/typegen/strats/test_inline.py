@@ -697,7 +697,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        "aclass",
+        "ano_attr",
         class_module,
         class_name1,
     ]
