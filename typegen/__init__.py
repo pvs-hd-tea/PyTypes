@@ -13,7 +13,7 @@ from .unification.drop_dupes import DropDuplicatesFilter
 from .unification.drop_test_func import DropTestFunctionDataFilter
 from .unification.drop_vars import DropVariablesOfMultipleTypesFilter
 from .unification.filter_base import TraceDataFilterList
-from .unification.subtyping import ReplaceSubTypesFilter
+from .unification.subtyping import UnifySubTypesFilter
 from .unification.drop_min_threshold import MinThresholdFilter
 from .unification.keep_only_first import KeepOnlyFirstFilter
 
@@ -27,7 +27,7 @@ __all__ = [
     DropDuplicatesFilter.__name__,
     DropTestFunctionDataFilter.__name__,
     DropVariablesOfMultipleTypesFilter.__name__,
-    ReplaceSubTypesFilter.__name__,
+    UnifySubTypesFilter.__name__,
     MinThresholdFilter.__name__,
     KeepOnlyFirstFilter.__name__,
 ]

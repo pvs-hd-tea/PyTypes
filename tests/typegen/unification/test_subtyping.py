@@ -8,7 +8,7 @@ import pandas as pd
 from tracing.trace_data_category import TraceDataCategory
 
 from typegen.unification.filter_base import TraceDataFilter
-from typegen.unification.subtyping import ReplaceSubTypesFilter
+from typegen.unification.subtyping import UnifySubTypesFilter
 
 from .data import sample_trace_data
 
@@ -23,14 +23,14 @@ import pathlib
 stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 strict_rstf = TraceDataFilter(  # type: ignore
-    ident=ReplaceSubTypesFilter.ident,
+    ident=UnifySubTypesFilter.ident,
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
     only_replace_if_base_was_traced=True,
 )
 relaxed_rstf = TraceDataFilter(  # type: ignore
-    ident=ReplaceSubTypesFilter.ident,
+    ident=UnifySubTypesFilter.ident,
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
@@ -39,8 +39,8 @@ relaxed_rstf = TraceDataFilter(  # type: ignore
 
 
 def test_factory():
-    assert isinstance(strict_rstf, ReplaceSubTypesFilter)
-    assert isinstance(relaxed_rstf, ReplaceSubTypesFilter)
+    assert isinstance(strict_rstf, UnifySubTypesFilter)
+    assert isinstance(relaxed_rstf, UnifySubTypesFilter)
 
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data(

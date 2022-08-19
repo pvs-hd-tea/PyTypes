@@ -6,7 +6,7 @@ from typegen.unification.drop_vars import DropVariablesOfMultipleTypesFilter
 
 from typegen.unification.filter_base import TraceDataFilter, TraceDataFilterList
 from typegen.unification.drop_test_func import DropTestFunctionDataFilter
-from typegen.unification.subtyping import ReplaceSubTypesFilter
+from typegen.unification.subtyping import UnifySubTypesFilter
 
 from .data import sample_trace_data
 
@@ -35,7 +35,7 @@ def test_trace_data_filter_list_processes_and_returns_correct_data(sample_trace_
     drop_duplicates_filter = TraceDataFilter(DropDuplicatesFilter.ident)
 
     replace_subtypes_filter = TraceDataFilter(
-        ReplaceSubTypesFilter.ident,
+        UnifySubTypesFilter.ident,
         proj_path=proj_path,
         venv_path=venv_path,
         stdlib_path=stdlib_path,

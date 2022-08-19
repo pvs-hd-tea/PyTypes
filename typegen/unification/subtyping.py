@@ -14,7 +14,7 @@ def _none_if_builtin(module: str) -> str | None:
     return module if module != "builtins" else None
 
 
-class ReplaceSubTypesFilter(TraceDataFilter):
+class UnifySubTypesFilter(TraceDataFilter):
     """Replaces rows containing types in the data with their common base type."""
 
     ident = "repl_subty"
@@ -104,7 +104,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             # drop base types which are considered too common (ABC, ABCMeta, object)
             abcless: list[tuple[str | None, str]] = list()
             for mod, ty in types_topologically_sorted:
-                if mod not in ReplaceSubTypesFilter._UNDESIRABLE_MODULES:
+                if mod not in UnifySubTypesFilter._UNDESIRABLE_MODULES:
                     abcless.append((mod, ty))
             abcless.pop()
 
