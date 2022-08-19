@@ -19,11 +19,14 @@ class PyTypes:
     benchmark_performance: bool = False
 
     output_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.TRACE_DATA_FILE_ENDING,
-        repr=False
+        default="pytypes/{project}/{test_case}/{func_name}"
+        + constants.TRACE_DATA_FILE_ENDING,
+        repr=False,
     )
     output_npy_template: str = field(
-        default="pytypes/{project}/{test_case}/{func_name}" + constants.NP_ARRAY_FILE_ENDING
+        default="pytypes/{project}/{test_case}/{func_name}"
+        + constants.NP_ARRAY_FILE_ENDING,
+        repr=False,
     )
 
 
@@ -48,10 +51,16 @@ class DropVars:
 
 
 @dataclass
-class ReplaceSubtypes:
+class UnifySubtypes:
     name: str
-    kind: typing.Literal["repl_subty"] = "repl_subty"
-    only_replace_if_base_was_traced: bool | None = False
+    kind: typing.Literal["unify_subty"] = "unify_subty"
+    only_unify_if_base_was_traced: bool | None = False
+
+
+@dataclass
+class Unify:
+    name: str
+    kind: typing.Literal["union"] = "union"
 
 
 @dataclass
@@ -69,7 +78,9 @@ class MinThreshold:
 
 # https://github.com/konradhalas/dacite/pull/184
 # the cooler union syntax is not supported
-Unifier = typing.Union[Dedup, DropTest, DropVars, ReplaceSubtypes, KeepFirst, MinThreshold]
+Unifier = typing.Union[
+    Dedup, DropTest, DropVars, UnifySubtypes, Unify, KeepFirst, MinThreshold
+]
 
 
 @dataclass
@@ -108,5 +119,6 @@ def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
 
     ad = asdict(pttoml)
     ad["pytypes"].pop("output_template")
+    ad["pytypes"].pop("output_npy_template")
 
     toml.dump(ad, config_path.open("w"))

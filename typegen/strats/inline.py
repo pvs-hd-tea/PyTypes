@@ -10,7 +10,7 @@ import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
 
-from constants import TraceData
+from constants import Column
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
 
@@ -50,12 +50,40 @@ def _find_targets(
     return extractor.targets
 
 
+def _create_annotation_from_vartype(vartype: str) -> cst.Annotation:
+    # handle union types
+    vartypes = vartype.split(" | ")
+    if len(vartypes) == 1:
+        return cst.Annotation(annotation=cst.Name(vartype))
+
+    as_types = list(map(cst.Name, vartypes))
+
+    lhs, rhs, remaining = *as_types[:2], as_types[2:]
+
+    initial = cst.BinaryOperation(left=lhs, operator=cst.BitOr(), right=rhs)
+    combined = functools.reduce(
+        lambda acc, curr: cst.BinaryOperation(left=acc, operator=cst.BitOr(), right=curr), remaining, initial
+    )
+    return cst.Annotation(annotation=combined)
+
+
 class TypeHintTransformer(cst.CSTTransformer):
+    """Transforms the CST by adding the traced type hints without modifying the original type hints."""
+
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, module: str, relevant: pd.DataFrame) -> None:
         super().__init__()
-        self.df = relevant
+
+        # corner case: NoneType can be hinted with None to avoid needing an import
+        self.df = relevant.copy()
+
+        builtin_mask = self.df[Column.VARTYPE_MODULE].isnull()
+        nonetype_mask = self.df[Column.VARTYPE] == "NoneType"
+
+        mask = functools.reduce(operator.and_, [builtin_mask, nonetype_mask])
+        self.df.loc[mask, Column.VARTYPE] = "None"
+
         self._module = module
         self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
 
@@ -93,31 +121,31 @@ class TypeHintTransformer(cst.CSTTransformer):
                 containing_classes.append(scope)
 
         if not len(containing_classes):
-            class_mask = self.df[TraceData.CLASS].isnull()
-            class_module_mask = self.df[TraceData.CLASS_MODULE].isnull()
+            class_mask = self.df[Column.CLASS].isnull()
+            class_module_mask = self.df[Column.CLASS_MODULE].isnull()
         else:
             class_names = list(map(lambda c: c.name.value, containing_classes))
-            class_mask = self.df[TraceData.CLASS].isin(class_names)
+            class_mask = self.df[Column.CLASS].isin(class_names)
 
             # This column can only ever contain project files, as we never
             # trace the internals of files outside of the given project
             # (i.e. no stdlib, no venv etc.), so this check is safe
-            class_module_mask = self.df[TraceData.CLASS_MODULE] == self._module
+            class_module_mask = self.df[Column.CLASS_MODULE] == self._module
 
         pos = self.get_metadata(PositionProvider, node).start
         name_mask = [
             class_module_mask,
             class_mask,
-            self.df[TraceData.LINENO] == pos.line,
-            self.df[TraceData.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
-            self.df[TraceData.VARNAME].isin(name_idents),
+            self.df[Column.LINENO] == pos.line,
+            self.df[Column.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
+            self.df[Column.VARNAME].isin(name_idents),
         ]
         attr_mask = [
             class_module_mask,
             class_mask,
-            self.df[TraceData.LINENO] == 0,
-            self.df[TraceData.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
-            self.df[TraceData.VARNAME].isin(attr_idents),
+            self.df[Column.LINENO] == 0,
+            self.df[Column.CATEGORY] == TraceDataCategory.CLASS_MEMBER,
+            self.df[Column.VARNAME].isin(attr_idents),
         ]
 
         names = self.df[functools.reduce(operator.and_, name_mask)]
@@ -136,10 +164,10 @@ class TypeHintTransformer(cst.CSTTransformer):
         param_name = node.name.value
 
         param_masks = [
-            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_PARAMETER,
-            self.df[TraceData.FUNCNAME] == fdef.name.value,
-            self.df[TraceData.LINENO] == pos.line,
-            self.df[TraceData.VARNAME] == param_name,
+            self.df[Column.CATEGORY] == TraceDataCategory.FUNCTION_PARAMETER,
+            self.df[Column.FUNCNAME] == fdef.name.value,
+            self.df[Column.LINENO] == pos.line,
+            self.df[Column.VARNAME] == param_name,
         ]
         params = self.df[functools.reduce(operator.and_, param_masks)]
         return params
@@ -149,18 +177,18 @@ class TypeHintTransformer(cst.CSTTransformer):
         # to disambig. methods and functions
         cdef = self._innermost_class()
         if cdef is not None:
-            clazz_mask = self.df[TraceData.CLASS] == cdef.name.value
-            class_module_mask = self.df[TraceData.CLASS_MODULE] == self._module
+            clazz_mask = self.df[Column.CLASS] == cdef.name.value
+            class_module_mask = self.df[Column.CLASS_MODULE] == self._module
         else:
-            clazz_mask = self.df[TraceData.CLASS].isnull()
-            class_module_mask = self.df[TraceData.CLASS_MODULE].isnull()
+            clazz_mask = self.df[Column.CLASS].isnull()
+            class_module_mask = self.df[Column.CLASS_MODULE].isnull()
 
         rettype_masks = [
             class_module_mask,
             clazz_mask,
-            self.df[TraceData.LINENO] == 0,  # return type, always stored at line 0
-            self.df[TraceData.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
-            self.df[TraceData.VARNAME] == node.name.value,
+            self.df[Column.LINENO] == 0,  # return type, always stored at line 0
+            self.df[Column.CATEGORY] == TraceDataCategory.FUNCTION_RETURN,
+            self.df[Column.VARNAME] == node.name.value,
         ]
         rettypes = self.df[functools.reduce(operator.and_, rettype_masks)]
         return rettypes
@@ -186,57 +214,67 @@ class TypeHintTransformer(cst.CSTTransformer):
     def leave_FunctionDef(
         self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
+        logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
+        self._scope_stack.pop()
+
         rettypes = self._get_trace_for_rettype(original_node)
 
         assert (
             rettypes.shape[0] <= 1
-        ), f"Found multiple hints for the return type:\n{rettypes[TraceData.VARTYPE].values}"
+        ), f"Found multiple hints for the return type:\n{rettypes[Column.VARTYPE].values}"
+
+        if updated_node.returns is not None:
+            logger.debug(
+                f"'{original_node.name.value}' already has an annotation, returning."
+            )
+            return updated_node
 
         returns: cst.Annotation | None
 
         # no type hint, skip
         if rettypes.empty:
             logger.debug(f"No return type hint found for {original_node.name.value}")
-            logger.debug(
-                f"Removing any previous return type annotation on FunctionDef '{original_node.name.value}'"
-            )
-            returns = None
-
+            return updated_node
         else:
-            rettype = rettypes[TraceData.VARTYPE].values[0]
+            rettype = rettypes[Column.VARTYPE].values[0]
             assert rettype is not None
 
             logger.debug(
                 f"Applying return type hint '{rettype}' to '{original_node.name.value}'"
             )
-            logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
             returns = cst.Annotation(cst.Name(rettype))
 
-        self._scope_stack.pop()
         return updated_node.with_changes(returns=returns)
 
     def leave_Param(
         self, original_node: cst.Param, updated_node: cst.Param
     ) -> cst.Param:
         params = self._get_trace_for_param(original_node)
-        arg_hints = params[TraceData.VARNAME]
+        arg_hints = params[Column.VARNAME]
         assert (
             arg_hints.shape[0] <= 1
         ), f"Found multiple hints for the parameter type: {arg_hints}"
 
+        if updated_node.annotation is not None:
+            logger.debug(
+                f"'{original_node.name.value}' already has an annotation, returning."
+            )
+            return updated_node
+
         # no type hint, skip
         if arg_hints.empty:
             logger.debug(f"No hint found for parameter '{original_node.name.value}'")
-            logger.debug("Removing any previous return type annotation on parameter")
-            return updated_node.with_changes(annotation=None)
+            return updated_node
 
-        argtype = params[TraceData.VARTYPE].values[0]
+        argtype = params[Column.VARTYPE].values[0]
         assert argtype is not None
 
         logger.debug(
             f"Applying hint '{argtype}' to parameter '{original_node.name.value}'"
         )
-        return updated_node.with_changes(annotation=cst.Annotation(cst.Name(argtype)))
+        return updated_node.with_changes(
+            annotation=_create_annotation_from_vartype(argtype)
+        )
 
     def leave_AugAssign(
         self, original_node: cst.AugAssign, _: cst.AugAssign
@@ -244,28 +282,28 @@ class TypeHintTransformer(cst.CSTTransformer):
         local_vars, class_members, targets = self._get_trace_for_targets(original_node)
         hinted_targets: list[cst.BaseSmallStatement] = []
 
-        for ident, var in itertools.chain(targets.attrs, targets.names):
-            if isinstance(var, cst.Name):
-                hinted = local_vars[local_vars[TraceData.VARNAME] == ident]
+        for target_name, target_node in itertools.chain(targets.attrs, targets.names):
+            if isinstance(target_node, cst.Name):
+                hinted = local_vars[local_vars[Column.VARNAME] == target_name]
             else:
-                hinted = class_members[class_members[TraceData.VARNAME] == ident]
+                hinted = class_members[class_members[Column.VARNAME] == target_name]
 
             assert (
                 hinted.shape[0] <= 1
-            ), f"Found more than one type hint for {ident}: \n{hinted}"
+            ), f"Found more than one type hint for {target_name}: \n{hinted}"
 
             if hinted.empty:
-                logger.debug(f"No type hint stored for {ident} in AugAssign")
+                logger.debug(f"No type hint stored for {target_name} in AugAssign")
                 logger.debug("Not adding AnnAssign for AugAssign")
                 continue
 
-            hint = hinted[TraceData.VARTYPE].values[0]
+            hint = hinted[Column.VARTYPE].values[0]
             assert hint is not None
 
             hinted_targets.append(
                 cst.AnnAssign(
                     target=original_node.target,
-                    annotation=cst.Annotation(cst.Name(value=hint)),
+                    annotation=_create_annotation_from_vartype(hint),
                     value=None,
                 )
             )
@@ -280,39 +318,43 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         if len(targets.names) + len(targets.attrs) > 1:
             hinted_targets: list[cst.BaseSmallStatement] = []
-            for ident, var in itertools.chain(targets.attrs, targets.names):
-                if isinstance(var, cst.Name):
-                    logger.debug(f"Searching for '{ident}' in local variables")
-                    hinted = local_vars[local_vars[TraceData.VARNAME] == ident]
+            for target_name, target_node in itertools.chain(
+                targets.attrs, targets.names
+            ):
+                if isinstance(target_node, cst.Name):
+                    logger.debug(f"Searching for '{target_name}' in local variables")
+                    hinted = local_vars[local_vars[Column.VARNAME] == target_name]
                 else:
-                    logger.debug(f"Searching for '{ident}' in class attributes")
-                    hinted = class_members[class_members[TraceData.VARNAME] == ident]
+                    logger.debug(f"Searching for '{target_name}' in class attributes")
+                    hinted = class_members[
+                        class_members[Column.VARNAME] == target_name
+                    ]
 
                 assert (
                     hinted.shape[0] <= 1
-                ), f"Found more than one type hint for {ident}"
+                ), f"Found more than one type hint for {target_name}"
 
                 if hinted.empty:
-                    if isinstance(var, cst.Attribute):
+                    if isinstance(target_node, cst.Attribute):
                         logger.debug(
-                            f"Skipping hint for {ident}, as annotating \
+                            f"Skipping hint for {target_name}, as annotating \
                             class members externally is forbidden"
                         )
                     else:
-                        logger.debug(f"Hint for {ident} could not be found")
+                        logger.debug(f"Hint for {target_name} could not be found")
 
                     logger.debug("Not adding AnnAssign for Assign")
                     continue
 
                 else:
-                    hint_ty = hinted[TraceData.VARTYPE].values[0]
+                    hint_ty = hinted[Column.VARTYPE].values[0]
                     assert hint_ty is not None
 
-                    logger.debug(f"Found '{hint_ty}' for '{ident}'")
+                    logger.debug(f"Found '{hint_ty}' for '{target_name}'")
                     hinted_targets.append(
                         cst.AnnAssign(
-                            target=var,
-                            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                            target=target_node,
+                            annotation=_create_annotation_from_vartype(hint_ty),
                             value=None,
                         )
                     )
@@ -320,30 +362,32 @@ class TypeHintTransformer(cst.CSTTransformer):
             hinted_targets.append(original_node)
             return cst.FlattenSentinel(hinted_targets)
 
-        ident, var = next(itertools.chain(targets.attrs, targets.names))
-        if isinstance(var, cst.Name):
-            hinted = local_vars[local_vars[TraceData.VARNAME] == ident]
+        target_name, target_node = next(itertools.chain(targets.attrs, targets.names))
+        if isinstance(target_node, cst.Name):
+            hinted = local_vars[local_vars[Column.VARNAME] == target_name]
         else:
-            hinted = class_members[class_members[TraceData.VARNAME] == ident]
+            hinted = class_members[class_members[Column.VARNAME] == target_name]
 
-        assert hinted.shape[0] <= 1, f"Found more than one type hint for '{ident}'"
+        assert (
+            hinted.shape[0] <= 1
+        ), f"Found more than one type hint for '{target_name}'"
 
         if hinted.empty:
-            logger.debug(f"No hints found for '{ident}'")
+            logger.debug(f"No hints found for '{target_name}'")
             logger.debug("Not adding type hint annotation for Assign")
             return updated_node
 
-        hint_ty = hinted[TraceData.VARTYPE].values[0]
+        hint_ty = hinted[Column.VARTYPE].values[0]
         assert hint_ty is not None
 
         logger.debug(
-            f"Replacing Assign for '{ident}' with AnnAssign with hint '{hint_ty}'"
+            f"Replacing Assign for '{target_name}' with AnnAssign with hint '{hint_ty}'"
         )
 
         # Replace simple assignment with annotated assignment
         return cst.AnnAssign(
             target=original_node.targets[0].target,
-            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+            annotation=_create_annotation_from_vartype(hint_ty),
             value=original_node.value,
         )
 
@@ -356,58 +400,47 @@ class TypeHintTransformer(cst.CSTTransformer):
         tgt_cnt = len(targets.attrs) + len(targets.names)
         assert tgt_cnt == 1, f"Only exactly one target is possible, found {tgt_cnt}"
 
-        ident, ident_node = next(itertools.chain(targets.attrs, targets.names))
-        logger.debug(f"Searching for hints to '{ident}' for an Assign")
+        return updated_node
 
-        hinted = local_var if isinstance(ident_node, cst.Name) else class_member
-        assert hinted.shape[0] <= 1, f"Found more than one type hint for '{ident}'"
 
-        if hinted.empty and original_node.value is None:
-            logger.debug(
-                "Removing AnnAssign without value \
-                    because no type hint can be provided"
-            )
+class RemoveAllTypeHintsTransformer(cst.CSTTransformer):
+    """Transforms the CST by removing all type hints."""
+
+    def leave_FunctionDef(
+        self, _: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
+        return updated_node.with_changes(returns=None)
+
+    def leave_Param(self, _: cst.Param, updated_node: cst.Param) -> cst.Param:
+        return updated_node.with_changes(annotation=None)
+
+    def leave_AnnAssign(
+        self, original_node: cst.AnnAssign, _: cst.AnnAssign
+    ) -> cst.Assign | cst.AnnAssign | cst.RemovalSentinel:
+        if original_node.value is None:
             return cst.RemoveFromParent()
 
-        elif hinted.empty and original_node.value is not None:
-            logger.debug(
-                "Replacing AnnAssign with value by Assign without type hint \
-                    because no type hint can be provided"
-            )
-            return cst.Assign(
-                targets=[cst.AssignTarget(original_node.target)],
-                value=original_node.value,
-            )
-
-        else:
-            hint_ty = hinted[TraceData.VARTYPE].values[0]
-            assert hint_ty is not None
-
-            logger.debug(f"Using '{hint_ty}' for the AnnAssign with '{ident}'")
-
-            # Replace simple assignment with annotated assignment
-            return updated_node.with_changes(
-                target=original_node.target,
-                annotation=cst.Annotation(cst.Name(value=hint_ty)),
-                value=original_node.value,
-            )
+        return cst.Assign(
+            targets=[cst.AssignTarget(original_node.target)],
+            value=original_node.value,
+        )
 
 
 class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         # Access is safe, as check in base class guarantees at least one element
-        filename = applicable[TraceData.FILENAME].values[0]
+        filename = applicable[Column.FILENAME].values[0]
         assert filename is not None
 
         path = os.path.splitext(filename)[0]
         as_module = path.replace(os.path.sep, ".")
 
-        visitor = TypeHintTransformer(as_module, applicable)
-        hinted = hintless_ast.visit(visitor)
+        transformer = TypeHintTransformer(as_module, applicable)
+        hinted = ast_with_metadata.visit(transformer)
 
         return hinted
 
@@ -416,3 +449,27 @@ class InlineGenerator(TypeHintGenerator):
         contents = hinting.code
         with source_file.open("w") as f:
             f.write(contents)
+
+
+class EvaluationInlineGenerator(InlineGenerator):
+    ident = "eval_inline"
+
+    def _gen_hinted_ast(
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
+    ) -> cst.Module:
+        # Access is safe, as check in base class guarantees at least one element
+        filename = applicable[Column.FILENAME].values[0]
+        assert filename is not None
+
+        path = os.path.splitext(filename)[0]
+        as_module = path.replace(os.path.sep, ".")
+
+        remove_hints_transformer = RemoveAllTypeHintsTransformer()
+        hintless_ast = ast_with_metadata.visit(remove_hints_transformer)
+
+        hintless_ast_with_metadata = cst.MetadataWrapper(hintless_ast)
+        typehint_transformer = TypeHintTransformer(as_module, applicable)
+        hinted = hintless_ast_with_metadata.visit(typehint_transformer)
+
+        return hinted
+

@@ -3,16 +3,19 @@ from typing import Iterable
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
-import constants
 from tracing import TraceDataCategory
+from typegen.evaluation.normalize_types import normalize_type
+
+from constants import Column, Schema
 
 
 class FileTypeHintsCollector:
     """Collects the type hints of multiple .py files."""
+
     typehint_data: pd.DataFrame
 
     def __init__(self):
-        self.typehint_data = pd.DataFrame(columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+        self.typehint_data = pd.DataFrame(columns=Schema.TypeHintData.keys())
 
     def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
         self.collect_data_from_files(root, [filename])
@@ -26,18 +29,25 @@ class FileTypeHintsCollector:
         self.collect_data(root, file_paths)
 
     def collect_data_from_folder(
-            self,
-            root: pathlib.Path,
-            folder: pathlib.Path,
-            include_also_files_in_subdirectories: bool = False) -> None:
+        self,
+        root: pathlib.Path,
+        folder: pathlib.Path,
+        include_also_files_in_subdirectories: bool = False,
+    ) -> None:
         assert folder.is_dir(), f"{folder} is not a folder path."
         file_pattern = "*.py"
-        file_paths = folder.rglob(file_pattern) if include_also_files_in_subdirectories else folder.glob(file_pattern)
+        file_paths = (
+            folder.rglob(file_pattern)
+            if include_also_files_in_subdirectories
+            else folder.glob(file_pattern)
+        )
         # Ensures that the order is deterministic.
         sorted_file_paths = sorted(file_paths)
         self.collect_data(root, sorted_file_paths)
 
-    def collect_data(self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]) -> None:
+    def collect_data(
+        self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]
+    ) -> None:
         self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
@@ -55,7 +65,7 @@ class FileTypeHintsCollector:
             typehint_data = visitor.typehint_data
             self.typehint_data = pd.concat(
                 [self.typehint_data, typehint_data], ignore_index=True
-            ).astype(constants.TraceData.TYPE_HINT_SCHEMA)
+            ).astype(Schema.TypeHintData)
 
 
 class _TypeHintVisitor(cst.CSTVisitor):
@@ -131,14 +141,14 @@ class _TypeHintVisitor(cst.CSTVisitor):
         if not hasattr(node, "annotation") or node.annotation is None:
             return True
         variable_name = self._get_variable_name(node)
-        type_hint = self._get_annotation_value(node.annotation)
+        type_hint = self._get_annotation_value(node.annotation.annotation)
         self._add_row(0, TraceDataCategory.FUNCTION_PARAMETER, variable_name, type_hint)
         return True
 
     def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
         variable_name = self._get_variable_name(node)
         if node.returns:
-            type_hint = self._get_annotation_value(node.returns)
+            type_hint = self._get_annotation_value(node.returns.annotation)
         else:
             type_hint = None
         self._add_row(0, TraceDataCategory.FUNCTION_RETURN, variable_name, type_hint)
@@ -146,7 +156,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         line_number = self._get_line_number(node)
 
-        type_hint = self._get_annotation_value(node.annotation)
+        type_hint = self._get_annotation_value(node.annotation.annotation)
         if isinstance(node.target, cst.Attribute):
             category = TraceDataCategory.CLASS_MEMBER
             variable_name = node.target.attr.value
@@ -154,16 +164,23 @@ class _TypeHintVisitor(cst.CSTVisitor):
             category = TraceDataCategory.LOCAL_VARIABLE
             variable_name = node.target.value
         else:
-            raise TypeError("Unhandled case for: " + type(node.annotation.annotation).__name__)
+            raise TypeError(
+                "Unhandled case for: " + type(node.annotation.annotation).__name__
+            )
         self._add_row(line_number, category, variable_name, type_hint)
         return True
 
     def leave_Module(self, original_node: cst.Module) -> None:
-        self.typehint_data = pd.DataFrame(self.collected_data, columns=constants.TraceData.TYPE_HINT_SCHEMA.keys())
+        self.typehint_data = pd.DataFrame(
+            self.collected_data, columns=Schema.TypeHintData.keys()
+        )
 
         # The typehint data contains line numbers instead of column offsets. These are replaced with the column offset.
         self.typehint_data = self.typehint_data.replace(
-            {constants.TraceData.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number})
+            {
+                Column.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number
+            }
+        )
 
     def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
         return node.name.value
@@ -174,13 +191,21 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
         column_offset = pos.column
         if line_number in self.smallest_column_offsets_by_line_number.keys():
-            self.smallest_column_offsets_by_line_number[line_number] = min(self.smallest_column_offsets_by_line_number[line_number], column_offset)
+            self.smallest_column_offsets_by_line_number[line_number] = min(
+                self.smallest_column_offsets_by_line_number[line_number], column_offset
+            )
         else:
             self.smallest_column_offsets_by_line_number[line_number] = column_offset
 
         return line_number
 
-    def _add_row(self, line_number: int, category: TraceDataCategory, variable_name: str | None, type_hint: str | None):
+    def _add_row(
+        self,
+        line_number: int,
+        category: TraceDataCategory,
+        variable_name: str | None,
+        type_hint: str | None,
+    ):
         class_node = self._innermost_class()
         class_name = None
         if class_node:
@@ -189,42 +214,99 @@ class _TypeHintVisitor(cst.CSTVisitor):
         function_name = None
         if function_node:
             function_name = function_node.name.value
-        self.collected_data.append([
-            self.file_path,
-            class_name,
-            function_name,
-            line_number,
-            category,
-            variable_name,
-            type_hint,
-        ])
+        if type_hint is not None:
+            type_hint = normalize_type(type_hint)
+        self.collected_data.append(
+            [
+                self.file_path,
+                class_name,
+                function_name,
+                line_number,
+                category,
+                variable_name,
+                type_hint,
+            ]
+        )
 
-    def _get_annotation_value(self, annotation: cst.Annotation | None) -> str | None:
+    def _get_annotation_value(self, annotation: cst.CSTNode) -> str | None:
         if annotation is None:
             return None
-
-        actual_annotation = annotation.annotation
-        if isinstance(actual_annotation, cst.Attribute) and isinstance(actual_annotation.value, cst.Name):
-            module_name = actual_annotation.value.value
-            type_name = actual_annotation.attr.value
-        elif isinstance(actual_annotation, cst.Name):
-            module_name = None
-            type_name = actual_annotation.value
-            if type_name in self.defined_classes:
-                # If an import imports a class but a class with the same name is defined in the file,
-                # the class in the file is used.
-                return type_name
-            if type_name in self.imports.keys():
-                module_name = self.imports[type_name]
+        if isinstance(annotation, cst.BinaryOperation):
+            # It is a union using | .
+            return self._get_annotation_value_of_binary_operation_union(annotation)
+        elif isinstance(annotation, cst.Subscript):
+            # It is a type with an inner type.
+            return self._get_annotation_value_of_subscript(annotation)
+        elif isinstance(annotation, cst.Attribute):
+            assert isinstance(annotation.value, cst.Name)
+            return self._get_annotation_value_of_attribute(annotation)
+        elif isinstance(annotation, cst.Name):
+            return self._get_annotation_value_of_name(annotation)
         else:
-            raise TypeError("Unhandled case for: " + type(actual_annotation).__name__)
+            raise TypeError("Unhandled case for: " + type(annotation).__name__)
 
-        if module_name is None:
-            current_annotation = type_name
-            if "." not in current_annotation:
-                return current_annotation
-        else:
+    def _get_annotation_value_of_name(self, annotation: cst.Name) -> str:
+        type_name = annotation.value
+        if type_name in self.defined_classes:
+            # If an import imports a class but a class with the same name is defined in the file,
+            # the class in the file is used.
+            return type_name
+        if type_name in self.imports.keys():
+            module_name = self.imports[type_name]
             current_annotation = module_name + "." + type_name
+        else:
+            current_annotation = type_name
+        return self._add_full_module_name_to_annotation(current_annotation)
+
+    def _get_annotation_value_of_attribute(self, annotation: cst.Attribute) -> str:
+        assert isinstance(annotation.value, cst.Name)
+        module_name = annotation.value.value
+        assert isinstance(annotation.attr, cst.Name)
+        type_name = annotation.attr.value
+        current_annotation = module_name + "." + type_name
+        return self._add_full_module_name_to_annotation(current_annotation)
+
+    def _get_annotation_value_of_binary_operation_union(
+        self, annotation: cst.BinaryOperation
+    ) -> str:
+        types_in_union = []
+
+        left_node = annotation.left
+        full_type_name = self._get_annotation_value(left_node)
+        assert full_type_name is not None
+        types_in_union.append(full_type_name)
+
+        right_node = annotation.right
+        full_type_name = self._get_annotation_value(right_node)
+        assert full_type_name is not None
+        types_in_union.append(full_type_name)
+
+        return " | ".join(types_in_union)
+
+    def _get_annotation_value_of_subscript(
+        self, actual_annotation: cst.Subscript
+    ) -> str:
+        outer_type_node = actual_annotation.value
+        full_outer_type_name = self._get_annotation_value(outer_type_node)
+        assert isinstance(full_outer_type_name, str)
+        inner_type_nodes = actual_annotation.slice
+        inner_value = None
+        for inner_type_node in inner_type_nodes:
+            assert isinstance(inner_type_node.slice, cst.Index)
+            full_inner_type_name = self._get_annotation_value(
+                inner_type_node.slice.value
+            )
+            assert isinstance(full_inner_type_name, str)
+            if inner_value is None:
+                inner_value = full_inner_type_name
+            else:
+                inner_value += ", " + full_inner_type_name
+        assert isinstance(inner_value, str)
+        return full_outer_type_name + "[" + inner_value + "]"
+
+    def _add_full_module_name_to_annotation(self, current_annotation: str) -> str:
+        if "." not in current_annotation:
+            return current_annotation
 
         splits = current_annotation.split(".", 1)
         first_module_element = splits[0]
@@ -256,4 +338,3 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return module_name
         else:
             raise NotImplementedError(type(module_node))
-

@@ -4,6 +4,9 @@ class AClass:
     def __init__(self, a):
         self.aclass_attr = a # set attribute in class C, TYPE HINT!
 
+    def set(self, another_c):
+        another_c.ano_attr = self.aclass_attr # set attribute in class C, TYPE HINT!
+
 class AnotherC:
     def __init__(self, a):
         self.ano_attr = a # set attribute in class C, TYPE HINT!

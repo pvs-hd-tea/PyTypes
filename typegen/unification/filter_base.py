@@ -15,7 +15,9 @@ class TraceDataFilter(abc.ABC):
         super().__init_subclass__(**kwargs)
         TraceDataFilter._REGISTRY[cls.ident] = cls
 
-    def __new__(cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs) -> "TraceDataFilter":
+    def __new__(
+        cls: typing.Type["TraceDataFilter"], /, ident: str, **kwargs
+    ) -> "TraceDataFilter":
         if (subcls := TraceDataFilter._REGISTRY.get(ident, None)) is not None:
             logging.debug(f"Creating {subcls.__name__} with {kwargs}")
             subinst = object.__new__(subcls)
@@ -54,5 +56,4 @@ class TraceDataFilterList(TraceDataFilter):
         """
         for trace_data_filter in self.filters:
             trace_data = trace_data_filter.apply(trace_data)
-
-        return trace_data.copy().reset_index(drop=True)
+        return trace_data.reset_index(drop=True)

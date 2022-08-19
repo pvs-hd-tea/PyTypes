@@ -1,10 +1,10 @@
 import os
-import sys, pathlib
+import sys
+import pathlib
 import pandas as pd
 from typing import List, Union
-import pytest
-import constants
 from tracing import Tracer, TraceDataCategory
+from constants import Column, Schema
 
 
 def _compare_dataframes(expected: pd.DataFrame, actual: pd.DataFrame):
@@ -88,7 +88,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
     integer = 5
     string = "sample"
 
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     sample_class_module = "tests.tracing.test_tracer"
     sample_class_type = "SampleClass"
@@ -163,7 +163,7 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
         none_type,
     ]
 
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_objects = tracers()
     for test_object in test_objects:
@@ -180,7 +180,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
     integer = 5
     string = "sample"
 
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     module = "tests.tracing.test_tracer"
 
@@ -278,7 +278,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
         bool_type,
     ]
 
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     sample_object = SampleClass(integer, string)
 
@@ -294,7 +294,7 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 
 def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
     invalid_string = "invalid string"
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     string_type = "str"
     none_type = "NoneType"
@@ -321,7 +321,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
         None,
         none_type,
     ]
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_objects = tracers()
     for test_object in test_objects:
@@ -336,7 +336,7 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
 def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     value1 = 18
     value2 = 17
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
     itype = "int"
     btype = "bool"
 
@@ -384,7 +384,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
         None,
         btype,
     ]
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_objects = tracers()
     for test_object in test_objects:
@@ -397,7 +397,7 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
 
 
 def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
     int_type = "int"
     string_type = "str"
     tuple_type = "tuple"
@@ -436,7 +436,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
         tuple_type,
     ]
 
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_objects = tracers()
     for test_object in test_objects:
@@ -451,7 +451,7 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
 def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data():
     list1 = [1, 2, 3, 4]
     list2 = [1, 2, 4, 4]
-    expected_trace_data = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     list_type = "list"
     int_type = "int"
@@ -578,7 +578,7 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
         None,
         bool_type,
     ]
-    expected_trace_data = expected_trace_data.astype(constants.TraceData.SCHEMA)
+    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
     test_objects = tracers()
     for test_object in test_objects:
