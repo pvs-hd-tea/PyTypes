@@ -106,7 +106,8 @@ def _is_type_with_inner_types(type_hint: str) -> bool:
     return False
 
 
-def _get_split_outside_of_brackets(type_hint: str, letter_to_split) -> list[str]:
+def _get_split_outside_of_brackets(type_hint: str, letter_to_split: str) -> list[str]:
+    assert len(letter_to_split) == 1
     bracket_depth = 0
     opening_bracket_letter = "["
     closing_bracket_letter = "]"
