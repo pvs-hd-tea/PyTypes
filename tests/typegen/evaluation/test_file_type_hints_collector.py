@@ -4,6 +4,7 @@ import typing
 import pandas as pd
 from constants import Column, Schema
 from typegen.evaluation import FileTypeHintsCollector
+from typegen.evaluation.normalize_types import normalize_type
 
 root = pathlib.Path.cwd()
 relative_sample_folder_path = (
@@ -40,7 +41,7 @@ def test_file_type_hints_collector_returns_correct_data_for_filename():
         ],
         test_object,
         method_to_tests_to_test,
-        24,
+        25,
     )
 
 
@@ -63,7 +64,7 @@ def test_file_type_hints_collector_returns_correct_data_for_filenames():
         ],
         test_object,
         method_to_tests_to_test,
-        27,
+        28,
     )
 
 
@@ -84,7 +85,7 @@ def test_file_type_hints_collector_returns_correct_data_for_folder():
         ],
         test_object,
         method_to_tests_to_test,
-        29,
+        35,
     )
 
 
@@ -105,7 +106,7 @@ def test_file_type_hints_collector_returns_correct_data_for_folder_including_sub
         ],
         test_object,
         method_to_tests_to_test,
-        32,
+        38,
     )
 
 
@@ -126,8 +127,26 @@ def test_file_type_hints_collector_returns_correct_data_for_multiple_file_paths(
         ],
         test_object,
         method_to_tests_to_test,
-        27,
+        28,
     )
+
+
+def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints():
+    filename = "file_with_complex_type_hints.py"
+    expected_typehints = [
+        "None | bool",
+        "dict[str, typegen.evaluation.FileTypeHintsCollector]",
+        "None | float | int | str",
+        "None | bool | numpy.ndarray | str",
+        "dict[None | typegen.evaluation.FileTypeHintsCollector, dict[float, None | bool | int]] | list[str]",
+    ]
+    test_object = FileTypeHintsCollector()
+    test_object.collect_data_from_file(sample_folder_path, filename)
+    actual_data = test_object.typehint_data
+    actual_typehints = actual_data[Column.VARTYPE].tolist()
+    print(actual_typehints)
+    for actual_typehint, expected_typehint in zip(actual_typehints, expected_typehints):
+        assert actual_typehint == expected_typehint
 
 
 def _test_with(
@@ -173,8 +192,18 @@ def _test_and_get_actual_data(
     print(actual_typehint_data)
 
     assert actual_typehint_data.shape[0] == amount_rows
-    assert expected_typehint_data.equals(actual_typehint_data), print(
-        actual_typehint_data
+
+    merged_data = actual_typehint_data.merge(
+        expected_typehint_data, indicator="Merge", how="outer"
     )
+    merged_data = merged_data[merged_data["Merge"] != "both"]
+    print("--- Difference ---")
+    print(merged_data)
+
+    assert expected_typehint_data.equals(actual_typehint_data)
+
+    for type_name in actual_typehint_data[Column.VARTYPE].dropna():
+        normalized_type_name = normalize_type(type_name)
+        assert type_name == normalized_type_name
 
     return actual_typehint_data
