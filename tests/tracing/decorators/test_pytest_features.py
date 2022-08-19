@@ -1,7 +1,32 @@
+import os
 import pathlib
 import pytest
+from tests.tracing.decorators.test_trace_all import MOCK_PATH
 
-from tracing import decorators
+from tracing import decorators, ptconfig
+
+
+MOCK_PATH = pathlib.Path.cwd()
+
+
+@pytest.fixture
+def cfg(monkeypatch) -> ptconfig.TomlCfg:
+    monkeypatch.setattr(
+        pathlib.Path, pathlib.Path.cwd.__name__, lambda: MOCK_PATH.resolve()
+    )
+    monkeypatch.setattr(
+        ptconfig,
+        ptconfig.load_config.__name__,
+        lambda _: ptconfig.TomlCfg(
+            pytypes=ptconfig.PyTypes(
+                project="pytest-mocks",
+                proj_path=pathlib.Path.cwd(),
+                venv_path=pathlib.Path(os.environ["VIRTUAL_ENV"]),
+                stdlib_path=pathlib.Path(pathlib.__file__).parent,
+            ),
+            unifier=list(),
+        ),
+    )
 
 
 ##### MONKEYPATCHING #####
@@ -14,7 +39,7 @@ def getssh():
 
 
 @decorators.trace
-def test_monkeypatched_getssh(monkeypatch) -> None:
+def test_monkeypatched_getssh(monkeypatch, cfg) -> None:
     # Application of the monkeypatch to replace Path.home
     # with the behavior to replace Path.home
     # always return '/abc'
@@ -33,7 +58,7 @@ def test_monkeypatched_getssh(monkeypatch) -> None:
 
 @pytest.mark.parametrize("test_input,expected", [("3+5", 8), ("2+4", 6), ("6*9", 54)])
 @decorators.trace
-def test_eval(test_input, expected):
+def test_eval(test_input, expected, cfg):
     assert eval(test_input) == expected
 
 
@@ -42,14 +67,14 @@ def test_eval(test_input, expected):
     [("3+5", 8), ("2+4", 6), pytest.param("6*9", 42, marks=pytest.mark.xfail)],
 )
 @decorators.trace
-def test_eval(test_input, expected):
+def test_eval(test_input, expected, cfg):
     assert eval(test_input) == expected
 
 
 @pytest.mark.parametrize("x", [0, 1])
 @pytest.mark.parametrize("y", [2, 3])
 @decorators.trace
-def test_foo(x, y):
+def test_foo(x, y, cfg):
     assert x in (0, 1) and y in (2, 3)
 
 
@@ -76,6 +101,7 @@ class App:
 def app(smtp_connection):
     return App(smtp_connection)
 
+
 @decorators.trace
-def test_smtp_connection_exists(app):
+def test_smtp_connection_exists(app, cfg):
     assert app.smtp_connection
