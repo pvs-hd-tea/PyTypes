@@ -1,15 +1,16 @@
 import libcst as cst
 from libcst.tool import dump
 from libcst.matchers import matches
+import libcst.matchers as m
 import logging
 import pathlib
 
-import constants
+from constants import Schema
 import typing
 
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
-from typegen.strats.inline import InlineGenerator
+from typegen.strats.inline import InlineGenerator, EvaluationInlineGenerator
 
 import pandas as pd
 
@@ -144,9 +145,14 @@ def load_with_metadata(path: pathlib.Path) -> cst.MetadataWrapper:
 
 def test_factory():
     gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
-    assert isinstance(
-        gen, InlineGenerator
+    assert (
+        type(gen) is InlineGenerator
     ), f"{type(gen)} should be {InlineGenerator.__name__}"
+
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
+    assert (
+        type(gen) is EvaluationInlineGenerator
+    ), f"{type(gen)} should be {EvaluationInlineGenerator.__name__}"
 
 
 def test_callables():
@@ -156,7 +162,7 @@ def test_callables():
     c_clazz_module = "tests.resource.typegen.callable"
     c_clazz = "C"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -337,9 +343,9 @@ def test_callables():
         "int",
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=traced)
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -350,9 +356,9 @@ def test_assignments():
     resource_path = pathlib.Path("tests", "resource", "typegen", "assignments.py")
     assert resource_path.is_file()
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -511,7 +517,7 @@ def test_assignments():
     ]
 
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -528,7 +534,7 @@ def test_imported():
     anotherc_clazz_module = "tests.resource.typegen.importing"
     anotherc_clazz = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -578,9 +584,9 @@ def test_imported():
         anotherc_clazz,
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -633,7 +639,7 @@ def test_present_annotations_are_removed():
     resource_path = pathlib.Path("tests", "resource", "typegen", "pretyped.py")
     assert resource_path.is_file()
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
     traced.loc[len(traced.index)] = [
         str(resource_path),
         None,
@@ -646,9 +652,9 @@ def test_present_annotations_are_removed():
         "",
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
 
@@ -672,13 +678,125 @@ def test_present_annotations_are_removed():
     imported.visit(HintLessTest())
 
 
+def test_inline_and_evaluation_in_line_generator_generate_file_correctly():
+    resource_path = pathlib.Path(
+        "tests", "resource", "typegen", "file_with_existing_type_hints.py"
+    )
+    expected_generated_evaluation_inline_code = """class Clazz:
+    def __init__(self):
+        self.class_member: int = 5
+
+    def change_value(self, parameter1: str, parameter2: str) -> bool:
+        local_variable = parameter1 == parameter2
+        self.class_member: int = int(local_variable)
+        return local_variable
+
+
+def function(parameter: Clazz):
+    assert isinstance(parameter, Clazz)
+"""
+
+    expected_generated_inline_code = """class Clazz:
+    def __init__(self):
+        self.class_member: int = 5
+
+    def change_value(self, parameter1: int, parameter2: str) -> None:
+        local_variable = parameter1 == parameter2
+        self.class_member: int = int(local_variable)
+        return local_variable
+
+
+def function(parameter: Clazz):
+    assert isinstance(parameter, Clazz)
+"""
+
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
+    class_module = "tests.resource.typegen.file_with_existing_type_hints"
+    class_name = "Clazz"
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "class_member",
+        None,
+        "int",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        5,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter1",
+        None,
+        "str",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        5,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter2",
+        None,
+        "str",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "change_value",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "change_value",
+        None,
+        "bool",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        class_module,
+        class_name,
+        "function",
+        11,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "parameter",
+        class_module,
+        class_name,
+    ]
+
+    evaluation_inline_gen = TypeHintGenerator(
+        ident=EvaluationInlineGenerator.ident, types=traced
+    )
+    hinted = evaluation_inline_gen._gen_hinted_ast(
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = evaluation_inline_gen._add_all_imports(
+        applicable=traced, hinted_ast=hinted
+    )
+    assert imported.code == expected_generated_evaluation_inline_code
+
+    evaluation_inline_gen = TypeHintGenerator(ident=InlineGenerator.ident, types=traced)
+    hinted = evaluation_inline_gen._gen_hinted_ast(
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = evaluation_inline_gen._add_all_imports(
+        applicable=traced, hinted_ast=hinted
+    )
+    assert imported.code == expected_generated_inline_code
+
+
 def test_attributes_are_not_annotated_outside_of_classes():
     resource_path = pathlib.Path("tests", "resource", "typegen", "attribute.py")
     class_module = "tests.resource.typegen.attribute"
     class_name1 = "AClass"
     class_name2 = "AnotherC"
 
-    traced = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
 
     traced.loc[len(traced.index)] = [
         str(resource_path),
@@ -698,14 +816,14 @@ def test_attributes_are_not_annotated_outside_of_classes():
         "",
         0,
         TraceDataCategory.CLASS_MEMBER,
-        "aclass",
+        "ano_attr",
         class_module,
         class_name1,
     ]
 
-    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
-        applicable=traced, hintless_ast=load_with_metadata(resource_path)
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"\n{imported.code}")
@@ -730,3 +848,68 @@ def test_attributes_are_not_annotated_outside_of_classes():
             return True
 
     imported.visit(ExternalAttributesAreHintLessVisitor())
+
+
+def test_union_import_generation():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "unions.py")
+
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        4,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "a",
+        ",,pathlib",
+        f"{int.__name__} | {str.__name__} | {pathlib.Path.__name__}",
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "stringify",
+        0,
+        TraceDataCategory.FUNCTION_RETURN,
+        "stringify",
+        None,
+        str.__name__,
+    ]
+
+    gen = TypeHintGenerator(ident=InlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"\n{imported.code}")
+
+    class CheckUnionApplicationVisitor(cst.CSTVisitor):
+        PATHLIB_IMPORT_M = m.ImportFrom(
+            module=m.Name(value="pathlib"), names=[m.ImportAlias(m.Name(value="Path"))]
+        )
+
+        IF_TYPE_CHECKING_M = m.If(test=m.Name("TYPE_CHECKING"))
+
+        def __init__(self) -> None:
+            self.classes: list[cst.ClassDef] = list()
+            self._in_type_matching = False
+
+        def visit_If(self, node: cst.If) -> bool | None:
+            self._in_type_matching = matches(
+                node, CheckUnionApplicationVisitor.IF_TYPE_CHECKING_M
+            )
+            return True
+
+        def leave_If(self, _: cst.If) -> None:
+            self._in_type_matching = False
+
+        def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+            if self._in_type_matching:
+                # Only import should be from pathlib import Path
+                assert matches(
+                    node, CheckUnionApplicationVisitor.PATHLIB_IMPORT_M
+                ), f"Did not match {dump(node)}"
+            return True
+
+    imported.visit(CheckUnionApplicationVisitor())

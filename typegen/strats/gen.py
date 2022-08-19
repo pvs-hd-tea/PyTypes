@@ -6,10 +6,11 @@ import typing
 import libcst as cst
 import pandas as pd
 
-from constants import TraceData
+from constants import Column
 from .imports import _AddImportTransformer
 
 logger = logging.getLogger(__name__)
+
 
 class TypeHintGenerator(abc.ABC):
     """Base class for different generation styles of type hints"""
@@ -42,11 +43,11 @@ class TypeHintGenerator(abc.ABC):
         return True
 
     def apply(self, root: pathlib.Path):
-        files = self.types[TraceData.FILENAME].unique()
+        files = self.types[Column.FILENAME].unique()
         as_paths = map(pathlib.Path, files)
         for path in filter(self._is_hintable_file, as_paths):
             # Get type hints relevant to this file
-            applicable = self.types[self.types[TraceData.FILENAME] == str(path)]
+            applicable = self.types[self.types[Column.FILENAME] == str(path)]
             if not applicable.empty:
                 logger.info(f"Generating type hints for {path}")
 
@@ -55,14 +56,14 @@ class TypeHintGenerator(abc.ABC):
                 module_and_meta = cst.MetadataWrapper(module)
 
                 typed = self._gen_hinted_ast(
-                    applicable=applicable, hintless_ast=module_and_meta
+                    applicable=applicable, ast_with_metadata=module_and_meta
                 )
                 imported = self._add_all_imports(applicable, typed)
                 self._store_hinted_ast(source_file=from_root, hinting=imported)
 
     @abc.abstractmethod
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, hintless_ast: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
     ) -> cst.Module:
         """
         Perform operations to generate types for the given file

@@ -7,7 +7,7 @@ import pandas as pd
 from tracing.trace_data_category import TraceDataCategory
 
 from tracing.tracer import Tracer
-import constants
+from constants import Column, Schema
 
 # NOTE: Ignored has been made defunct;
 # NOTE: the tracer will ignore the pathlib calls by itself
@@ -47,7 +47,7 @@ def test_pathlib_calls_are_not_traced():
 
     assert df.shape[0] == 6
 
-    expected = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
     expected.loc[len(expected.index)] = [
         str(resource_path),
         None,

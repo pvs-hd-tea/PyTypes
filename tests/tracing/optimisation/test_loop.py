@@ -7,7 +7,7 @@ import pandas as pd
 from tracing.trace_data_category import TraceDataCategory
 
 from tracing.tracer import Tracer
-import constants
+from constants import Schema
 
 
 def skippable_looping():
@@ -48,7 +48,7 @@ def test_all_variables_exist():
     df = tracer.trace_data
     print(df)
 
-    expected = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
     expected.loc[len(expected.index)] = [
         str(test_path),
         None,
@@ -104,8 +104,8 @@ def test_all_variables_exist():
         None,
         "int",
     ]
-    expected = expected.astype(constants.TraceData.SCHEMA)
-    df = df.astype(constants.TraceData.SCHEMA)
+    expected = expected.astype(Schema.TraceData)
+    df = df.astype(Schema.TraceData)
 
     logging.debug(f"expected: \n{expected}")
     logging.debug(f"actual: \n{df}")
@@ -119,7 +119,7 @@ def test_variable_is_not_traced():
     skippable_looping_with_skipped_variable()
     tracer.stop_trace()
 
-    expected = pd.DataFrame(columns=constants.TraceData.SCHEMA.keys())
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
 
     expected.loc[len(expected.index)] = [
         str(test_path),
@@ -189,10 +189,10 @@ def test_variable_is_not_traced():
         "int",
     ]
 
-    expected = expected.astype(constants.TraceData.SCHEMA)
+    expected = expected.astype(Schema.TraceData)
 
     df = tracer.trace_data
-    df = df.astype(constants.TraceData.SCHEMA)
+    df = df.astype(Schema.TraceData)
 
     logging.debug(f"expected: \n{expected}")
     logging.debug(f"actual: \n{df}")
