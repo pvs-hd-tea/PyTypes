@@ -14,22 +14,22 @@ def _none_if_builtin(module: str) -> str | None:
     return module if module != "builtins" else None
 
 
-class ReplaceSubTypesFilter(TraceDataFilter):
+class UnifySubTypesFilter(TraceDataFilter):
     """Replaces rows containing types in the data with their common base type."""
 
-    ident = "repl_subty"
+    ident = "unify_subty"
 
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
     venv_path: pathlib.Path
-    only_replace_if_base_was_traced: bool = True
+    only_unify_if_base_was_traced: bool = False
 
     _UNDESIRABLE_MODULES = ("abc",)
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
-        Replaces the rows containing types with their common base type and returns the processed trace data. If
-        only_replace_if_base_type_already_in_data is True, only rows of types whose base type is already in the data
+        Unify rows containing types using their common base type. 
+        If only_unify_if_base_was_traced is True, only rows of types whose base type is already in the data
         are replaced.
 
         @param trace_data The provided trace data to process.
@@ -48,13 +48,19 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             dropna=False,
             sort=False,
         )
-        processed_trace_data = grouped_trace_data.apply(
-            lambda group: self._update_group(trace_data, group)
-        )
 
-        typed = processed_trace_data.reset_index(drop=True).astype(Schema.TraceData)
-        typed.columns = list(Schema.TraceData.keys())
-        return typed
+        unified = [
+            self._update_group(trace_data, group).drop_duplicates()
+            for _, group in grouped_trace_data
+        ]
+
+        processed_trace_data = pd.concat(unified)
+
+        restored = pd.DataFrame(
+            processed_trace_data.reset_index(drop=True),
+            columns=list(Schema.TraceData.keys()),
+        ).astype(Schema.TraceData)
+        return restored
 
     def _update_group(self, entire: pd.DataFrame, group):
         modules_with_types_in_group = group[
@@ -69,7 +75,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             return group
 
         basetype_module, basetype = common
-        if self.only_replace_if_base_was_traced:
+        if self.only_unify_if_base_was_traced:
             if basetype_module not in entire[Column.VARTYPE_MODULE].values:
                 logger.debug(f"Discarding {common}; module was not found in trace data")
                 return group
@@ -98,7 +104,7 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             # drop base types which are considered too common (ABC, ABCMeta, object)
             abcless: list[tuple[str | None, str]] = list()
             for mod, ty in types_topologically_sorted:
-                if mod not in ReplaceSubTypesFilter._UNDESIRABLE_MODULES:
+                if mod not in UnifySubTypesFilter._UNDESIRABLE_MODULES:
                     abcless.append((mod, ty))
             abcless.pop()
 

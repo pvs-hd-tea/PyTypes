@@ -8,7 +8,7 @@ import pandas as pd
 from tracing.trace_data_category import TraceDataCategory
 
 from typegen.unification.filter_base import TraceDataFilter
-from typegen.unification.subtyping import ReplaceSubTypesFilter
+from typegen.unification.subtyping import UnifySubTypesFilter
 
 from .data import sample_trace_data
 
@@ -23,24 +23,24 @@ import pathlib
 stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 strict_rstf = TraceDataFilter(  # type: ignore
-    ident=ReplaceSubTypesFilter.ident,
+    ident=UnifySubTypesFilter.ident,
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
-    only_replace_if_base_was_traced=True,
+    only_unify_if_base_was_traced=True,
 )
 relaxed_rstf = TraceDataFilter(  # type: ignore
-    ident=ReplaceSubTypesFilter.ident,
+    ident=UnifySubTypesFilter.ident,
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
-    only_replace_if_base_was_traced=False,
+    only_unify_if_base_was_traced=False,
 )
 
 
 def test_factory():
-    assert isinstance(strict_rstf, ReplaceSubTypesFilter)
-    assert isinstance(relaxed_rstf, ReplaceSubTypesFilter)
+    assert isinstance(strict_rstf, UnifySubTypesFilter)
+    assert isinstance(relaxed_rstf, UnifySubTypesFilter)
 
 
 def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_returns_correct_data(
@@ -49,7 +49,9 @@ def test_replace_subtypes_filter_if_common_base_type_in_data_processes_and_retur
     expected_trace_data = sample_trace_data.copy().reset_index(drop=True)
     expected_trace_data.loc[3, Column.VARTYPE] = "SubClass1"
     expected_trace_data.loc[9, Column.VARTYPE] = "SubClass1"
-    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
+    expected_trace_data = expected_trace_data.drop_duplicates(ignore_index=True).astype(
+        Schema.TraceData
+    )
 
     trace_data = sample_trace_data.copy()
     actual_trace_data = strict_rstf.apply(trace_data)
@@ -69,7 +71,9 @@ def test_replace_subtypes_filter_processes_and_returns_correct_data(sample_trace
     expected_trace_data.loc[:3, Column.VARTYPE] = "BaseClass"
     expected_trace_data.loc[3:, Column.VARTYPE] = "SubClass1"
     expected_trace_data.loc[10:, Column.VARTYPE] = "BaseClass"
-    expected_trace_data = expected_trace_data.astype(Schema.TraceData)
+    expected_trace_data = expected_trace_data.drop_duplicates(ignore_index=True).astype(
+        Schema.TraceData
+    )
 
     trace_data = sample_trace_data.copy()
     actual_trace_data = relaxed_rstf.apply(trace_data)
@@ -169,7 +173,7 @@ def test_inherit_from_builtin_type():
     expected = trace_data.copy()
     expected.loc[len(trace_data.index) - 1, Column.VARTYPE_MODULE] = None
     expected.loc[len(trace_data.index) - 1, Column.VARTYPE] = "int"
-    expected = expected.astype(Schema.TraceData)
+    expected = expected.drop_duplicates(ignore_index=True).astype(Schema.TraceData)
     # once for strict
     strict_actual = strict_rstf.apply(trace_data)
 
@@ -189,9 +193,9 @@ def test_inherit_from_builtin_type():
 
 
 def test_unify_stdlib_types():
-    trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
-
     resource_path = pathlib.Path("tests", "typegen", "unification", "test_subtyping.py")
+
+    trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
     trace_data.loc[len(trace_data.index)] = [
         str(resource_path),
@@ -232,7 +236,7 @@ def test_unify_stdlib_types():
 
     expected = trace_data.copy()
     expected.loc[:, Column.VARTYPE] = "Path"
-    expected = expected.astype(Schema.TraceData)
+    expected = expected.drop_duplicates(ignore_index=True).astype(Schema.TraceData)
 
     logging.debug(f"expected: \n{expected}")
     logging.debug(f"actual: \n{relaxed_actual}")

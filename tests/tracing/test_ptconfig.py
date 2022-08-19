@@ -43,15 +43,15 @@ def test_full():
     assert config.unifier[3].kind == "drop_mult_var"
     assert config.unifier[3].min_amount_types_to_drop == 5
 
-    assert isinstance(config.unifier[4], ptconfig.ReplaceSubtypes)
-    assert config.unifier[4].name == "replace_subtypes_relaxed"
-    assert config.unifier[4].kind == "repl_subty"
-    assert config.unifier[4].only_replace_if_base_was_traced == False
+    assert isinstance(config.unifier[4], ptconfig.UnifySubtypes)
+    assert config.unifier[4].name == "unify_subtypes_relaxed"
+    assert config.unifier[4].kind == "unify_subty"
+    assert config.unifier[4].only_unify_if_base_was_traced == False
 
-    assert isinstance(config.unifier[5], ptconfig.ReplaceSubtypes)
-    assert config.unifier[5].name == "replace_subtypes_strict"
-    assert config.unifier[5].kind == "repl_subty"
-    assert config.unifier[5].only_replace_if_base_was_traced == True
+    assert isinstance(config.unifier[5], ptconfig.UnifySubtypes)
+    assert config.unifier[5].name == "unify_subtypes_strict"
+    assert config.unifier[5].kind == "unify_subty"
+    assert config.unifier[5].only_unify_if_base_was_traced == True
 
     assert isinstance(config.unifier[6], ptconfig.KeepFirst)
     assert config.unifier[6].name == "keep_first"
