@@ -49,12 +49,12 @@ class UnifySubTypesFilter(TraceDataFilter):
             sort=False,
         )
 
-        interfaces = [
+        unified = [
             self._update_group(trace_data, group).drop_duplicates()
             for _, group in grouped_trace_data
         ]
 
-        processed_trace_data = pd.concat(interfaces)
+        processed_trace_data = pd.concat(unified)
 
         restored = pd.DataFrame(
             processed_trace_data.reset_index(drop=True),
