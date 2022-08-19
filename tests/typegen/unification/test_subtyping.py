@@ -27,14 +27,14 @@ strict_rstf = TraceDataFilter(  # type: ignore
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
-    only_replace_if_base_was_traced=True,
+    only_unify_if_base_was_traced=True,
 )
 relaxed_rstf = TraceDataFilter(  # type: ignore
     ident=UnifySubTypesFilter.ident,
     proj_path=proj_path,
     venv_path=venv_path,
     stdlib_path=stdlib_path,
-    only_replace_if_base_was_traced=False,
+    only_unify_if_base_was_traced=False,
 )
 
 
