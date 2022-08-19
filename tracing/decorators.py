@@ -131,7 +131,6 @@ def _execute_tracing(
         err_output_path.open("w").write(err)
 
     else:
-        print(trace_output_path)
         traced.to_pickle(str(trace_output_path))
 
     return traced, benchmarks
