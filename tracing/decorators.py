@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 import functools
+import os
 import pathlib
 import inspect
+import traceback
 from typing import Any, Callable, Protocol, TypeVar
 import timeit
 
 import pandas as pd
+from pandas.util import hash_pandas_object
 import numpy as np
 
 import constants
@@ -22,9 +25,14 @@ class _TemplateSubstitutes:
     func_name: str
 
 
-def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]):
-    with tracer.active_trace():
-        call()
+def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]) -> str | None:
+    try:
+        with tracer.active_trace():
+            call()
+        return None
+
+    except:
+        return traceback.format_exc()
 
 
 def _execute_tracing(
@@ -34,23 +42,7 @@ def _execute_tracing(
     *args,
     **kwargs,
 ) -> tuple[pd.DataFrame, np.ndarray | None]:
-    trace_subst = config.pytypes.output_template.format_map(
-        {
-            "project": subst.project,
-            "test_case": subst.test_case,
-            "func_name": subst.func_name,
-        }
-    )
-
     if config.pytypes.benchmark_performance:
-        benchmark_subst = config.pytypes.output_npy_template.format_map(
-            {
-                "project": subst.project,
-                "test_case": subst.test_case,
-                "func_name": subst.func_name,
-            }
-        )
-
         no_operation_tracer = NoOperationTracer(
             proj_path=config.pytypes.proj_path,
             stdlib_path=config.pytypes.stdlib_path,
@@ -90,6 +82,9 @@ def _execute_tracing(
 
         traced = tracers[-1].trace_data
 
+        # Unable to catch error in benchmarking mode due to timeit usage
+        err = None
+
     else:
         benchmarks = None
 
@@ -100,18 +95,43 @@ def _execute_tracing(
             apply_opts=True,
         )
 
-        _trace_callable(tracer, lambda: c(*args, **kwargs))
+        err = _trace_callable(tracer, lambda: c(*args, **kwargs))
 
         traced = tracer.trace_data
 
     if benchmarks is not None:
-        benchmark_output_path = config.pytypes.proj_path / benchmark_subst
+        # Append hash to avoid overwriting other benchmarks
+        benchmark_subst = config.pytypes.output_npy_template.format_map(
+            {
+                "project": subst.project,
+                "test_case": subst.test_case,
+                "func_name": subst.func_name,
+            }
+        )
+        benchmark_output_path = (
+            config.pytypes.proj_path / f"{benchmark_subst}-{hash(str(benchmarks))}"
+        )
         benchmark_output_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(benchmark_output_path, benchmarks)
 
+    # Append hash to avoid overwriting other pickled DataFrames
+    trace_subst = config.pytypes.output_template.format_map(
+        {
+            "project": subst.project,
+            "test_case": subst.test_case,
+            "func_name": f"{subst.func_name}-{hash_pandas_object(traced).sum()}",
+        }
+    )
+
     trace_output_path = config.pytypes.proj_path / trace_subst
     trace_output_path.parent.mkdir(parents=True, exist_ok=True)
-    traced.to_pickle(str(trace_output_path))
+
+    if err is not None:
+        err_output_path = trace_output_path.with_suffix(".err")
+        err_output_path.open("w").write(err)
+
+    else:
+        traced.to_pickle(str(trace_output_path))
 
     return traced, benchmarks
 
@@ -142,24 +162,16 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
 
     module = inspect.getmodule(prev_frame)
     assert module is not None  # we can never come from a builtin
-    module_name = module.__name__
+    module_name = module.__name__.replace(".", os.path.sep)
 
     @functools.wraps(c)
     def wrapper(*args, **kwargs) -> tuple[pd.DataFrame, np.ndarray | None]:
-        root = pathlib.Path.cwd()
-        cfg = ptconfig.load_config(root / constants.CONFIG_FILE_NAME)
-        if cfg.pytypes.proj_path != root:
-            raise RuntimeError(
-                f"Invalid config file: wrong project root: {trace.__name__} had \
-                {root} specified, config file has {cfg.pytypes.proj_path} set"
-            )
-
+        cfg = ptconfig.load_config(pathlib.Path(constants.CONFIG_FILE_NAME))
         subst = _TemplateSubstitutes(
             project=cfg.pytypes.project,
             test_case=module_name,
             func_name=c.__name__,
         )
-
         return _execute_tracing(c, cfg, subst, *args, **kwargs)
 
     return wrapper
