@@ -869,7 +869,7 @@ def test_attributes_are_not_annotated_outside_of_classes():
 def _test_for_stub_file_generator(trace_data: pd.DataFrame, resource_path: pathlib.Path):
     gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=trace_data)
     hinted = gen._gen_hinted_ast(
-        applicable=trace_data, hintless_ast=load_with_metadata(resource_path)
+        applicable=trace_data, ast_with_metadata=load_with_metadata(resource_path)
     )
     imported = gen._add_all_imports(applicable=trace_data, hinted_ast=hinted)
     absolute_resource_path = pathlib.Path.cwd() / resource_path
