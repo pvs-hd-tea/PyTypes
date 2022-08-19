@@ -35,7 +35,8 @@ class _ImportUnionTransformer(cst.CSTTransformer):
             )
 
             typings_line = cst.SimpleStatementLine([typing_union_import])
-            new_body = [typings_line] + list(updated_node.body)
+            new_body = [typings_line] + list(updated_node.body)  # type: ignore
+            # Note: Same code as in typegen/strats/imports.py
 
             return updated_node.with_changes(body=new_body)
         return updated_node
@@ -46,13 +47,13 @@ class _ImportUnionTransformer(cst.CSTTransformer):
         self._check_annotation_union(node.annotation.annotation)
         return True
 
-    def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> bool | None:
+    def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
         if node.returns:
             self._check_annotation_union(node.returns.annotation)
-        return True
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
         self._check_annotation_union(node.annotation.annotation)
+        return True
 
     def _check_annotation_union(self, node: cst.CSTNode | None) -> None:
         if self.requires_union_import:
