@@ -68,5 +68,6 @@ jobs:
         poetry run python -m coverage run --source=. -m pytest --ignore=tests/tracing
         poetry run python -m coverage report -m
 
-    - name: sys.settrace + pytest (cannot be covered)
+    - name: settrace + pytest
+      run: | 
         poetry run python -m pytest tests/tracing
