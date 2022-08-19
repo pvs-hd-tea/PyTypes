@@ -18,7 +18,7 @@ from .unification.drop_min_threshold import MinThresholdFilter
 from .unification.keep_only_first import KeepOnlyFirstFilter
 
 from .strats.stub import StubFileGenerator
-from .strats.inline import InlineGenerator
+from .strats.inline import InlineGenerator, EvaluationInlineGenerator
 from .strats.gen import TypeHintGenerator
 
 __all__ = [
@@ -59,7 +59,7 @@ __all__ = [
     "--gen-strat",
     help="Select a strategy for generating type hints",
     type=click.Choice(
-        [StubFileGenerator.ident, InlineGenerator.ident], case_sensitive=False
+        [StubFileGenerator.ident, InlineGenerator.ident, EvaluationInlineGenerator.ident], case_sensitive=False
     ),
     required=True,
 )
