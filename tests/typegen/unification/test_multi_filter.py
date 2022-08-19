@@ -39,7 +39,7 @@ def test_trace_data_filter_list_processes_and_returns_correct_data(sample_trace_
         proj_path=proj_path,
         venv_path=venv_path,
         stdlib_path=stdlib_path,
-        only_replace_if_base_was_traced=True,
+        only_unify_if_base_was_traced=True,
     )
     drop_variables_of_multiple_types_filter = TraceDataFilter(
         ident=DropVariablesOfMultipleTypesFilter.ident
