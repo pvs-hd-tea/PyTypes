@@ -17,7 +17,7 @@ def _none_if_builtin(module: str) -> str | None:
 class UnifySubTypesFilter(TraceDataFilter):
     """Replaces rows containing types in the data with their common base type."""
 
-    ident = "repl_subty"
+    ident = "unify_subty"
 
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
