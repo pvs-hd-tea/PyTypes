@@ -29,9 +29,10 @@ def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]) -> str | N
     try:
         with tracer.active_trace():
             call()
+        return None
 
     except:
-        return traceback.print_exc()
+        return traceback.format_exc()
 
 
 def _execute_tracing(

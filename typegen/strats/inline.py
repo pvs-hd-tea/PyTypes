@@ -63,7 +63,11 @@ def _create_annotation_from_vartype(vartype: str) -> cst.Annotation:
 
     initial = cst.BinaryOperation(left=lhs, operator=cst.BitOr(), right=rhs)
     combined = functools.reduce(
-        lambda acc, curr: cst.BinaryOperation(left=acc, operator=cst.BitOr(), right=curr), remaining, initial
+        lambda acc, curr: cst.BinaryOperation(
+            left=acc, operator=cst.BitOr(), right=curr
+        ),
+        remaining,
+        initial,
     )
     return cst.Annotation(annotation=combined)
 
@@ -428,6 +432,20 @@ class TypeHintTransformer(cst.CSTTransformer):
                 value=original_node.value,
             )
 
+    def _on_multiple_hints_found(
+        self, ident: str, hints_found: pd.DataFrame, node: cst.CSTNode
+    ) -> NoReturn:
+        try:
+            stringified = cst.Module([]).code_for_node(node)
+        except AttributeError:
+            stringified = node.__class__.__name__
+        file = self.df[Column.FILENAME].values[0]
+        with pd.option_context("display.max_rows", None, "display.max_columns", None):
+            raise ValueError(
+                f"In {file}: found more than one type hint for {ident}\nNode: {stringified}\n{hints_found}"
+            )
+
+
 class RemoveAllTypeHintsTransformer(cst.CSTTransformer):
     """Transforms the CST by removing all type hints."""
 
@@ -449,19 +467,6 @@ class RemoveAllTypeHintsTransformer(cst.CSTTransformer):
             targets=[cst.AssignTarget(original_node.target)],
             value=original_node.value,
         )
-
-    def _on_multiple_hints_found(
-        self, ident: str, hints_found: pd.DataFrame, node: cst.CSTNode
-    ) -> NoReturn:
-        try:
-            stringified = cst.Module([]).code_for_node(node)
-        except AttributeError:
-            stringified = node.__class__.__name__
-        file = self.df[Column.FILENAME].values[0]
-        with pd.option_context("display.max_rows", None, "display.max_columns", None):
-            raise ValueError(
-                f"In {file}: found more than one type hint for {ident}\nNode: {stringified}\n{hints_found}"
-            )
 
 
 class InlineGenerator(TypeHintGenerator):
@@ -510,4 +515,3 @@ class EvaluationInlineGenerator(InlineGenerator):
         hinted = hintless_ast_with_metadata.visit(typehint_transformer)
 
         return hinted
-
