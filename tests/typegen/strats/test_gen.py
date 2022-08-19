@@ -866,16 +866,112 @@ def test_attributes_are_not_annotated_outside_of_classes():
     _test_for_stub_file_generator(traced, resource_path)
 
 
-def _test_for_stub_file_generator(trace_data: pd.DataFrame, resource_path: pathlib.Path):
-    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=trace_data)
+def test_stub_file_generator_generates_file_with_correct_content():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "sample_file_with_type_hints.py")
+    empty_trace_data = pd.DataFrame(columns=Schema.TraceData)
+
+    empty_trace_data.loc[len(empty_trace_data.index)] = [
+        "",
+        None,
+        None,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        None,
+        None,
+        None,
+    ]
+
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=empty_trace_data)
     hinted = gen._gen_hinted_ast(
-        applicable=trace_data, ast_with_metadata=load_with_metadata(resource_path)
+        applicable=empty_trace_data, ast_with_metadata=load_with_metadata(resource_path)
     )
-    imported = gen._add_all_imports(applicable=trace_data, hinted_ast=hinted)
+    imported = gen._add_all_imports(applicable=empty_trace_data, hinted_ast=hinted)
     absolute_resource_path = pathlib.Path.cwd() / resource_path
     gen._store_hinted_ast(absolute_resource_path, imported)
+
+    expected_stub_file_content = """class A:
+    def __init__(self) -> None: ...
+    def a(self, b: int) -> str: ...
+
+def check_instance(a: A) -> bool: ...
+"""
     expected_stub_file_path = resource_path.with_suffix(".pyi")
     assert expected_stub_file_path.is_file()
+    with expected_stub_file_path.open() as stub_file:
+        actual_stub_file_content = stub_file.read()
+    assert actual_stub_file_content == expected_stub_file_content
+    expected_stub_file_path.unlink()
+
+
+def test_stub_file_generator_generates_file_with_correct_content_with_union_import():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "sample_file_with_type_hint_unions.py")
+    empty_trace_data = pd.DataFrame(columns=Schema.TraceData)
+
+    empty_trace_data.loc[len(empty_trace_data.index)] = [
+        "",
+        None,
+        None,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        None,
+        None,
+        None,
+    ]
+
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=empty_trace_data)
+    hinted = gen._gen_hinted_ast(
+        applicable=empty_trace_data, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=empty_trace_data, hinted_ast=hinted)
+    absolute_resource_path = pathlib.Path.cwd() / resource_path
+    gen._store_hinted_ast(absolute_resource_path, imported)
+
+    expected_stub_file_content = """from typing import Union
+def function(parameter: Union[int, None]) -> Union[str, int]: ...
+"""
+    expected_stub_file_path = resource_path.with_suffix(".pyi")
+    assert expected_stub_file_path.is_file()
+    with expected_stub_file_path.open() as stub_file:
+        actual_stub_file_content = stub_file.read()
+    assert actual_stub_file_content == expected_stub_file_content
+    expected_stub_file_path.unlink()
+
+
+def test_stub_file_generator_generates_file_with_correct_content_with_custom_union_without_union_import():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "sample_file_with_custom_union.py")
+    empty_trace_data = pd.DataFrame(columns=Schema.TraceData)
+
+    empty_trace_data.loc[len(empty_trace_data.index)] = [
+        "",
+        None,
+        None,
+        "",
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        None,
+        None,
+        None,
+    ]
+
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=empty_trace_data)
+    hinted = gen._gen_hinted_ast(
+        applicable=empty_trace_data, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=empty_trace_data, hinted_ast=hinted)
+    absolute_resource_path = pathlib.Path.cwd() / resource_path
+    gen._store_hinted_ast(absolute_resource_path, imported)
+
+    expected_stub_file_content = """class Union: ...
+
+def function(parameter: int) -> Union: ...
+"""
+    expected_stub_file_path = resource_path.with_suffix(".pyi")
+    assert expected_stub_file_path.is_file()
+    with expected_stub_file_path.open() as stub_file:
+        actual_stub_file_content = stub_file.read()
+    assert actual_stub_file_content == expected_stub_file_content
     expected_stub_file_path.unlink()
 
 
@@ -942,3 +1038,16 @@ def test_union_import_generation():
             return True
 
     imported.visit(CheckUnionApplicationVisitor())
+
+
+def _test_for_stub_file_generator(trace_data: pd.DataFrame, resource_path: pathlib.Path):
+    gen = TypeHintGenerator(ident=StubFileGenerator.ident, types=trace_data)
+    hinted = gen._gen_hinted_ast(
+        applicable=trace_data, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=trace_data, hinted_ast=hinted)
+    absolute_resource_path = pathlib.Path.cwd() / resource_path
+    gen._store_hinted_ast(absolute_resource_path, imported)
+    expected_stub_file_path = resource_path.with_suffix(".pyi")
+    assert expected_stub_file_path.is_file()
+    expected_stub_file_path.unlink()
