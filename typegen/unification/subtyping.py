@@ -28,8 +28,8 @@ class UnifySubTypesFilter(TraceDataFilter):
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
-        Replaces the rows containing types with their common base type and returns the processed trace data. If
-        only_replace_if_base_type_already_in_data is True, only rows of types whose base type is already in the data
+        Unify rows containing types using their common base type. 
+        If only_replace_if_base_was_traced is True, only rows of types whose base type is already in the data
         are replaced.
 
         @param trace_data The provided trace data to process.
