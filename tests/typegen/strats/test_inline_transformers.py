@@ -1,5 +1,5 @@
 import libcst as cst
-from typegen.strats import RemoveAllTypeHintsTransformer
+from typegen.strats.inline import RemoveAllTypeHintsTransformer
 
 
 def test_remove_all_hints_transformer_removes_all_hints():
