@@ -22,7 +22,7 @@ class UnifySubTypesFilter(TraceDataFilter):
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
     venv_path: pathlib.Path
-    only_unify_if_base_was_traced: bool = True
+    only_unify_if_base_was_traced: bool = False
 
     _UNDESIRABLE_MODULES = ("abc",)
 
