@@ -27,7 +27,7 @@ class TypeStableLoop(Optimisation):
         self._iterations_since_type_changes = 0
         self._status = TriggerStatus.INACTIVE
 
-        self._relevant_lines: tuple[int, int | None] = (self.fwm.f_lineno, None)
+        self._relevant_lines: tuple[int, int] = (self.fwm.f_lineno, self.fwm.f_lineno)
         self._loop_traced_count = 0
 
     def status(self) -> TriggerStatus:
@@ -70,7 +70,7 @@ class TypeStableLoop(Optimisation):
             self._when_ongoing(current_frame, traced)
             self._status = TriggerStatus.ONGOING
 
-        if self._relevant_lines[1] and current_frame.f_lineno > self._relevant_lines[1]:
+        if current_frame.f_lineno > self._relevant_lines[1]:
             logger.debug(
                 f"{TypeStableLoop.__name__}: {self._status} -> EXITED due to leaving loop"
             )

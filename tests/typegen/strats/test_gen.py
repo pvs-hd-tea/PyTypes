@@ -714,7 +714,7 @@ def function(parameter: Clazz):
     def __init__(self):
         self.class_member: int = 5
 
-    def change_value(self, parameter1: int, parameter2: str) -> None:
+    def change_value(self, parameter1: int, parameter2: str) -> bool:
         local_variable = parameter1 == parameter2
         self.class_member: int = int(local_variable)
         return local_variable

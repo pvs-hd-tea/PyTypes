@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import sys
-from types import ModuleType
+from types import ModuleType, NoneType
 
 import pandas as pd
 
@@ -70,6 +70,9 @@ class Resolver:
         logger.debug(f"{(module_name, type_name)} as builtin?")
         if not isinstance(module_name, str):
             # __builtins__ is typed as Module by mypy, but is dict in the REPL?
+            # Special case: NoneType
+            if type_name == "NoneType":
+                return NoneType
             builtin_ty: type = __builtins__[type_name]  # type: ignore
             return builtin_ty
 
@@ -109,6 +112,13 @@ class Resolver:
         logger.debug(f"{(module.__name__, ty.__name__)} as builtin?")
         if module.__name__ == "builtins":
             return None, ty.__name__
+
+        # Special case:
+        # The __file__ attribute is not present for C modules that are statically linked into the interpreter; 
+        # for extension modules loaded dynamically from a shared library, 
+        # it is the pathname of the shared library file.
+        if not hasattr(module, "__file__"):
+            return module.__name__, ty.__name__
 
         assert module.__file__ is not None
         module_file = pathlib.Path(module.__file__)

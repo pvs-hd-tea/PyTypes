@@ -42,7 +42,11 @@ class PyTestDetector(TestDetector):
         super().__init__(project)
 
     def matches(self) -> bool:
-        return self._has_pytest_ini() or self._has_pytest_in_pyproject()
+        return (
+            self._has_pytest_ini()
+            or self._has_pytest_in_pyproject()
+            or self._has_pytest_in_requirements()
+        )
 
     def create_strategy(self, recurse_into_subdirs: bool) -> ApplicationStrategy:
         return PyTestStrategy(
@@ -67,3 +71,15 @@ class PyTestDetector(TestDetector):
         elif "dev-dependencies" not in pyproj_cfg["tool"]["poetry"]:
             return False
         return "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]
+
+    def _has_pytest_in_requirements(self) -> bool:
+        for candidate in ("requirements", "requirements-dev"):
+            requirements = self.project.root / f"{candidate}.txt"
+            if not requirements.is_file():
+                continue
+
+            lines = requirements.open().readlines()
+            if any(line.startswith("pytest") for line in lines):
+                return True
+
+        return False
