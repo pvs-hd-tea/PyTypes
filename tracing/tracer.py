@@ -56,9 +56,12 @@ class TracerBase(abc.ABC):
             self.active_trace.__name__,
         ]
 
+        self._old_trace: typing.Callable | None = None
+
     def start_trace(self) -> None:
         """Starts the trace."""
         logger.info("Starting trace")
+        self._old_trace = sys.gettrace()
         sys.settrace(self._on_trace_is_called)
         self._prev_line.clear()
 
@@ -72,7 +75,7 @@ class TracerBase(abc.ABC):
 
     def stop_trace(self):
         logger.info("Stopping trace")
-        sys.settrace(None)
+        sys.settrace(self._old_trace)
 
         # Drop all references to the tracer
         self.trace_data = self.trace_data.drop_duplicates(ignore_index=True)
