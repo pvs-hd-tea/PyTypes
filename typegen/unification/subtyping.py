@@ -22,14 +22,14 @@ class UnifySubTypesFilter(TraceDataFilter):
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
     venv_path: pathlib.Path
-    only_replace_if_base_was_traced: bool = True
+    only_unify_if_base_was_traced: bool = True
 
     _UNDESIRABLE_MODULES = ("abc",)
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Unify rows containing types using their common base type. 
-        If only_replace_if_base_was_traced is True, only rows of types whose base type is already in the data
+        If only_unify_if_base_was_traced is True, only rows of types whose base type is already in the data
         are replaced.
 
         @param trace_data The provided trace data to process.
@@ -75,7 +75,7 @@ class UnifySubTypesFilter(TraceDataFilter):
             return group
 
         basetype_module, basetype = common
-        if self.only_replace_if_base_was_traced:
+        if self.only_unify_if_base_was_traced:
             if basetype_module not in entire[Column.VARTYPE_MODULE].values:
                 logger.debug(f"Discarding {common}; module was not found in trace data")
                 return group

@@ -24,13 +24,13 @@ kind = "drop_mult_var"
 min_amount_types_to_drop = 5
 
 [[unifier]]
-name = "replace_subtypes_relaxed"
-kind = "repl_subty"
+name = "unify_subtypes_relaxed"
+kind = "unify_subty"
 
 [[unifier]]
-name = "replace_subtypes_strict"
-kind = "repl_subty"
-only_replace_if_base_was_traced = true
+name = "unify_subtypes_strict"
+kind = "unify_subty"
+only_unify_if_base_was_traced = true
 
 [[unifier]]
 name = "keep_first"

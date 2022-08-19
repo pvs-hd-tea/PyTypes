@@ -51,10 +51,10 @@ class DropVars:
 
 
 @dataclass
-class ReplaceSubtypes:
+class UnifySubtypes:
     name: str
-    kind: typing.Literal["repl_subty"] = "repl_subty"
-    only_replace_if_base_was_traced: bool | None = False
+    kind: typing.Literal["unify_subty"] = "unify_subty"
+    only_unify_if_base_was_traced: bool | None = False
 
 
 @dataclass
@@ -79,7 +79,7 @@ class MinThreshold:
 # https://github.com/konradhalas/dacite/pull/184
 # the cooler union syntax is not supported
 Unifier = typing.Union[
-    Dedup, DropTest, DropVars, ReplaceSubtypes, Unify, KeepFirst, MinThreshold
+    Dedup, DropTest, DropVars, UnifySubtypes, Unify, KeepFirst, MinThreshold
 ]
 
 
