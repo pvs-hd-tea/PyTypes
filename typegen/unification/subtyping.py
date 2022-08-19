@@ -48,13 +48,19 @@ class ReplaceSubTypesFilter(TraceDataFilter):
             dropna=False,
             sort=False,
         )
-        processed_trace_data = grouped_trace_data.apply(
-            lambda group: self._update_group(trace_data, group)
-        )
 
-        typed = processed_trace_data.reset_index(drop=True).astype(Schema.TraceData)
-        typed.columns = list(Schema.TraceData.keys())
-        return typed
+        interfaces = [
+            self._update_group(trace_data, group).drop_duplicates()
+            for _, group in grouped_trace_data
+        ]
+
+        processed_trace_data = pd.concat(interfaces)
+
+        restored = pd.DataFrame(
+            processed_trace_data.reset_index(drop=True),
+            columns=list(Schema.TraceData.keys()),
+        ).astype(Schema.TraceData)
+        return restored
 
     def _update_group(self, entire: pd.DataFrame, group):
         modules_with_types_in_group = group[
