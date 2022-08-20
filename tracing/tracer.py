@@ -209,7 +209,7 @@ class Tracer(TracerBase):
         first_element_name = next(iter(frame.f_locals), None)
         if first_element_name is None:
             return batch
-        
+
         class_object = frame.f_locals[first_element_name]
         names2types = dict()
 
@@ -275,7 +275,6 @@ class Tracer(TracerBase):
             self.old_global_vars[frame.f_code.co_filename] = dict()
             self._prev_line.append(line_number)
 
-            
             batch = self._on_call(frame, batch)
 
         elif event == "return":
@@ -316,12 +315,12 @@ class Tracer(TracerBase):
         it to the existing trace data collection.
         """
 
-        batch = batch_update.to_frame()
-        if batch.empty:
+        batch_df = batch_update.to_frame()
+        if batch_df.empty:
             return
-        self.trace_data = pd.concat([self.trace_data, batch], ignore_index=True).astype(
-            Schema.TraceData
-        )
+        self.trace_data = pd.concat(
+            [self.trace_data, batch_df], ignore_index=True
+        ).astype(Schema.TraceData)
 
     def _get_new_defined_variables_with_types(
         self,
