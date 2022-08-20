@@ -6,6 +6,7 @@ import operator
 import os
 import pathlib
 from typing import NoReturn
+import typing
 
 import pandas as pd
 import libcst as cst
@@ -90,7 +91,9 @@ class TypeHintTransformer(cst.CSTTransformer):
         self.df.loc[mask, Column.VARTYPE] = "None"
 
         self._module = module
-        self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
+        self._scope_stack: list[cst.FunctionDef | cst.ClassDef | cst.Global] = []
+
+        self._globals_by_scope: dict[cst.FunctionDef, set[str]] = {}
 
     def _innermost_class(self) -> cst.ClassDef | None:
         fromtop = reversed(self._scope_stack)
@@ -106,15 +109,57 @@ class TypeHintTransformer(cst.CSTTransformer):
         first: cst.FunctionDef | None = next(fdefs, None)  # type: ignore
         return first
 
+    def _find_visible_globals(
+        self, node: cst.Assign | cst.AnnAssign | cst.AugAssign
+    ) -> typing.Iterator[str]:
+        fromtop = reversed(self._scope_stack)
+
+        # tee copies the iterator, avoid death by mutable reference
+        # there is no rewinding of iterators sadly
+        fdefs, tester = itertools.tee(
+            filter(lambda p: isinstance(p, cst.FunctionDef), fromtop)
+        )
+
+        # Check if this IS global scope
+        if next(tester, None) is None:
+            # We are in the global scope -> any variable written on this line must be a global!
+            # Only consider names, as we are outside of class scope, and we shall not annotate
+            # class attributes outside of said class
+            logger.debug(
+                "This is global scope; Using the variables on the given line as globals!"
+            )
+            yield from map(operator.itemgetter(0), _find_targets(node).names)
+
+        # Advance iterator and collect globals
+        SENTINEL = {}
+        yield from (
+            glbl
+            for fdef in fdefs
+            for glbl in self._globals_by_scope.get(fdef, SENTINEL)
+        )
+
     def _get_trace_for_targets(
         self, node: cst.Assign | cst.AnnAssign | cst.AugAssign
-    ) -> tuple[pd.DataFrame, pd.DataFrame, Targets]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Targets]:
         """
         Fetches trace data for the targets from the given assignment statement.
-        Return order is (variables, class attributes, targets)
+        Return order is (global variables, local variables, class attributes, targets)
         """
         targets = _find_targets(node)
-        name_idents = list(map(operator.itemgetter(0), targets.names))
+
+        # Skip the globals
+        glbls = set(self._find_visible_globals(node))
+        local_var_idents = list()
+        global_var_idents = list()
+
+        for ident, _ in targets.names:
+            if ident not in glbls:
+                logger.debug(f"Interpreted {ident} as a local variable")
+                local_var_idents.append(ident)
+            else:
+                logger.debug(f"Interpreted {ident} as a global variable")
+                global_var_idents.append(ident)
+
         attr_idents = list(map(operator.itemgetter(0), targets.attrs))
 
         containing_classes: list[cst.ClassDef] = []
@@ -138,12 +183,13 @@ class TypeHintTransformer(cst.CSTTransformer):
             class_module_mask = self.df[Column.CLASS_MODULE] == self._module
 
         pos = self.get_metadata(PositionProvider, node).start
-        name_mask = [
+
+        local_var_mask = [
             class_module_mask,
             class_mask,
             self.df[Column.LINENO] == pos.line,
             self.df[Column.CATEGORY] == TraceDataCategory.LOCAL_VARIABLE,
-            self.df[Column.VARNAME].isin(name_idents),
+            self.df[Column.VARNAME].isin(local_var_idents),
         ]
         attr_mask = [
             class_module_mask,
@@ -153,10 +199,19 @@ class TypeHintTransformer(cst.CSTTransformer):
             self.df[Column.VARNAME].isin(attr_idents),
         ]
 
-        names = self.df[functools.reduce(operator.and_, name_mask)]
-        attrs = self.df[functools.reduce(operator.and_, attr_mask)]
+        global_var_mask = [
+            self.df[Column.CLASS_MODULE].isnull(),
+            self.df[Column.CLASS].isnull(),
+            self.df[Column.LINENO] == 0,
+            self.df[Column.CATEGORY] == TraceDataCategory.GLOBAL_VARIABLE,
+            self.df[Column.VARNAME].isin(global_var_idents),
+        ]
 
-        return names, attrs, targets
+        local_vars = self.df[functools.reduce(operator.and_, local_var_mask)]
+        attrs = self.df[functools.reduce(operator.and_, attr_mask)]
+        global_vars = self.df[functools.reduce(operator.and_, global_var_mask)]
+
+        return global_vars, local_vars, attrs, targets
 
     def _get_trace_for_param(self, node: cst.Param) -> pd.DataFrame:
         # Retrieve outermost function from parent stack
@@ -216,11 +271,25 @@ class TypeHintTransformer(cst.CSTTransformer):
         self._scope_stack.append(fdef)
         return True
 
+    def visit_Global(self, node: cst.Global) -> bool | None:
+        names = set(map(lambda n: n.name.value, node.names))
+        logger.debug(f"Found globals: '{names}'")
+
+        fdef = self._innermost_function()
+        assert fdef is not None
+
+        # globals are global for the scope they are currently part of
+        self._globals_by_scope[fdef] = names
+        return True
+
     def leave_FunctionDef(
         self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
         logger.debug(f"Leaving FunctionDef '{original_node.name.value}'")
         self._scope_stack.pop()
+
+        if original_node in self._globals_by_scope:
+            del self._globals_by_scope[original_node]
 
         rettypes = self._get_trace_for_rettype(original_node)
 
@@ -281,13 +350,22 @@ class TypeHintTransformer(cst.CSTTransformer):
     def leave_AugAssign(
         self, original_node: cst.AugAssign, _: cst.AugAssign
     ) -> cst.FlattenSentinel[cst.BaseSmallStatement]:
-        local_vars, class_members, targets = self._get_trace_for_targets(original_node)
+        global_vars, local_vars, class_members, targets = self._get_trace_for_targets(
+            original_node
+        )
         hinted_targets: list[cst.BaseSmallStatement] = []
 
+        all_globals_in_scope = set(self._find_visible_globals(original_node))
+
         for ident, var in itertools.chain(targets.attrs, targets.names):
-            if isinstance(var, cst.Name):
+            if isinstance(var, cst.Name) and ident in all_globals_in_scope:
+                logger.debug(f"Searching for '{ident}' in global variables")
+                hinted = global_vars[global_vars[Column.VARNAME] == ident]
+            elif isinstance(var, cst.Name):
+                logger.debug(f"Searching for '{ident}' in local variables")
                 hinted = local_vars[local_vars[Column.VARNAME] == ident]
             else:
+                logger.debug(f"Searching for '{ident}' in class attributes")
                 hinted = class_members[class_members[Column.VARNAME] == ident]
 
             if hinted.shape[0] > 1:
@@ -315,12 +393,21 @@ class TypeHintTransformer(cst.CSTTransformer):
     def leave_Assign(
         self, original_node: cst.Assign, updated_node: cst.Assign
     ) -> cst.Assign | cst.AnnAssign | cst.FlattenSentinel[cst.BaseSmallStatement]:
-        local_vars, class_members, targets = self._get_trace_for_targets(original_node)
+        global_vars, local_vars, class_members, targets = self._get_trace_for_targets(
+            original_node
+        )
+        all_globals_in_scope = set(self._find_visible_globals(original_node))
+
+        logger.debug(f"Set: {all_globals_in_scope}")
+        logger.debug(f"DataFrame:\n{global_vars}")
 
         if len(targets.names) + len(targets.attrs) > 1:
             hinted_targets: list[cst.BaseSmallStatement] = []
             for ident, var in itertools.chain(targets.attrs, targets.names):
-                if isinstance(var, cst.Name):
+                if isinstance(var, cst.Name) and ident in all_globals_in_scope:
+                    logger.debug(f"Searching for '{ident}' in global variables")
+                    hinted = global_vars[global_vars[Column.VARNAME] == ident]
+                elif isinstance(var, cst.Name):
                     logger.debug(f"Searching for '{ident}' in local variables")
                     hinted = local_vars[local_vars[Column.VARNAME] == ident]
                 else:
@@ -359,9 +446,14 @@ class TypeHintTransformer(cst.CSTTransformer):
             return cst.FlattenSentinel(hinted_targets)
 
         ident, var = next(itertools.chain(targets.attrs, targets.names))
-        if isinstance(var, cst.Name):
+        if isinstance(var, cst.Name) and ident in all_globals_in_scope:
+            logger.debug(f"Searching for '{ident}' in global variables")
+            hinted = global_vars[global_vars[Column.VARNAME] == ident]
+        elif isinstance(var, cst.Name):
+            logger.debug(f"Searching for '{ident}' in local variables")
             hinted = local_vars[local_vars[Column.VARNAME] == ident]
         else:
+            logger.debug(f"Searching for '{ident}' in class attributes")
             hinted = class_members[class_members[Column.VARNAME] == ident]
 
         if hinted.shape[0] > 1:
@@ -382,37 +474,41 @@ class TypeHintTransformer(cst.CSTTransformer):
         # Replace simple assignment with annotated assignment
         return cst.AnnAssign(
             target=original_node.targets[0].target,
-            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+            annotation=_create_annotation_from_vartype(hint_ty),
             value=original_node.value,
         )
 
     def leave_AnnAssign(
         self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign
     ) -> cst.Assign | cst.AnnAssign | cst.RemovalSentinel:
-        local_var, class_member, targets = self._get_trace_for_targets(original_node)
+        global_var, local_var, class_member, targets = self._get_trace_for_targets(
+            original_node
+        )
 
         # only one target is possible
         tgt_cnt = len(targets.attrs) + len(targets.names)
         assert tgt_cnt == 1, f"Only exactly one target is possible, found {tgt_cnt}"
 
         ident, ident_node = next(itertools.chain(targets.attrs, targets.names))
-        logger.debug(f"Searching for hints to '{ident}' for an Assign")
+        logger.debug(f"Searching for hints to '{ident}' for an AnnAssign")
 
-        hinted = local_var if isinstance(ident_node, cst.Name) else class_member
+        if isinstance(ident_node, cst.Name):
+            hinted = local_var if not local_var.empty else global_var
+        else:
+            hinted = class_member
+
         if hinted.shape[0] > 1:
             self._on_multiple_hints_found(ident, hinted, original_node)
 
         if hinted.empty and original_node.value is None:
             logger.debug(
-                "Removing AnnAssign without value \
-                    because no type hint can be provided"
+                "Removing AnnAssign without value because no type hint can be provided"
             )
             return cst.RemoveFromParent()
 
         elif hinted.empty and original_node.value is not None:
             logger.debug(
-                "Replacing AnnAssign with value by Assign without type hint \
-                    because no type hint can be provided"
+                "Replacing AnnAssign with value by Assign without type hint because no type hint can be provided"
             )
             return cst.Assign(
                 targets=[cst.AssignTarget(original_node.target)],

@@ -12,6 +12,8 @@ from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
 from typegen.strats.inline import InlineGenerator, EvaluationInlineGenerator
 
+from typegen.unification.union import TraceDataFilter, UnionFilter
+
 import pandas as pd
 
 
@@ -913,3 +915,141 @@ def test_union_import_generation():
             return True
 
     imported.visit(CheckUnionApplicationVisitor())
+
+
+def test_global_hinting():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "glbls.py")
+    traced = pd.DataFrame(columns=Schema.TraceData.keys())
+
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        7,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "not_a_global",
+        None,
+        str.__name__,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        8,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        int.__name__,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "sneaky_inside_scope",
+        None,
+        bool.__name__,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "sneaky_inside_scope",
+        None,
+        str.__name__,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        bool.__name__,
+    ]
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        int.__name__,
+    ]
+
+    traced = TraceDataFilter(UnionFilter.ident).apply(traced)
+    logging.debug(f"Unions:\n{traced}")
+
+    expected_code = r"""from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+from tracing import decorators
+
+exists_outside_of_all_scopes: bool | int = False
+
+
+def f():
+    not_a_global: str = "Hello"
+    exists_outside_of_all_scopes: int = 5  # This is a local variable!
+
+    global sneaky_inside_scope
+    sneaky_inside_scope: bool | str = True
+
+
+def g():
+    # This should induce a union type in BOTH functions
+    global sneaky_inside_scope
+    sneaky_inside_scope: bool | str = "TypeChange"
+
+
+def h():
+    # Reference existing global
+    global exists_outside_of_all_scopes
+    exists_outside_of_all_scopes: bool | int = 5
+    
+
+@decorators.trace
+def main():
+    # False
+    print(exists_outside_of_all_scopes)
+    f()
+    
+    # False True    
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+    # False TypeChange
+    g()
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+    # 5 TypeChange  
+    h()
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+
+if __name__ == "__main__":
+    main()"""
+
+    expected_ast = cst.parse_module(expected_code)
+
+    gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
+    hinted = gen._gen_hinted_ast(
+        applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
+    )
+    imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
+    logging.debug(f"Expected: \n{expected_ast.code}")
+    logging.debug(f"Generated: \n{imported.code}")
+    
+    assert expected_ast.code == imported.code
+    
