@@ -15,6 +15,7 @@ import pathlib
 from constants import Column, Schema
 from tracing.resolver import Resolver
 from tracing.trace_data_category import TraceDataCategory
+from tracing.trace_update import BatchTraceUpdate, TraceUpdate
 
 from .optimisation import (
     TriggerStatus,
@@ -105,8 +106,6 @@ class NoOperationTracer(TracerBase):
 
 
 class Tracer(TracerBase):
-    TRACE_MAP = dict[str, tuple[str | None, str]]
-
     def __init__(
         self,
         proj_path: pathlib.Path,
@@ -160,7 +159,7 @@ class Tracer(TracerBase):
         for optimisation in self.optimisation_stack:
             optimisation.advance(fwm, self.trace_data)
 
-    def _on_call(self, frame, _: typing.Any) -> Tracer.TRACE_MAP:
+    def _on_call(self, frame, batch: BatchTraceUpdate) -> BatchTraceUpdate:
         names2types = dict()
 
         for name, value in frame.f_locals.items():
@@ -169,9 +168,11 @@ class Tracer(TracerBase):
                 self._on_non_importable(type(value))
             names2types[name] = modname
 
-        return names2types
+        return batch.parameters(names2types)
 
-    def _on_return(self, frame, arg: typing.Any) -> Tracer.TRACE_MAP:
+    def _on_return(
+        self, frame, arg: typing.Any, batch: BatchTraceUpdate
+    ) -> BatchTraceUpdate:
         code = frame.f_code
         function_name = code.co_name
 
@@ -180,28 +181,36 @@ class Tracer(TracerBase):
             self._on_non_importable(type(arg))
         names2types = {function_name: modname}
 
-        return names2types
+        return batch.returns(names2types)
 
-    def _on_line(self, frame) -> tuple[Tracer.TRACE_MAP, Tracer.TRACE_MAP]:
+    def _on_line(
+        self, frame, real_line_number: int, batch: BatchTraceUpdate
+    ) -> BatchTraceUpdate:
         local_names2types = self._get_new_defined_variables_with_types(
             self.old_local_vars[frame.f_code.co_name],
             frame.f_locals,
         )
+        with_local = batch.local_variables(
+            line_number=real_line_number, names2types=local_names2types
+        )
+
         global_names2types = self._get_new_defined_variables_with_types(
             self.old_global_vars[frame.f_code.co_filename],
             frame.f_globals,
         )
-        return local_names2types, global_names2types
+        with_global = with_local.global_variables(global_names2types)
 
-    def _on_class_function_return(self, frame) -> Tracer.TRACE_MAP:
+        return with_global
+
+    def _on_class_function_return(
+        self, frame, batch: BatchTraceUpdate
+    ) -> BatchTraceUpdate:
         """Updates the trace data with the members of the class object."""
         first_element_name = next(iter(frame.f_locals), None)
         if first_element_name is None:
-            return dict()
-        self_object = frame.f_locals[first_element_name]
-        return self._evaluate_object(self_object)
-
-    def _evaluate_object(self, class_object: typing.Any) -> Tracer.TRACE_MAP:
+            return batch
+        
+        class_object = frame.f_locals[first_element_name]
         names2types = dict()
 
         object_dict = class_object.__dict__
@@ -211,12 +220,14 @@ class Tracer(TracerBase):
                 self._on_non_importable(type(value))
             names2types[name] = modname
 
-        return names2types
+        return batch.members(names2types)
 
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         """Called during execution of a function which is traced. Collects trace data from the frame."""
         # Ignore out of project files
-        if not pathlib.Path(frame.f_code.co_filename).is_relative_to(self.proj_path):
+        file_name = pathlib.Path(frame.f_code.co_filename)
+
+        if not file_name.is_relative_to(self.proj_path):
             return self._on_trace_is_called
 
         if self.apply_opts:
@@ -232,172 +243,91 @@ class Tracer(TracerBase):
             ):
                 return self._on_trace_is_called
 
-        code = frame.f_code
-        function_name = code.co_name
-        possible_class = _get_class_in_frame(frame)
+        function_name = frame.f_code.co_name
+        enclosing_class = _get_class_in_frame(frame)
 
-        if possible_class is not None:
-            modname = self._resolver.get_module_and_name(possible_class)
+        if enclosing_class is not None:
+            modname = self._resolver.get_module_and_name(enclosing_class)
             if modname is None:
-                self._on_non_importable(possible_class)
+                self._on_non_importable(enclosing_class)
             class_module, class_name = modname
         else:
             class_module, class_name = None, None
 
-        file_name = pathlib.Path(code.co_filename).relative_to(self.proj_path)
+        file_name = file_name.relative_to(self.proj_path)
         line_number = frame.f_lineno
 
-        names2types, category = None, None
         frameinfo = inspect.getframeinfo(frame)
 
+        batch = BatchTraceUpdate(
+            file_name=file_name,
+            class_module=class_module,
+            class_name=class_name,
+            function_name=function_name,
+            line_number=line_number,
+        )
+
         if event == "call":
-            self._prev_line.append(line_number)
             logger.info(f"Tracing call: {frameinfo}")
-            names2types = self._on_call(frame, arg)
-            category = TraceDataCategory.FUNCTION_PARAMETER
+
+            # Add to storage
+            self.old_local_vars[function_name] = dict()
+            self.old_global_vars[frame.f_code.co_filename] = dict()
+            self._prev_line.append(line_number)
+
+            
+            batch = self._on_call(frame, batch)
 
         elif event == "return":
             logger.info(f"Tracing return: {frameinfo}")
-            names2types = self._on_return(frame, arg)
 
             # Catch locals and globals that are changed on last line
-            local_names2types, global_names2types = self._on_line(frame)
-            if local_names2types:
-                self._update_trace_data_with(
-                    file_name,
-                    class_module,
-                    class_name,
-                    function_name,
-                    line_number,
-                    TraceDataCategory.LOCAL_VARIABLE,
-                    local_names2types,
-                )
+            line_number = self._prev_line[-1]
+            batch = self._on_line(frame, line_number, batch)
 
-            if global_names2types:
-                self._update_trace_data_with(
-                    file_name,
-                    None,
-                    None,
-                    None,
-                    0,
-                    TraceDataCategory.GLOBAL_VARIABLE,
-                    global_names2types,
-                )
+            # Adds tracing data of class members if the return is from a class function / method.
+            if enclosing_class is not None:
+                batch = self._on_class_function_return(frame, batch)
 
-            category = TraceDataCategory.FUNCTION_RETURN
+            batch = self._on_return(frame, arg, batch)
 
             # Remove from storage
             self.old_local_vars.pop(function_name)
             self.old_global_vars.pop(frame.f_code.co_filename)
             self._prev_line.pop()
 
-            # Special case
-            line_number = 0
-
-            # Adds tracing data of class members if the return is from a class function.
-            if possible_class is not None:
-                names2types2 = self._on_class_function_return(frame)
-                category2 = TraceDataCategory.CLASS_MEMBER
-
-                # Line number is 0 and function name is empty to
-                # unify matching class members more better.
-
-                # Class Members contain state and can theoretically, at any time, on the same line, be of many types
-
-                self._update_trace_data_with(
-                    file_name,
-                    class_module,
-                    class_name,
-                    "",
-                    0,
-                    category2,
-                    names2types2,
-                )
-
         elif event == "line":
             line_number, self._prev_line[-1] = self._prev_line[-1], line_number
             logger.info(f"Tracing line: {frameinfo}")
-            names2types, global_names2types = self._on_line(frame)
-            category = TraceDataCategory.LOCAL_VARIABLE
+            batch = self._on_line(frame, line_number, batch)
 
-            if global_names2types:
-                self._update_trace_data_with(
-                    file_name,
-                    None,
-                    None,
-                    None,
-                    0,
-                    TraceDataCategory.GLOBAL_VARIABLE,
-                    global_names2types,
-                )
-
-        if names2types and category:
-            self._update_trace_data_with(
-                file_name,
-                class_module,
-                class_name,
-                function_name,
-                line_number,
-                category,
-                names2types,
-            )
+        self._update_trace_data_with(batch)
 
         self.old_local_vars[function_name] = frame.f_locals.copy()
         self.old_global_vars[frame.f_code.co_filename] = frame.f_globals.copy()
         if self.apply_opts:
             self.trace_data = self.trace_data.drop_duplicates()
+
         return self._on_trace_is_called
 
-    def _update_trace_data_with(
-        self,
-        file_name: pathlib.Path,
-        class_module: str | None,
-        class_name: str | None,
-        function_name: str | None,
-        line_number: int,
-        category: TraceDataCategory,
-        names2types: dict[str, tuple[str | None, str]],
-    ) -> None:
+    def _update_trace_data_with(self, batch_update: BatchTraceUpdate) -> None:
         """
-        Constructs a DataFrame from the provided arguments, and appends
+        Constructs a DataFrame from the provided updates, and appends
         it to the existing trace data collection.
-
-        @param file_name The file name in which the variables are declared.
-        @param class_module Module of the class the variable is in
-        @param class_name Name of the class the variable is in
-        @param function_name The function which declares the variable.
-        @param line_number The line number.
-        @param category The data category of the row.
-        @param names2types A dictionary containing the variable name, the type's module and the type's name.
         """
-        varnames = list(names2types.keys())
 
-        vartype_modules = list(map(operator.itemgetter(0), names2types.values()))
-        vartypes = list(map(operator.itemgetter(1), names2types.values()))
-
-        d = {
-            Column.FILENAME: [str(file_name)] * len(varnames),
-            Column.CLASS_MODULE: [class_module] * len(varnames),
-            Column.CLASS: [class_name] * len(varnames),
-            Column.FUNCNAME: [function_name] * len(varnames),
-            Column.LINENO: [line_number] * len(varnames),
-            Column.CATEGORY: [category] * len(varnames),
-            Column.VARNAME: varnames,
-            Column.VARTYPE_MODULE: vartype_modules,
-            Column.VARTYPE: vartypes,
-        }
-        logger.debug(f"{d}")
-        update = pd.DataFrame(d).astype(Schema.TraceData)
-
-        self.trace_data = pd.concat(
-            [self.trace_data, update], ignore_index=True
-        ).astype(Schema.TraceData)
+        batch = batch_update.to_frame()
+        if batch.empty:
+            return
+        self.trace_data = pd.concat([self.trace_data, batch], ignore_index=True).astype(
+            Schema.TraceData
+        )
 
     def _get_new_defined_variables_with_types(
         self,
         prev_vars2vals: dict[str, typing.Any],
         new_vars2vals: dict[str, typing.Any],
-    ) -> Tracer.TRACE_MAP:
+    ) -> dict[str, tuple[str | None, str]]:
         """Gets the new defined variable from one frame to the next frame."""
         names2types = {}
 
