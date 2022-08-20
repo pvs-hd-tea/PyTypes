@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import contextlib
 import functools
@@ -44,7 +46,10 @@ class TracerBase(abc.ABC):
         self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
 
         # Map of a function name to the variables in that functions scope
-        self.old_vars: dict[str, dict[str, typing.Any]] = dict()
+        self.old_local_vars: dict[str, dict[str, typing.Any]] = dict()
+
+        # Map of filename to the global variables in that variable's scope
+        self.old_global_vars: dict[str, dict[str, typing.Any]] = dict()
 
         # stack based in order to hold previous line when returning
         self._prev_line: list[int] = list()
@@ -100,6 +105,8 @@ class NoOperationTracer(TracerBase):
 
 
 class Tracer(TracerBase):
+    TRACE_MAP = dict[str, tuple[str | None, str]]
+
     def __init__(
         self,
         proj_path: pathlib.Path,
@@ -136,19 +143,6 @@ class Tracer(TracerBase):
                 break
 
         # Appending; only one optimisation at a time
-        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
-        # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
-        # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path
-        ignore = Ignore(fwm)
-        frame_path = pathlib.Path(fwm.co_filename)
-        if not self.optimisation_stack or not isinstance(
-            self.optimisation_stack[-1], Ignore
-        ):
-            if not frame_path.is_relative_to(self.proj_path):
-                logger.debug(f"Applying Ignore for {inspect.getframeinfo(fwm._frame)}")
-                self.optimisation_stack.append(ignore)
-                return
-
         # Entering a loop for the first time
         if not self.optimisation_stack or not isinstance(
             self.optimisation_stack[-1], TypeStableLoop
@@ -166,7 +160,7 @@ class Tracer(TracerBase):
         for optimisation in self.optimisation_stack:
             optimisation.advance(fwm, self.trace_data)
 
-    def _on_call(self, frame, _: typing.Any) -> dict[str, tuple[str | None, str]]:
+    def _on_call(self, frame, _: typing.Any) -> Tracer.TRACE_MAP:
         names2types = dict()
 
         for name, value in frame.f_locals.items():
@@ -177,7 +171,7 @@ class Tracer(TracerBase):
 
         return names2types
 
-    def _on_return(self, frame, arg: typing.Any) -> dict[str, tuple[str | None, str]]:
+    def _on_return(self, frame, arg: typing.Any) -> Tracer.TRACE_MAP:
         code = frame.f_code
         function_name = code.co_name
 
@@ -188,16 +182,18 @@ class Tracer(TracerBase):
 
         return names2types
 
-    def _on_line(self, frame) -> dict[str, tuple[str | None, str]]:
-        code = frame.f_code
-        function_name = code.co_name
-        names2types = self._get_new_defined_local_variables_with_types(
-            self.old_vars[function_name],
+    def _on_line(self, frame) -> tuple[Tracer.TRACE_MAP, Tracer.TRACE_MAP]:
+        local_names2types = self._get_new_defined_variables_with_types(
+            self.old_local_vars[frame.f_code.co_name],
             frame.f_locals,
         )
-        return names2types
+        global_names2types = self._get_new_defined_variables_with_types(
+            self.old_global_vars[frame.f_code.co_filename],
+            frame.f_globals,
+        )
+        return local_names2types, global_names2types
 
-    def _on_class_function_return(self, frame) -> dict[str, tuple[str | None, str]]:
+    def _on_class_function_return(self, frame) -> Tracer.TRACE_MAP:
         """Updates the trace data with the members of the class object."""
         first_element_name = next(iter(frame.f_locals), None)
         if first_element_name is None:
@@ -205,9 +201,7 @@ class Tracer(TracerBase):
         self_object = frame.f_locals[first_element_name]
         return self._evaluate_object(self_object)
 
-    def _evaluate_object(
-        self, class_object: typing.Any
-    ) -> dict[str, tuple[str | None, str]]:
+    def _evaluate_object(self, class_object: typing.Any) -> Tracer.TRACE_MAP:
         names2types = dict()
 
         object_dict = class_object.__dict__
@@ -265,10 +259,36 @@ class Tracer(TracerBase):
         elif event == "return":
             logger.info(f"Tracing return: {frameinfo}")
             names2types = self._on_return(frame, arg)
+
+            # Catch locals and globals that are changed on last line
+            local_names2types, global_names2types = self._on_line(frame)
+            if local_names2types:
+                self._update_trace_data_with(
+                    file_name,
+                    class_module,
+                    class_name,
+                    function_name,
+                    line_number,
+                    TraceDataCategory.LOCAL_VARIABLE,
+                    local_names2types,
+                )
+
+            if global_names2types:
+                self._update_trace_data_with(
+                    file_name,
+                    None,
+                    None,
+                    None,
+                    0,
+                    TraceDataCategory.GLOBAL_VARIABLE,
+                    global_names2types,
+                )
+
             category = TraceDataCategory.FUNCTION_RETURN
 
             # Remove from storage
-            self.old_vars.pop(function_name)
+            self.old_local_vars.pop(function_name)
+            self.old_global_vars.pop(frame.f_code.co_filename)
             self._prev_line.pop()
 
             # Special case
@@ -297,12 +317,20 @@ class Tracer(TracerBase):
         elif event == "line":
             line_number, self._prev_line[-1] = self._prev_line[-1], line_number
             logger.info(f"Tracing line: {frameinfo}")
-            names2types = self._on_line(frame)
+            names2types, global_names2types = self._on_line(frame)
             category = TraceDataCategory.LOCAL_VARIABLE
 
-        logger.debug(
-            f"{event} @ {line_number} {names2types or 'NO NEW TYPES'} {category or 'NO CATEGORY'}"
-        )
+            if global_names2types:
+                self._update_trace_data_with(
+                    file_name,
+                    None,
+                    None,
+                    None,
+                    0,
+                    TraceDataCategory.GLOBAL_VARIABLE,
+                    global_names2types,
+                )
+
         if names2types and category:
             self._update_trace_data_with(
                 file_name,
@@ -314,7 +342,8 @@ class Tracer(TracerBase):
                 names2types,
             )
 
-        self.old_vars[function_name] = frame.f_locals.copy()
+        self.old_local_vars[function_name] = frame.f_locals.copy()
+        self.old_global_vars[frame.f_code.co_filename] = frame.f_globals.copy()
         if self.apply_opts:
             self.trace_data = self.trace_data.drop_duplicates()
         return self._on_trace_is_called
@@ -357,17 +386,18 @@ class Tracer(TracerBase):
             Column.VARTYPE_MODULE: vartype_modules,
             Column.VARTYPE: vartypes,
         }
+        logger.debug(f"{d}")
         update = pd.DataFrame(d).astype(Schema.TraceData)
 
         self.trace_data = pd.concat(
             [self.trace_data, update], ignore_index=True
         ).astype(Schema.TraceData)
 
-    def _get_new_defined_local_variables_with_types(
+    def _get_new_defined_variables_with_types(
         self,
         prev_vars2vals: dict[str, typing.Any],
         new_vars2vals: dict[str, typing.Any],
-    ) -> dict[str, tuple[str | None, str]]:
+    ) -> Tracer.TRACE_MAP:
         """Gets the new defined variable from one frame to the next frame."""
         names2types = {}
 

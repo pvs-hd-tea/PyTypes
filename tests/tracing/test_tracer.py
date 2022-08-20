@@ -57,6 +57,23 @@ class SampleClass:
         return are_integers_equal and are_strings_equal
 
 
+def create_and_set_global():
+    global a_global_var
+    a_global_var = "Interesting Data"
+    return None
+
+
+def modify_global():
+    global a_global_var
+    a_global_var = 42
+    return None
+
+
+def read_from_global() -> str:
+    global a_global_var
+    return a_global_var
+
+
 cwd = pathlib.Path.cwd()
 from types import NoneType
 
@@ -66,7 +83,10 @@ import pathlib
 
 stdlib_path = pathlib.Path(pathlib.__file__).parent
 
+import pytest
 
+
+@pytest.fixture(scope="function")
 def tracers() -> tuple[Tracer, Tracer]:
     opt = Tracer(
         proj_path=proj_path,
@@ -84,7 +104,9 @@ def tracers() -> tuple[Tracer, Tracer]:
     return opt, nonopt
 
 
-def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data():
+def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     integer = 5
     string = "sample"
 
@@ -165,18 +187,19 @@ def test_if_tracer_traces_init_of_sample_class_it_collects_correct_tracing_data(
 
     expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         SampleClass(integer, string)
-        test_object.stop_trace()
+        tracer.stop_trace()
 
-        actual_trace_data = test_object.trace_data
+        actual_trace_data = tracer.trace_data
 
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_data():
+def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     integer = 5
     string = "sample"
 
@@ -282,17 +305,18 @@ def test_if_tracer_traces_function_of_sample_class_it_collects_correct_tracing_d
 
     sample_object = SampleClass(integer, string)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         sample_object.sample_check_if_arguments_match_members(integer, string)
-        test_object.stop_trace()
+        tracer.stop_trace()
 
-        actual_trace_data = test_object.trace_data
+        actual_trace_data = tracer.trace_data
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data():
+def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     invalid_string = "invalid string"
     expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
 
@@ -323,17 +347,18 @@ def test_if_tracer_traces_sample_function_which_raises_error_it_collects_correct
     ]
     expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         sample_convert_string_to_int(invalid_string)
-        test_object.stop_trace()
+        tracer.stop_trace()
 
-        actual_trace_data = test_object.trace_data
+        actual_trace_data = tracer.trace_data
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
+def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     value1 = 18
     value2 = 17
     expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
@@ -386,17 +411,18 @@ def test_if_tracer_traces_sample_function_it_collects_correct_tracing_data():
     ]
     expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         sample_compare_integers(value1, value2)
-        test_object.stop_trace()
-        actual_trace_data = test_object.trace_data
+        tracer.stop_trace()
+        actual_trace_data = tracer.trace_data
 
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data():
+def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_one_line_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
     int_type = "int"
     string_type = "str"
@@ -438,17 +464,18 @@ def test_if_tracer_traces_sample_function_which_defines_multiple_variables_in_on
 
     expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         sample_get_two_variables_declared_in_one_line()
-        test_object.stop_trace()
-        actual_trace_data = test_object.trace_data
+        tracer.stop_trace()
+        actual_trace_data = tracer.trace_data
 
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data():
+def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correct_tracing_data(
+    tracers: list[Tracer],
+):
     list1 = [1, 2, 3, 4]
     list2 = [1, 2, 4, 4]
     expected_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
@@ -580,31 +607,74 @@ def test_if_tracer_traces_sample_function_with_inner_function_it_collects_correc
     ]
     expected_trace_data = expected_trace_data.astype(Schema.TraceData)
 
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+    for tracer in tracers:
+        tracer.start_trace()
         sample_compare_two_int_lists(list1, list2)
-        test_object.stop_trace()
+        tracer.stop_trace()
 
-        actual_trace_data = test_object.trace_data
+        actual_trace_data = tracer.trace_data
         _compare_dataframes(expected_trace_data, actual_trace_data)
 
 
-def test_if_tracer_starts_trace_data_is_none_or_empty():
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.start_trace()
+def test_if_tracer_starts_trace_data_is_none_or_empty(tracers: list[Tracer]):
+    for tracer in tracers:
+        tracer.start_trace()
 
-        tracing_data = test_object.trace_data
+        tracing_data = tracer.trace_data
 
         # Clears trace setup.
-        test_object.stop_trace()
+        tracer.stop_trace()
 
         assert tracing_data is None or len(tracing_data) == 0
 
 
-def test_if_tracer_stops_no_trace_is_set():
-    test_objects = tracers()
-    for test_object in test_objects:
-        test_object.stop_trace()
+def test_if_tracer_stops_no_trace_is_set(tracers: list[Tracer]):
+    for tracer in tracers:
+        tracer.stop_trace()
         assert sys.gettrace() is None
+
+
+import logging
+
+
+def test_tracer_finds_globals(tracers: list[Tracer]):
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
+
+    filepath = str(pathlib.Path("tests", "tracing", "test_tracer.py"))
+
+    expected.loc[len(expected.index)] = [
+        filepath,
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "a_global_var",
+        None,
+        int.__name__,
+    ]
+    expected.loc[len(expected.index)] = [
+        filepath,
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "a_global_var",
+        None,
+        str.__name__,
+    ]
+
+    for tracer in tracers:
+        with tracer.active_trace():
+            create_and_set_global()
+            _ = read_from_global()
+            modify_global()
+            _ = read_from_global()
+
+        trace_data = tracer.trace_data
+        logging.debug(f"\n{trace_data}")
+
+        subset = expected.merge(trace_data, how="inner")
+        assert len(subset) == len(expected), f"Did not find all globals!\n{trace_data}"
+
