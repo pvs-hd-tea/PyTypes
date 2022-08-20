@@ -104,9 +104,8 @@ class Resolver:
                 return None
 
             # Resolve inner classes too!
-            variable_type: type = functools.reduce(
-                getattr, type_name.split("."), module
-            )
+            # Have to ignore because mypy thinks accessing a module returns a module :shrug:
+            variable_type: type = functools.reduce(getattr, type_name.split("."), module)  # type: ignore
             return variable_type
 
     def get_module_and_name(self, ty: type) -> tuple[str | None, str] | None:
