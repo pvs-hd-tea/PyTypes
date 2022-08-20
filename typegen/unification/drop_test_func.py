@@ -22,6 +22,6 @@ class DropTestFunctionDataFilter(TraceDataFilter):
             )
 
         processed_trace_data = trace_data[
-            ~trace_data[Column.FUNCNAME].str.match(self.test_name_pat)
+            ~trace_data[Column.FUNCNAME].str.match(self.test_name_pat, na=False)
         ]
         return processed_trace_data.astype(Schema.TraceData)
