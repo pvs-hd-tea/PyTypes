@@ -1,5 +1,3 @@
-from tracing import decorators
-
 exists_outside_of_all_scopes = False
 
 
@@ -23,7 +21,6 @@ def h():
     exists_outside_of_all_scopes = 5
 
 
-@decorators.trace
 def main():
     # False
     print(exists_outside_of_all_scopes)

@@ -926,7 +926,7 @@ def test_global_hinting():
         None,
         None,
         "f",
-        7,
+        5,
         TraceDataCategory.LOCAL_VARIABLE,
         "not_a_global",
         None,
@@ -937,7 +937,7 @@ def test_global_hinting():
         None,
         None,
         "f",
-        8,
+        6,
         TraceDataCategory.LOCAL_VARIABLE,
         "exists_outside_of_all_scopes",
         None,
@@ -995,8 +995,6 @@ def test_global_hinting():
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
-from tracing import decorators
-
 exists_outside_of_all_scopes: bool | int = False
 
 
@@ -1020,7 +1018,6 @@ def h():
     exists_outside_of_all_scopes: bool | int = 5
 
 
-@decorators.trace
 def main():
     # False
     print(exists_outside_of_all_scopes)

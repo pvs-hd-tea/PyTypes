@@ -637,7 +637,7 @@ def test_if_tracer_stops_no_trace_is_set(tracers: list[Tracer]):
 import logging
 
 
-def test_if_tracer_finds_global(tracers: list[Tracer]):
+def test_tracer_finds_globals(tracers: list[Tracer]):
     expected = pd.DataFrame(columns=Schema.TraceData.keys())
 
     filepath = str(pathlib.Path("tests", "tracing", "test_tracer.py"))
