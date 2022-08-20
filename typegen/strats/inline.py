@@ -131,11 +131,12 @@ class TypeHintTransformer(cst.CSTTransformer):
             yield from map(operator.itemgetter(0), _find_targets(node).names)
 
         # Advance iterator and collect globals
-        SENTINEL = {}
+        # mypy fails to narrow the fdef type here
+        SENTINEL: set[str] = set()
         yield from (
             glbl
             for fdef in fdefs
-            for glbl in self._globals_by_scope.get(fdef, SENTINEL)
+            for glbl in self._globals_by_scope.get(fdef, SENTINEL)  # type: ignore
         )
 
     def _get_trace_for_targets(
