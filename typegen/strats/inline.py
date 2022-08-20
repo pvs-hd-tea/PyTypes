@@ -91,7 +91,7 @@ class TypeHintTransformer(cst.CSTTransformer):
         self.df.loc[mask, Column.VARTYPE] = "None"
 
         self._module = module
-        self._scope_stack: list[cst.FunctionDef | cst.ClassDef | cst.Global] = []
+        self._scope_stack: list[cst.FunctionDef | cst.ClassDef] = []
 
         self._globals_by_scope: dict[cst.FunctionDef, set[str]] = {}
 
