@@ -143,19 +143,6 @@ class Tracer(TracerBase):
                 break
 
         # Appending; only one optimisation at a time
-        # Check we do not trace somewhere we do not belong, e.g. Python's stdlib!
-        # NOTE: De Morgan - if no optimisations are on and we are in an unwanted path OR
-        # NOTE: if the newest optimisation is not a currently active Ignore and we are in an unwanted path
-        ignore = Ignore(fwm)
-        frame_path = pathlib.Path(fwm.co_filename)
-        if not self.optimisation_stack or not isinstance(
-            self.optimisation_stack[-1], Ignore
-        ):
-            if not frame_path.is_relative_to(self.proj_path):
-                logger.debug(f"Applying Ignore for {inspect.getframeinfo(fwm._frame)}")
-                self.optimisation_stack.append(ignore)
-                return
-
         # Entering a loop for the first time
         if not self.optimisation_stack or not isinstance(
             self.optimisation_stack[-1], TypeStableLoop
