@@ -60,6 +60,13 @@ class SampleClass:
 def create_and_set_global():
     global a_global_var
     a_global_var = "Interesting Data"
+    return None
+
+
+def modify_global():
+    global a_global_var
+    a_global_var = 42
+    return None
 
 
 def read_from_global() -> str:
@@ -631,12 +638,43 @@ import logging
 
 
 def test_if_tracer_finds_global(tracers: list[Tracer]):
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
+
+    filepath = str(pathlib.Path("tests", "tracing", "test_tracer.py"))
+
+    expected.loc[len(expected.index)] = [
+        filepath,
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "a_global_var",
+        None,
+        int.__name__,
+    ]
+    expected.loc[len(expected.index)] = [
+        filepath,
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "a_global_var",
+        None,
+        str.__name__,
+    ]
+
     for tracer in tracers:
         with tracer.active_trace():
             create_and_set_global()
+            _ = read_from_global()
+            modify_global()
             _ = read_from_global()
 
         trace_data = tracer.trace_data
         logging.debug(f"\n{trace_data}")
 
-    assert False
+        subset = expected.merge(trace_data, how="inner")
+        assert len(subset) == len(expected), f"Did not find all globals!\n{trace_data}"
+
