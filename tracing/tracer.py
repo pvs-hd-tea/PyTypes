@@ -259,6 +259,31 @@ class Tracer(TracerBase):
         elif event == "return":
             logger.info(f"Tracing return: {frameinfo}")
             names2types = self._on_return(frame, arg)
+
+            # Catch locals and globals that are changed on last line
+            local_names2types, global_names2types = self._on_line(frame)
+            if local_names2types:
+                self._update_trace_data_with(
+                    file_name,
+                    class_module,
+                    class_name,
+                    function_name,
+                    line_number,
+                    TraceDataCategory.LOCAL_VARIABLE,
+                    local_names2types,
+                )
+
+            if global_names2types:
+                self._update_trace_data_with(
+                    file_name,
+                    None,
+                    None,
+                    None,
+                    0,
+                    TraceDataCategory.GLOBAL_VARIABLE,
+                    global_names2types,
+                )
+
             category = TraceDataCategory.FUNCTION_RETURN
 
             # Remove from storage
