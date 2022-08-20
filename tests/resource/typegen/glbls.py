@@ -21,14 +21,14 @@ def h():
     # Reference existing global
     global exists_outside_of_all_scopes
     exists_outside_of_all_scopes = 5
-    
+
 
 @decorators.trace
 def main():
     # False
     print(exists_outside_of_all_scopes)
     f()
-    
+
     # False True
     print(exists_outside_of_all_scopes, sneaky_inside_scope)
 
@@ -36,7 +36,7 @@ def main():
     g()
     print(exists_outside_of_all_scopes, sneaky_inside_scope)
 
-    # 5 TypeChange  
+    # 5 TypeChange
     h()
     print(exists_outside_of_all_scopes, sneaky_inside_scope)
 
