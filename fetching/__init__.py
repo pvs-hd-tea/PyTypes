@@ -8,6 +8,7 @@ from .repo import Repository, GitRepository, ArchiveRepository
 from .detector import TestDetector
 
 __all__ = [Repository.__name__]
+ORIGINAL_REPOSITORY_FOLDER_NAME = "Original"
 
 
 @click.command(name="fetch", help="download repositories and apply tracing decorators")
@@ -77,7 +78,7 @@ def main(**params):
 
     traceable_output_path = out
     if evaluate:
-        original_repo_path = out / constants.ORIGINAL_REPOSITORY_FOLDER_NAME
+        original_repo_path = out / ORIGINAL_REPOSITORY_FOLDER_NAME
         repo.fetch(original_repo_path)
         traceable_output_path /= traceable_output_path.name
 
