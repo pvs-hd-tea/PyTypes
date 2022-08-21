@@ -74,8 +74,9 @@ class TypeHintGenerator(abc.ABC):
         applied = module
         for transformer in self._transformers(as_module, applicable):
             if hasattr(transformer, "METADATA_DEPENDENCIES"):
-                applied = cst.MetadataWrapper(applied)
-            applied = applied.visit(transformer)
+                applied = cst.MetadataWrapper(applied).visit(transformer)
+            else:
+                applied = applied.visit(transformer)
 
         return applied
 
