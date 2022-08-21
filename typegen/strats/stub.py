@@ -1,8 +1,12 @@
 import pathlib
-import libcst as cst
 import tempfile
+
 from mypy import stubgen
-from typegen.strats.inline import InlineGenerator
+import pandas as pd
+import libcst as cst
+from typegen.strats.gen import TypeHintGenerator
+
+from typegen.strats.inline import TypeHintTransformer
 
 
 class _ImportUnionTransformer(cst.CSTTransformer):
@@ -45,32 +49,40 @@ class _ImportUnionTransformer(cst.CSTTransformer):
                 self.requires_union_import = True
 
 
-class StubFileGenerator(InlineGenerator):
+class StubFileGenerator(TypeHintGenerator):
     """Generates stub files using mypy.stubgen."""
 
     ident = "stub"
+
+    def _transformers(self, module_path: str, applicable: pd.DataFrame) -> list[cst.CSTTransformer]:
+        return [
+            TypeHintTransformer(module_path, applicable)
+        ]
+
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
         # Stub means generating a stub without overwriting the original
         root = pathlib.Path.cwd()
 
-        temp_py_file = tempfile.NamedTemporaryFile()
-        temp_py_file_path = pathlib.Path(temp_py_file.name)
+        # Store inline hinted ast in temporary file so that mypy can 
+        # extract our applied hints to it
+        with tempfile.NamedTemporaryFile() as temphinted:
+            temp_py_file_path = pathlib.Path(temphinted.name)
 
-        super()._store_hinted_ast(temp_py_file_path, hinting)
+            with temp_py_file_path.open("w") as f:
+                f.write(hinting.code)
 
-        # Generates the stub file by generating the file (temporary)
-        # and use stubgen to generate a stub file from the generated file.
-        options = stubgen.parse_options([str(temp_py_file_path)])
-        mypy_opts = stubgen.mypy_options(options)
+            # Generates the stub file by generating the file (temporary)
+            # and use stubgen to generate a stub file from the generated file.
+            options = stubgen.parse_options([str(temp_py_file_path)])
+            mypy_opts = stubgen.mypy_options(options)
 
-        module = stubgen.StubSource("temp", str(temp_py_file_path))
+            module = stubgen.StubSource("temp", str(temp_py_file_path))
 
-        stubgen.generate_asts_for_modules([module], False, mypy_opts, options.verbose)
-        assert module.path is not None, "Not found module was not skipped"
-        relative_stub_file_path = str(source_file.relative_to(root).with_suffix(".pyi"))
+            stubgen.generate_asts_for_modules([module], False, mypy_opts, options.verbose)
+            assert module.path is not None, "Not found module was not skipped"
+            relative_stub_file_path = str(source_file.relative_to(root).with_suffix(".pyi"))
 
-        try:
             with stubgen.generate_guarded(module.module, relative_stub_file_path):
                 stubgen.generate_stub_from_ast(
                     module, relative_stub_file_path, False, options.pyversion
@@ -86,7 +98,5 @@ class StubFileGenerator(InlineGenerator):
             transformer = _ImportUnionTransformer()
             stub_cst = stub_cst.visit(transformer)
 
-            super()._store_hinted_ast(path_of_stub_file, stub_cst)
-        finally:
-            # Clears the file content.
-            temp_py_file_path.open("w").close()
+            with path_of_stub_file.open("w") as f:
+                f.write(stub_cst.code)

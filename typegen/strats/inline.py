@@ -529,20 +529,10 @@ class TypeHintTransformer(cst.CSTTransformer):
 class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
-    def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
-    ) -> cst.Module:
-        # Access is safe, as check in base class guarantees at least one element
-        filename = applicable[Column.FILENAME].values[0]
-        assert filename is not None
-
-        path = os.path.splitext(filename)[0]
-        as_module = path.replace(os.path.sep, ".")
-
-        transformer = TypeHintTransformer(as_module, applicable)
-        hinted = ast_with_metadata.visit(transformer)
-
-        return hinted
+    def _transformers(self, module_path: str, applicable: pd.DataFrame) -> list[cst.CSTTransformer]:
+        return [
+            TypeHintTransformer(module_path, applicable)
+        ]
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
         # Inline means overwriting the original

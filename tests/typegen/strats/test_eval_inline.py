@@ -6,11 +6,9 @@ from tests.typegen.strats._sample_data import get_test_data
 import pandas as pd
 
 
-def load_with_metadata(path: pathlib.Path) -> cst.MetadataWrapper:
+def load_cst_module(path: pathlib.Path) -> cst.Module:
     module = cst.parse_module(source=path.open().read())
-    module_w_metadata = cst.MetadataWrapper(module)
-
-    return module_w_metadata
+    return module
 
 
 def test_factory():
@@ -29,7 +27,7 @@ def test_inline_generator_generates_expected_content(get_test_data):
 
         gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
         hinted = gen._gen_hinted_ast(
-            applicable=sample_trace_data, ast_with_metadata=load_with_metadata(resource_path)
+            applicable=sample_trace_data, module=load_cst_module(resource_path)
         )
         imported = gen._add_all_imports(applicable=sample_trace_data, hinted_ast=hinted)
         actual_file_content = imported.code
