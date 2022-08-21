@@ -5,6 +5,8 @@ import pytest
 
 from constants import Schema
 from tracing import TraceDataCategory
+from typegen import TraceDataFilter, DropDuplicatesFilter
+from typegen.unification.union import UnionFilter
 
 
 @pytest.fixture()
@@ -17,6 +19,7 @@ def get_test_data():
         get_test_data_existing_type_hints,
         get_test_data_attribute,
         get_test_data_union_import,
+        get_test_data_global_hinting
     ]
 
     returned_data = []
@@ -283,8 +286,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        2,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "z",
         None,
         "int",
@@ -294,8 +297,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        4,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "y",
         None,
         "float",
@@ -305,8 +308,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        7,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "d",
         None,
         "dict",
@@ -316,8 +319,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        8,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "s",
         None,
         "set",
@@ -327,8 +330,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        9,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "l",
         None,
         "list",
@@ -339,8 +342,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        18,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "a",
         None,
         "float",
@@ -350,8 +353,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        18,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "b",
         None,
         "int",
@@ -361,8 +364,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        18,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "i",
         None,
         "float",
@@ -372,8 +375,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        18,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "j",
         None,
         "int",
@@ -383,30 +386,20 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        18,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "f",
         None,
         "int",
     ]
+
     sample_trace_data.loc[len(sample_trace_data.index)] = [
         str(resource_path),
         None,
         None,
         None,
-        20,
-        TraceDataCategory.LOCAL_VARIABLE,
-        "f",
-        None,
-        "int",
-    ]
-    sample_trace_data.loc[len(sample_trace_data.index)] = [
-        str(resource_path),
-        None,
-        None,
-        None,
-        20,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "y",
         None,
         "int",
@@ -416,8 +409,8 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        21,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "f",
         None,
         "int",
@@ -427,17 +420,24 @@ def get_test_data_assignments():
         None,
         None,
         None,
-        21,
-        TraceDataCategory.LOCAL_VARIABLE,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
         "y",
         None,
         "int",
     ]
 
+    sample_trace_data = TraceDataFilter(DropDuplicatesFilter.ident).apply(sample_trace_data)
+    sample_trace_data = TraceDataFilter(UnionFilter.ident).apply(sample_trace_data)
+
     expected_inline_content = """# Simple assignment, is lifted to AnnAssign
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
 z: int = 0
 # Resulting from math op, should not differ from simple assignment
-y: float = 5.0 + z
+y: float | int = 5.0 + z
 
 # data structures
 d: dict = dict(zip("HelloWorld", range(10)))
@@ -453,13 +453,14 @@ l: list = list(range(10))
 # j: int
 a: float; b: int; i: float; j: int; (a, b), (i, j) = (y, z), (y, z)
 
-f: int; y: int; f = y = 10
+f: int; y: float | int; f = y = 10
 f: int; f += y - 20
 """
     expected_eval_inline_content = expected_inline_content
 
-    expected_stub_content = """z: int
-y: float
+    expected_stub_content = """from typing import Union
+z: int
+y: Union[float, int]
 d: dict
 s: set
 l: list
@@ -889,4 +890,144 @@ def stringify(a: Union[int, str, Path]) -> str: ...
         expected_inline_content,
         expected_eval_inline_content,
         expected_stub_content,
+    )
+
+def get_test_data_global_hinting():
+    resource_path = pathlib.Path("tests", "resource", "typegen", "glbls.py")
+    sample_trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
+
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        5,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "not_a_global",
+        None,
+        str.__name__,
+    ]
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "f",
+        6,
+        TraceDataCategory.LOCAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        int.__name__,
+    ]
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "sneaky_inside_scope",
+        None,
+        bool.__name__,
+    ]
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "sneaky_inside_scope",
+        None,
+        str.__name__,
+    ]
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        bool.__name__,
+    ]
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        None,
+        0,
+        TraceDataCategory.GLOBAL_VARIABLE,
+        "exists_outside_of_all_scopes",
+        None,
+        int.__name__,
+    ]
+
+    sample_trace_data = TraceDataFilter(UnionFilter.ident).apply(sample_trace_data)
+
+    expected_inline_content = r"""from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+exists_outside_of_all_scopes: bool | int = False
+
+
+def f():
+    not_a_global: str = "Hello"
+    exists_outside_of_all_scopes: int = 5  # This is a local variable!
+
+    global sneaky_inside_scope
+    sneaky_inside_scope: bool | str = True
+
+
+def g():
+    # This should induce a union type in BOTH functions
+    global sneaky_inside_scope
+    sneaky_inside_scope: bool | str = "TypeChange"
+
+
+def h():
+    # Reference existing global
+    global exists_outside_of_all_scopes
+    exists_outside_of_all_scopes: bool | int = 5
+
+
+def main():
+    # False
+    print(exists_outside_of_all_scopes)
+    f()
+
+    # False True
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+    # False TypeChange
+    g()
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+    # 5 TypeChange
+    h()
+    print(exists_outside_of_all_scopes, sneaky_inside_scope)
+
+
+if __name__ == "__main__":
+    main()
+"""
+
+    expected_eval_inline_content = expected_inline_content
+
+    expected_stub_content = """from typing import Union
+exists_outside_of_all_scopes: Union[bool, int]
+
+def f() -> None: ...
+def g() -> None: ...
+def h() -> None: ...
+def main() -> None: ...
+"""
+
+    return (
+        resource_path,
+        sample_trace_data,
+        expected_inline_content,
+        expected_eval_inline_content,
+        expected_stub_content
     )

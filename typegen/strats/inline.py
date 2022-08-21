@@ -438,7 +438,7 @@ class TypeHintTransformer(cst.CSTTransformer):
                     hinted_targets.append(
                         cst.AnnAssign(
                             target=var,
-                            annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                            annotation=_create_annotation_from_vartype(hint_ty),
                             value=None,
                         )
                     )
