@@ -49,54 +49,60 @@ class _ImportUnionTransformer(cst.CSTTransformer):
                 self.requires_union_import = True
 
 
+class MyPyHintTransformer(cst.CSTTransformer):
+    def leave_Module(
+        self, original_node: cst.Module, updated_node: cst.Module
+    ) -> cst.Module:
+        # Store inline hinted ast in temporary file so that mypy can
+        # extract our applied hints to it
+        with tempfile.NamedTemporaryFile() as temphinted, tempfile.NamedTemporaryFile() as tempstub:
+            temp_py_file_path = pathlib.Path(temphinted.name)
+            tempstub_path = pathlib.Path(tempstub.name)
+
+            with temp_py_file_path.open("w") as f:
+                f.write(updated_node.code)
+
+            # Generates the stub file by generating the file (temporary)
+            # and use stubgen to generate a stub file from the generated file.
+            options = stubgen.parse_options([temphinted.name])
+            mypy_opts = stubgen.mypy_options(options)
+
+            module = stubgen.StubSource("temp", temphinted.name)
+
+            stubgen.generate_asts_for_modules(
+                py_modules=[module],
+                parse_only=False,
+                mypy_options=mypy_opts,
+                verbose=options.verbose,
+            )
+            with stubgen.generate_guarded(module.module, tempstub_path.name):
+                stubgen.generate_stub_from_ast(
+                    mod=module,
+                    target=tempstub.name,
+                    parse_only=False,
+                    pyversion=options.pyversion,
+                )
+
+            with tempstub_path.open() as file:
+                stub_file_content = file.read()
+
+            return cst.parse_module(stub_file_content)
+
+
 class StubFileGenerator(TypeHintGenerator):
     """Generates stub files using mypy.stubgen."""
 
     ident = "stub"
 
-    def _transformers(self, module_path: str, applicable: pd.DataFrame) -> list[cst.CSTTransformer]:
+    def _transformers(
+        self, module_path: str, applicable: pd.DataFrame
+    ) -> list[cst.CSTTransformer]:
         return [
-            TypeHintTransformer(module_path, applicable)
+            TypeHintTransformer(module_path, applicable),
+            MyPyHintTransformer(),
+            _ImportUnionTransformer(),
         ]
 
-
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
-        # Stub means generating a stub without overwriting the original
-        root = pathlib.Path.cwd()
-
-        # Store inline hinted ast in temporary file so that mypy can 
-        # extract our applied hints to it
-        with tempfile.NamedTemporaryFile() as temphinted:
-            temp_py_file_path = pathlib.Path(temphinted.name)
-
-            with temp_py_file_path.open("w") as f:
-                f.write(hinting.code)
-
-            # Generates the stub file by generating the file (temporary)
-            # and use stubgen to generate a stub file from the generated file.
-            options = stubgen.parse_options([str(temp_py_file_path)])
-            mypy_opts = stubgen.mypy_options(options)
-
-            module = stubgen.StubSource("temp", str(temp_py_file_path))
-
-            stubgen.generate_asts_for_modules([module], False, mypy_opts, options.verbose)
-            assert module.path is not None, "Not found module was not skipped"
-            relative_stub_file_path = str(source_file.relative_to(root).with_suffix(".pyi"))
-
-            with stubgen.generate_guarded(module.module, relative_stub_file_path):
-                stubgen.generate_stub_from_ast(
-                    module, relative_stub_file_path, False, options.pyversion
-                )
-
-            # Adds the missing "from typing import Union" statement.
-            path_of_stub_file = root / relative_stub_file_path
-            with path_of_stub_file.open() as file:
-                stub_file_content = file.read()
-
-            stub_cst = cst.parse_module(stub_file_content)
-
-            transformer = _ImportUnionTransformer()
-            stub_cst = stub_cst.visit(transformer)
-
-            with path_of_stub_file.open("w") as f:
-                f.write(stub_cst.code)
+        with source_file.with_suffix(".pyi").open("w") as f:
+            f.write(hinting.code)
