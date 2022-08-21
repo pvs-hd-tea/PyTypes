@@ -17,31 +17,7 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-
-    - name: Set up Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: 1.1.10
-        virtualenvs-create: true
-        virtualenvs-in-project: false
-        virtualenvs-path: ~/.cache/virtualenvs
-        installer-parallel: true
-
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/virtualenvs
-        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
-    - name: Install deploy dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install -E doc-tools
-
     - name: Deploy Documentation
-      run: |
-        poetry run mkdocs gh-deploy
+      uses: mhausenblas/mkdocs-deploy-gh-pages@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
