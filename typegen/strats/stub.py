@@ -1,26 +1,8 @@
 import pathlib
 import libcst as cst
+import tempfile
 from mypy import stubgen
-import constants
-from tracing.ptconfig import load_config
 from typegen.strats.inline import InlineGenerator
-
-
-def _get_temp_folder_path(root: pathlib.Path) -> pathlib.Path:
-    cfg = load_config(root / constants.CONFIG_FILE_NAME)
-    if cfg.pytypes.proj_path != root:
-        raise RuntimeError(
-            f"Invalid config file: wrong project root: Program has been executed in {root}, "
-            f"but config file has {cfg.pytypes.proj_path} set"
-        )
-
-    return root / StubFileGenerator.RELATIVE_TEMP_FOLDER_PATH
-
-
-def validate_temp_file_path(temp_file_path: pathlib.Path) -> None:
-    if temp_file_path.exists():
-        assert temp_file_path.is_file()
-        assert temp_file_path.stat().st_size == 0, f"{temp_file_path} is not empty!"
 
 
 class _ImportUnionTransformer(cst.CSTTransformer):
@@ -66,21 +48,14 @@ class _ImportUnionTransformer(cst.CSTTransformer):
 class StubFileGenerator(InlineGenerator):
     """Generates stub files using mypy.stubgen."""
 
-    RELATIVE_TEMP_FOLDER_PATH = pathlib.Path("pytypes") / "typegen" / "stub" / "temp"
-    TEMP_PY_FILENAME = "temp.py"
-    TEMP_STUB_FILENAME = "temp.pyi"
     ident = "stub"
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
         # Stub means generating a stub without overwriting the original
         root = pathlib.Path.cwd()
 
-        temp_folder_path = _get_temp_folder_path(root)
-        temp_folder_path.mkdir(parents=True, exist_ok=True)
-
-        temp_py_file_path = temp_folder_path / StubFileGenerator.TEMP_PY_FILENAME
-
-        validate_temp_file_path(temp_py_file_path)
+        temp_py_file = tempfile.NamedTemporaryFile()
+        temp_py_file_path = pathlib.Path(temp_py_file.name)
 
         super()._store_hinted_ast(temp_py_file_path, hinting)
 
