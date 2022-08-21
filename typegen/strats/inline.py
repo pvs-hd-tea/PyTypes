@@ -15,6 +15,7 @@ from libcst.metadata import PositionProvider
 from constants import Column
 from tracing.trace_data_category import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
+from typegen.strats.imports import _AddImportTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -529,9 +530,12 @@ class TypeHintTransformer(cst.CSTTransformer):
 class InlineGenerator(TypeHintGenerator):
     ident = "inline"
 
-    def _transformers(self, module_path: str, applicable: pd.DataFrame) -> list[cst.CSTTransformer]:
+    def _transformers(
+        self, module_path: str, applicable: pd.DataFrame
+    ) -> list[cst.CSTTransformer]:
         return [
-            TypeHintTransformer(module_path, applicable)
+            TypeHintTransformer(module_path, applicable),
+            _AddImportTransformer(applicable),
         ]
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
@@ -539,4 +543,3 @@ class InlineGenerator(TypeHintGenerator):
         contents = hinting.code
         with source_file.open("w") as f:
             f.write(contents)
-

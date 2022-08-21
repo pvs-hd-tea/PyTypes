@@ -56,8 +56,7 @@ class TypeHintGenerator(abc.ABC):
                 module = cst.parse_module(source=from_root.open().read())
 
                 typed = self._gen_hinted_ast(applicable=applicable, module=module)
-                imported = self._add_all_imports(applicable, typed)
-                self._store_hinted_ast(source_file=from_root, hinting=imported)
+                self._store_hinted_ast(source_file=from_root, hinting=typed)
 
     def _gen_hinted_ast(
         self, applicable: pd.DataFrame, module: cst.Module
@@ -92,10 +91,3 @@ class TypeHintGenerator(abc.ABC):
         Store the hinted AST at the correct location, based upon the `source_file` param
         """
         pass
-
-    def _add_all_imports(
-        self,
-        applicable: pd.DataFrame,
-        hinted_ast: cst.Module,
-    ) -> cst.Module:
-        return hinted_ast.visit(_AddImportTransformer(applicable))
