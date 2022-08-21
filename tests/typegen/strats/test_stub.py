@@ -30,9 +30,8 @@ def test_stube_file_generator_generates_expected_content(get_test_data):
         hinted = gen._gen_hinted_ast(
             applicable=sample_trace_data, module=load_cst_module(resource_path)
         )
-        imported = gen._add_all_imports(applicable=sample_trace_data, hinted_ast=hinted)
         absolute_resource_path = pathlib.Path.cwd() / resource_path
-        gen._store_hinted_ast(absolute_resource_path, imported)
+        gen._store_hinted_ast(absolute_resource_path, hinted)
 
         expected_stub_file_path = resource_path.with_suffix(".pyi")
         assert expected_stub_file_path.is_file()
@@ -72,9 +71,8 @@ def test_stub_file_generator_generates_file_with_correct_content_with_union_impo
     hinted = gen._gen_hinted_ast(
         applicable=empty_trace_data, module=load_cst_module(resource_path)
     )
-    imported = gen._add_all_imports(applicable=empty_trace_data, hinted_ast=hinted)
     absolute_resource_path = pathlib.Path.cwd() / resource_path
-    gen._store_hinted_ast(absolute_resource_path, imported)
+    gen._store_hinted_ast(absolute_resource_path, hinted)
 
     expected_stub_file_content = """from typing import Union
 def function(parameter: Union[int, None]) -> Union[str, int]: ...
@@ -107,9 +105,8 @@ def test_stub_file_generator_generates_file_with_correct_content_with_custom_uni
     hinted = gen._gen_hinted_ast(
         applicable=empty_trace_data, module=load_cst_module(resource_path)
     )
-    imported = gen._add_all_imports(applicable=empty_trace_data, hinted_ast=hinted)
     absolute_resource_path = pathlib.Path.cwd() / resource_path
-    gen._store_hinted_ast(absolute_resource_path, imported)
+    gen._store_hinted_ast(absolute_resource_path, hinted)
 
     expected_stub_file_content = """class Union: ...
 

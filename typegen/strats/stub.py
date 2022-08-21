@@ -5,6 +5,7 @@ from mypy import stubgen
 import pandas as pd
 import libcst as cst
 from typegen.strats.gen import TypeHintGenerator
+from typegen.strats.imports import _AddImportTransformer
 
 from typegen.strats.inline import TypeHintTransformer
 
@@ -101,6 +102,7 @@ class StubFileGenerator(TypeHintGenerator):
             TypeHintTransformer(module_path, applicable),
             MyPyHintTransformer(),
             _ImportUnionTransformer(),
+            _AddImportTransformer(applicable)
         ]
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:

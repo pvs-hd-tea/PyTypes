@@ -458,11 +458,7 @@ f: int; f += y - 20
 """
     expected_eval_inline_content = expected_inline_content
 
-    expected_stub_content = """from __future__ import annotations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    pass
-from typing import Union
+    expected_stub_content = """from typing import Union
 z: int
 y: Union[float, int]
 d: dict

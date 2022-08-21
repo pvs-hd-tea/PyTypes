@@ -29,8 +29,7 @@ def test_inline_generator_generates_expected_content(get_test_data):
         hinted = gen._gen_hinted_ast(
             applicable=sample_trace_data, module=load_cst_module(resource_path)
         )
-        imported = gen._add_all_imports(applicable=sample_trace_data, hinted_ast=hinted)
-        actual_file_content = imported.code
+        actual_file_content = hinted.code
         if actual_file_content != expected_eval_inline_content:
             print(f"Test failed for: {str(resource_path)}")
             print("Expected generated code: ")
