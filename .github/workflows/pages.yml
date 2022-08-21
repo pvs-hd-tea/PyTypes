@@ -8,6 +8,7 @@ on:
       - main
 
 permissions:
+  pages: write
   contents: read
 
 jobs:
@@ -41,11 +42,10 @@ jobs:
         path: ~/.cache/virtualenvs
         key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
-    - name: Install dependencies
+    - name: Install deploy dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
+      run: poetry install -E doc-tools
 
     - name: Deploy Documentation
-      if: github.ref == 'refs/heads/develop'
       run: |
         poetry run mkdocs gh-deploy
