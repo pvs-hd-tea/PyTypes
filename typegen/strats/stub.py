@@ -102,7 +102,7 @@ class StubFileGenerator(TypeHintGenerator):
             TypeHintTransformer(module_path, applicable),
             MyPyHintTransformer(),
             _ImportUnionTransformer(),
-            _AddImportTransformer(applicable)
+            _AddImportTransformer(applicable),
         ]
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
