@@ -7,10 +7,6 @@ on:
       - docs*
       - main
 
-permissions:
-  pages: write
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
