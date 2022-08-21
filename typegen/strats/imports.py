@@ -59,7 +59,9 @@ class _AddImportTransformer(cst.CSTTransformer):
                     mod_name, cst.Name | cst.Attribute
                 ), f"Accidentally parsed {type(mod_name)}"
 
-                aliases = [cst.ImportAlias(name=cst.Name(ty))]
+                # For inner types, the outermost attr exposes them
+                outer_most = ty.split(".")[0]
+                aliases = [cst.ImportAlias(name=cst.Name(outer_most))]
                 imp_from = cst.ImportFrom(module=mod_name, names=aliases)
                 imports_for_type_hints.append(cst.SimpleStatementLine([imp_from]))
 

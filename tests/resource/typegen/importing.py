@@ -6,3 +6,6 @@ class AnotherC:
 
 def another_function(c):
     return "4"
+
+def takes_inner_inst(inner):
+    return inner
