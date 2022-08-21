@@ -144,3 +144,4 @@ pytypes/
 tests/fetching/repos/*
 !tests/fetching/repos/.gitkeep
 .vscode
+site/

@@ -1,0 +1,46 @@
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - docs*
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+
+    - name: Set up Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.1.10
+        virtualenvs-create: true
+        virtualenvs-in-project: false
+        virtualenvs-path: ~/.cache/virtualenvs
+        installer-parallel: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/virtualenvs
+        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+
+    - name: Deploy Documentation
+      if: github.ref == 'refs/heads/develop'
+      run: |
+        poetry run mkdocs gh-deploy
