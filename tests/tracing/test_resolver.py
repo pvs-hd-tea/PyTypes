@@ -50,7 +50,8 @@ class UserClass:
 
 class Outer:
     class Inner:
-        ...
+        class EvenMoreInner:
+            ...
 
 
 @pytest.mark.parametrize(
@@ -58,6 +59,11 @@ class Outer:
     [
         (UserClass, "tests.tracing.test_resolver", "UserClass"),
         (Outer.Inner, "tests.tracing.test_resolver", "Outer.Inner"),
+        (
+            Outer.Inner.EvenMoreInner,
+            "tests.tracing.test_resolver",
+            "Outer.Inner.EvenMoreInner",
+        ),
     ],
 )
 def test_proj(resolver: Resolver, ty: type, module: str, name: str):
