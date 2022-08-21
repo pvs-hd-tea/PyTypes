@@ -1,6 +1,8 @@
 import re
 import pandas as pd
 
+ORIGINAL_REPOSITORY_FOLDER_NAME = "Original"
+
 PROJECT_NAME = "PyTypes"
 
 CONFIG_FILE_NAME = "pytypes.toml"

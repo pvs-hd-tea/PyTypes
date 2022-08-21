@@ -3,6 +3,7 @@ import pathlib
 
 import click
 
+import constants
 from .repo import Repository, GitRepository, ArchiveRepository
 from .detector import TestDetector
 
@@ -41,6 +42,14 @@ __all__ = [Repository.__name__]
     default=False,
 )
 @click.option(
+    "-e",
+    "--eval",
+    help="Instead of generating one copy, generate two copies: The original & the repository for tracing",
+    is_flag=True,
+    required=False,
+    default=False,
+)
+@click.option(
     "-v",
     "--verbose",
     help="INFO if not given, else CRITICAL",
@@ -52,19 +61,27 @@ __all__ = [Repository.__name__]
 
 
 def main(**params):
-    url, fmt, out, verb, notraverse = (
+    url, fmt, out, verb, notraverse, evaluate = (
         params["url"],
         params["format"],
         params["output"],
         params["verbose"],
-        params["no_traverse"]
+        params["no_traverse"],
+        params["eval"]
     )
     logging.basicConfig(level=verb)
 
     logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {notraverse=}")
 
     repo = Repository.factory(project_url=url, fmt=fmt)
-    project = repo.fetch(out)
+
+    traceable_output_path = out
+    if evaluate:
+        original_repo_path = out / constants.ORIGINAL_REPOSITORY_FOLDER_NAME
+        repo.fetch(original_repo_path)
+        traceable_output_path /= traceable_output_path.name
+
+    project = repo.fetch(traceable_output_path)
 
     detector = TestDetector.factory(proj=project)
     strategy = detector.create_strategy(recurse_into_subdirs=not notraverse)
