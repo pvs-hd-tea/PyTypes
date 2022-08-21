@@ -586,6 +586,20 @@ def test_imported():
         anotherc_clazz,
     ]
 
+    inner_outer_module = "tests.resource.typegen.scopage"
+    inner_outer_class = "OuterClass.InnerClass"
+    traced.loc[len(traced.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "takes_inner_inst",
+        10,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "inner",
+        inner_outer_module,
+        inner_outer_class,
+    ]
+
     gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
     hinted = gen._gen_hinted_ast(
         applicable=traced, ast_with_metadata=load_with_metadata(resource_path)
@@ -613,6 +627,13 @@ def test_imported():
                 assert len(node.names) == 1
                 assert node.names[0].name.value == "C"
 
+            elif matches(
+                node.module, cst.parse_expression("tests.resource.typegen.scopage")
+            ):
+                assert isinstance(node.module, cst.Attribute)
+                assert len(node.names) == 1
+                assert node.names[0].name.value == "OuterClass"
+
             else:
                 assert False, f"Unexpected ImportFrom: {node.module.value}"
 
@@ -629,6 +650,11 @@ def test_imported():
                 assert node.params.params[0].annotation.annotation.value == "AnotherC"
 
                 assert node.returns.annotation.value == "str"
+
+            elif node.name.value == "takes_inner_inst":
+                assert node.params.params[0].name.value == "inner"
+                hint = cst.parse_expression("OuterClass.InnerClass")
+                assert matches(node.params.params[0].annotation.annotation, hint)
 
             else:
                 assert False, f"Unhandled functiondef: {node.name.value}"
@@ -1048,6 +1074,5 @@ if __name__ == "__main__":
     imported = gen._add_all_imports(applicable=traced, hinted_ast=hinted)
     logging.debug(f"Expected: \n{expected_ast.code}")
     logging.debug(f"Generated: \n{imported.code}")
-    
+
     assert expected_ast.code == imported.code
-    

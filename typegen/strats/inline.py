@@ -53,24 +53,7 @@ def _find_targets(
 
 
 def _create_annotation_from_vartype(vartype: str) -> cst.Annotation:
-    # handle union types
-    vartypes = vartype.split(" | ")
-    if len(vartypes) == 1:
-        return cst.Annotation(annotation=cst.Name(vartype))
-
-    as_types = list(map(cst.Name, vartypes))
-
-    lhs, rhs, remaining = *as_types[:2], as_types[2:]
-
-    initial = cst.BinaryOperation(left=lhs, operator=cst.BitOr(), right=rhs)
-    combined = functools.reduce(
-        lambda acc, curr: cst.BinaryOperation(
-            left=acc, operator=cst.BitOr(), right=curr
-        ),
-        remaining,
-        initial,
-    )
-    return cst.Annotation(annotation=combined)
+    return cst.Annotation(annotation=cst.parse_expression(vartype))
 
 
 class TypeHintTransformer(cst.CSTTransformer):

@@ -74,6 +74,13 @@ def read_from_global() -> str:
     return a_global_var
 
 
+class OuterClass:
+    class InnerClass:
+        ...
+    def __init__(self) -> None:
+        self.inner = OuterClass.InnerClass()
+
+
 cwd = pathlib.Path.cwd()
 from types import NoneType
 
@@ -678,3 +685,30 @@ def test_tracer_finds_globals(tracers: list[Tracer]):
         subset = expected.merge(trace_data, how="inner")
         assert len(subset) == len(expected), f"Did not find all globals!\n{trace_data}"
 
+
+def test_tracer_names_inner_correctly(tracers: list[Tracer]):
+    expected = pd.DataFrame(columns=Schema.TraceData.keys())
+
+    filepath = str(pathlib.Path("tests", "tracing", "test_tracer.py"))
+
+    expected.loc[len(expected.index)] = [
+        filepath,
+        "tests.tracing.test_tracer",
+        "OuterClass",
+        None,
+        0,
+        TraceDataCategory.CLASS_MEMBER,
+        "inner",
+        "tests.tracing.test_tracer",
+        "OuterClass.InnerClass",
+    ]
+
+    for tracer in tracers:
+        with tracer.active_trace():
+            _ = OuterClass()
+
+        trace_data = tracer.trace_data
+        logging.debug(f"\n{trace_data}")
+
+        subset = expected.merge(trace_data, how="inner")
+        assert len(subset) == len(expected), f"Failed to find inner class!\n{trace_data}"
