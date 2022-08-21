@@ -1,6 +1,6 @@
-# Simple assigment, is lifted to AnnAssign
+# Simple assignment, is lifted to AnnAssign
 z = 0
-# Resulting from math op, shouldnt differ from simple assignment
+# Resulting from math op, should not differ from simple assignment
 y = 5.0 + z
 
 # data structures

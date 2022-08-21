@@ -1,5 +1,6 @@
 import abc
 import logging
+import os
 import pathlib
 import typing
 
@@ -53,21 +54,35 @@ class TypeHintGenerator(abc.ABC):
 
                 from_root = root / path
                 module = cst.parse_module(source=from_root.open().read())
-                module_and_meta = cst.MetadataWrapper(module)
 
-                typed = self._gen_hinted_ast(
-                    applicable=applicable, ast_with_metadata=module_and_meta
-                )
-                imported = self._add_all_imports(applicable, typed)
-                self._store_hinted_ast(source_file=from_root, hinting=imported)
+                typed = self._gen_hinted_ast(applicable=applicable, module=module)
+                self._store_hinted_ast(source_file=from_root, hinting=typed)
 
-    @abc.abstractmethod
     def _gen_hinted_ast(
-        self, applicable: pd.DataFrame, ast_with_metadata: cst.MetadataWrapper
+        self, applicable: pd.DataFrame, module: cst.Module
     ) -> cst.Module:
         """
         Perform operations to generate types for the given file
         """
+        filename = applicable[Column.FILENAME].values[0]
+        assert filename is not None
+
+        path = os.path.splitext(filename)[0]
+        as_module = path.replace(os.path.sep, ".")
+
+        applied = module
+        for transformer in self._transformers(as_module, applicable):
+            if hasattr(transformer, "METADATA_DEPENDENCIES"):
+                applied = cst.MetadataWrapper(applied).visit(transformer)
+            else:
+                applied = applied.visit(transformer)
+
+        return applied
+
+    @abc.abstractmethod
+    def _transformers(
+        self, module_path: str, applicable: pd.DataFrame
+    ) -> list[cst.CSTTransformer]:
         pass
 
     @abc.abstractmethod
@@ -76,10 +91,3 @@ class TypeHintGenerator(abc.ABC):
         Store the hinted AST at the correct location, based upon the `source_file` param
         """
         pass
-
-    def _add_all_imports(
-        self,
-        applicable: pd.DataFrame,
-        hinted_ast: cst.Module,
-    ) -> cst.Module:
-        return hinted_ast.visit(_AddImportTransformer(applicable))
