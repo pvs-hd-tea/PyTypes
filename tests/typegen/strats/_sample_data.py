@@ -537,10 +537,25 @@ def get_test_data_imported():
         anotherc_clazz_module,
         anotherc_clazz,
     ]
+    inner_outer_module = "tests.resource.typegen.scopage"
+    inner_outer_class = "OuterClass.InnerClass"
+    sample_trace_data.loc[len(sample_trace_data.index)] = [
+        str(resource_path),
+        None,
+        None,
+        "takes_inner_inst",
+        10,
+        TraceDataCategory.FUNCTION_PARAMETER,
+        "inner",
+        inner_outer_module,
+        inner_outer_class,
+    ]
+
     expected_inline_content = """from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tests.resource.typegen.callable import C
+    from tests.resource.typegen.scopage import OuterClass
 def function(c: C) -> int:
     return c.outer(5)
 
@@ -549,16 +564,21 @@ class AnotherC:
 
 def another_function(c: AnotherC) -> str:
     return "4"
+
+def takes_inner_inst(inner: OuterClass.InnerClass):
+    return inner
 """
     expected_eval_inline_content = expected_inline_content
 
     expected_stub_content = """from tests.resource.typegen.callable import C as C
+from tests.resource.typegen.scopage import OuterClass as OuterClass
 
 def function(c: C) -> int: ...
 
 class AnotherC: ...
 
 def another_function(c: AnotherC) -> str: ...
+def takes_inner_inst(inner: OuterClass.InnerClass): ...
 """
     return (
         resource_path,
