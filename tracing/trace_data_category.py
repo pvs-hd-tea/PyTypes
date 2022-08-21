@@ -7,3 +7,4 @@ class TraceDataCategory(enum.IntEnum):
     FUNCTION_PARAMETER = 2
     FUNCTION_RETURN = 3
     CLASS_MEMBER = 4
+    GLOBAL_VARIABLE = 5
