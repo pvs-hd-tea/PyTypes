@@ -103,7 +103,9 @@ class Resolver:
                 )
                 return None
 
-            variable_type: type = getattr(module, type_name)
+            # Resolve inner classes too!
+            # Have to ignore because mypy thinks accessing a module returns a module :shrug:
+            variable_type: type = functools.reduce(getattr, type_name.split("."), module)  # type: ignore
             return variable_type
 
     def get_module_and_name(self, ty: type) -> tuple[str | None, str] | None:
@@ -114,8 +116,8 @@ class Resolver:
             return None, ty.__name__
 
         # Special case:
-        # The __file__ attribute is not present for C modules that are statically linked into the interpreter; 
-        # for extension modules loaded dynamically from a shared library, 
+        # The __file__ attribute is not present for C modules that are statically linked into the interpreter;
+        # for extension modules loaded dynamically from a shared library,
         # it is the pathname of the shared library file.
         if not hasattr(module, "__file__"):
             return module.__name__, ty.__name__
@@ -147,4 +149,4 @@ class Resolver:
             return None
 
         relmod = str(rel_path.with_suffix("")).replace(os.path.sep, ".")
-        return relmod, ty.__name__
+        return relmod, ty.__qualname__
