@@ -1,4 +1,4 @@
-from typegen.strats.imports import _AddImportTransformer
+from typegen.strats.imports import AddImportTransformer
 from .inline import InlineGenerator, TypeHintTransformer
 import os
 import pandas as pd
@@ -38,5 +38,5 @@ class EvaluationInlineGenerator(InlineGenerator):
         return [
             RemoveAllTypeHintsTransformer(),
             TypeHintTransformer(module_path, applicable),
-            _AddImportTransformer(applicable),
+            AddImportTransformer(applicable),
         ]

@@ -5,12 +5,12 @@ from mypy import stubgen
 import pandas as pd
 import libcst as cst
 from typegen.strats.gen import TypeHintGenerator
-from typegen.strats.imports import _AddImportTransformer
+from typegen.strats.imports import AddImportTransformer
 
 from typegen.strats.inline import TypeHintTransformer
 
 
-class _ImportUnionTransformer(cst.CSTTransformer):
+class ImportUnionTransformer(cst.CSTTransformer):
     def __init__(self):
         self.requires_union_import = False
 
@@ -100,9 +100,9 @@ class StubFileGenerator(TypeHintGenerator):
     ) -> list[cst.CSTTransformer]:
         return [
             TypeHintTransformer(module_path, applicable),
-            _AddImportTransformer(applicable),
+            AddImportTransformer(applicable),
             MyPyHintTransformer(),
-            _ImportUnionTransformer(),
+            ImportUnionTransformer(),
         ]
 
     def _store_hinted_ast(self, source_file: pathlib.Path, hinting: cst.Module) -> None:
