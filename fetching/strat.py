@@ -11,6 +11,7 @@ from .projio import Project
 import constants
 from tracing.ptconfig import write_config, TomlCfg, PyTypes
 
+from confgen import generate_cfg
 
 class ApplicationStrategy(ABC):
     """
@@ -31,16 +32,7 @@ class ApplicationStrategy(ABC):
         ):
             self._apply(path)
 
-        cfg_path = project.root / constants.CONFIG_FILE_NAME
-        pts = PyTypes(
-            project=project.root.name,
-            proj_path=project.root,
-            stdlib_path=pathlib.Path("stdlib", "goes", "here"),
-            venv_path=pathlib.Path("venv", "goes", "here"),
-        )
-
-        toml = TomlCfg(pts, unifier=None)  # type: ignore
-        write_config(cfg_path, toml)
+        generate_cfg(project.root)
 
     @abstractmethod
     def _apply(self, path: pathlib.Path) -> None:
