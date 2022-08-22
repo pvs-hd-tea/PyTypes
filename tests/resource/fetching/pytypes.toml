@@ -1,0 +1,6 @@
+[pytypes]
+project = "fetching"
+stdlib_path = "stdlib/goes/here"
+proj_path = "tests/resource/fetching"
+venv_path = "venv/goes/here"
+benchmark_performance = false

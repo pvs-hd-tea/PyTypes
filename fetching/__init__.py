@@ -3,7 +3,6 @@ import pathlib
 
 import click
 
-import constants
 from .repo import Repository, GitRepository, ArchiveRepository
 from .detector import TestDetector
 
