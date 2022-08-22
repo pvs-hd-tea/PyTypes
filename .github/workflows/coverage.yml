@@ -14,12 +14,23 @@ jobs:
     steps:
       - run: echo 'The triggering workflow passed'
 
-      - name: Upload coverage
+      - name: Retrieve Coverage Artifact
+        uses: actions/download-artifact@master
+        with:
+          name: coverage-report
+          path: reports/coverage/coverage.xml
+
+      - name: Upload Coverage
         uses: codecov/codecov-action@v3
         with:
           files: reports/coverage/coverage.xml
           env_vars: OS,PYTHON
           fail_ci_if_error: true
+
+      - name: Delete Coverage Artifact
+        uses: actions/delete-artifact@master
+        with:
+          name: coverage-report
 
 
   on-failure:

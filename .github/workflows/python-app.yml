@@ -71,3 +71,8 @@ jobs:
     - name: PyTest + sys.settrace
       run: | 
         poetry run python -m pytest tests/tracing
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: coverage-report
+        path: reports/coverage/coverage.xml
