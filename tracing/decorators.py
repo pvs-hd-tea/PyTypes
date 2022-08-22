@@ -92,7 +92,7 @@ def _execute_tracing(
             proj_path=config.pytypes.proj_path,
             stdlib_path=config.pytypes.stdlib_path,
             venv_path=config.pytypes.venv_path,
-            apply_opts=True,
+            apply_opts=False,
         )
 
         err = _trace_callable(tracer, lambda: c(*args, **kwargs))
@@ -164,9 +164,10 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
     assert module is not None  # we can never come from a builtin
     module_name = module.__name__.replace(".", os.path.sep)
 
+    cfg = ptconfig.load_config(pathlib.Path(constants.CONFIG_FILE_NAME))
+
     @functools.wraps(c)
     def wrapper(*args, **kwargs) -> tuple[pd.DataFrame, np.ndarray | None]:
-        cfg = ptconfig.load_config(pathlib.Path(constants.CONFIG_FILE_NAME))
         subst = _TemplateSubstitutes(
             project=cfg.pytypes.project,
             test_case=module_name,
