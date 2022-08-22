@@ -43,10 +43,14 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         decorator=m.Attribute(value=m.Name("decorators"), attr=m.Name("trace"))
     )
 
+    # from __future__ import ...
+    _FUTURE_IMPORT_MATCH = m.ImportFrom(module=m.Name(value="__future__"))
+
     def __init__(self) -> None:
         self.sys_import_exists = False
         self.decorator_import_exists = False
         self.all_tests_are_traced = True
+        self.future_import_found = False
 
         self.import_found = False
         self.import_from_found = False
@@ -62,6 +66,12 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         return True
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        if m.matches(node, ValidPytestApplicationVisitor._FUTURE_IMPORT_MATCH):
+            assert not self.import_found, f"Found __future__ import before imports!"
+            self.future_import_found = True
+        else:
+            assert self.import_from_found, f"Found __future__ import before other import froms!"
+
         self.import_from_found = True
         self.decorator_import_exists = self.decorator_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.DECORATOR_IMPORT
@@ -106,6 +116,8 @@ def nonrecursed_globs() -> typing.Iterator[list[pathlib.Path]]:
 
 def check_file_is_valid(filepath: pathlib.Path):
     module = cst.parse_module(filepath.open().read())
+    logging.info(f"{module.code}")
+
     visitor = ValidPytestApplicationVisitor()
     module.visit(visitor)
 
@@ -139,3 +151,33 @@ def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders(
     for test_file_path in nonrecursed_globs:
         assert test_file_path.exists()
         check_file_is_valid(test_file_path)
+
+
+@pytest.fixture
+def future_test_project():
+    with mock.patch(
+        "fetching.projio.Project.test_directory",
+        new_callable=mock.PropertyMock,
+    ) as m:
+        fake_cwd = pathlib.Path("tests", "resource", "fetching")
+        m.return_value = fake_cwd
+        p = Project(fake_cwd)
+
+        yield p
+
+@pytest.fixture
+def has_future_import() -> typing.Iterator[pathlib.Path]:
+    p = pathlib.Path("tests", "resource", "fetching", "test_has_future_import.py")
+    backup = p.open().read()
+
+    yield p
+
+    with p.open("w") as f:
+        f.write(backup)
+
+def test_if_future_has_correct_position(future_test_project: Project, has_future_import: pathlib.Path):
+    test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
+    test_object.apply(future_test_project)
+
+    assert has_future_import.exists()
+    check_file_is_valid(has_future_import)
