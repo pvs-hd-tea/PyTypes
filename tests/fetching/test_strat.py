@@ -50,11 +50,12 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         self.sys_import_exists = False
         self.decorator_import_exists = False
         self.all_tests_are_traced = True
-        self.future_import_found = False
 
         self.import_found = False
-        self.import_from_found = False
+        self.standard_import_from_found = False
         self.test_found = False
+
+        self._has_import_future = False
 
     def visit_Import(self, node: cst.Import) -> bool | None:
         self.import_found = True
@@ -67,17 +68,21 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
         if m.matches(node, ValidPytestApplicationVisitor._FUTURE_IMPORT_MATCH):
-            assert not self.import_found, f"Found __future__ import before imports!"
-            self.future_import_found = True
-        else:
-            assert self.import_from_found, f"Found __future__ import before other import froms!"
+            assert not self.import_found, f"Found __future__ import after imports!"
 
-        self.import_from_found = True
+            # No other ImportFroms may have appeared before this 
+            assert not self.standard_import_from_found, f"Found __future__ import after other import froms!"
+            self._has_import_future = True
+
+        else:
+            # This is an import-from that is NOT a from __future__ import
+            self.standard_import_from_found = True
+
         self.decorator_import_exists = self.decorator_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.DECORATOR_IMPORT
         )
 
-        logging.debug(f"{self.import_from_found=}  {self.decorator_import_exists=}")
+        logging.debug(f"{self.standard_import_from_found=}  {self.decorator_import_exists=}")
         return True
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
@@ -124,7 +129,7 @@ def check_file_is_valid(filepath: pathlib.Path):
     assert visitor.import_found, f"No imports found:\n{module.code}"
     assert visitor.sys_import_exists, f"Could not find sys import:\n{module.code}"
 
-    assert visitor.import_from_found, f"No from x import ys found:\n{module.code}"
+    assert visitor.standard_import_from_found, f"No from x import ys found:\n{module.code}"
     assert visitor.decorator_import_exists, f"No decorator import found:\n{module.code}"
 
     assert visitor.test_found, f"No tests found:\n{module.code}"
@@ -165,6 +170,7 @@ def future_test_project():
 
         yield p
 
+
 @pytest.fixture
 def has_future_import() -> typing.Iterator[pathlib.Path]:
     p = pathlib.Path("tests", "resource", "fetching", "test_has_future_import.py")
@@ -175,7 +181,10 @@ def has_future_import() -> typing.Iterator[pathlib.Path]:
     with p.open("w") as f:
         f.write(backup)
 
-def test_if_future_has_correct_position(future_test_project: Project, has_future_import: pathlib.Path):
+
+def test_if_future_has_correct_position(
+    future_test_project: Project, has_future_import: pathlib.Path
+):
     test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
     test_object.apply(future_test_project)
 
