@@ -65,8 +65,7 @@ jobs:
     - name: PyTest + coverage
       run: |
         poetry run python main.py confgen -p .
-        poetry run python -m coverage run --source=. -m pytest --ignore=tests/tracing --junitxml=reports/coverage/coverage.xml
-        poetry run python -m coverage report -m
+        poetry run python -m pytest --ignore=tests/tracing --cov --cov-report xml:reports/coverage/coverage.xml
 
     - name: PyTest + sys.settrace
       run: | 
