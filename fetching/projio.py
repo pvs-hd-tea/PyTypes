@@ -1,6 +1,7 @@
 import functools
 import pathlib
 import logging
+import typing
 
 
 class Project:
@@ -14,15 +15,25 @@ class Project:
         self.root = root
 
     @functools.cached_property
-    def test_directory(self) -> pathlib.Path | None:
-        # tests folder in root of project?
-        if (test_dir := self.root / "tests").is_dir():
-            logging.info(f"Detected test folder in root of project - {test_dir}")
-            return test_dir
+    def test_directories(self) -> list[pathlib.Path] | None:
+        tests: list[pathlib.Path] = []
 
-        if (test_dir := self.root / self.root.name / "tests").is_dir():
-            logging.info(f"Detected test folder in folder by name of project - {test_dir}")
-            return test_dir
+        for candidate_subdir in self._candidate_subdirs():
+            if (candidate := self.root / candidate_subdir).is_dir():
+                logging.info(f"Detected test folder in root of project - {candidate}")
+                tests.append(candidate)
 
-        logging.warning(f"Unable to find test directory for project at {self.root}")
-        return None
+        if not tests:
+            logging.warning(f"Unable to find test directory for project at {self.root}")
+            return None
+
+        return tests
+
+    def _candidate_subdirs(self) -> typing.Iterator[pathlib.Path]:
+        yield from (
+            pathlib.Path("tests"),
+            pathlib.Path(self.root.name) / "tests",
+
+            pathlib.Path("test"),
+            pathlib.Path(self.root.name) / "test",
+        )

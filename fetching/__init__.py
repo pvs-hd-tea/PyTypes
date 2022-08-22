@@ -3,7 +3,7 @@ import pathlib
 
 import click
 
-from .repo import Repository, GitRepository, ArchiveRepository
+from .repo import LocalFolder, Repository, GitRepository, ArchiveRepository
 from .detector import TestDetector
 
 __all__ = [Repository.__name__]
@@ -13,9 +13,9 @@ ORIGINAL_REPOSITORY_FOLDER_NAME = "Original"
 @click.command(name="fetch", help="download repositories and apply tracing decorators")
 @click.option(
     "-u",
-    "--url",
+    "--uri",
     type=str,
-    help="URL to a repository",
+    help="URI to code resource",
     required=True,
 )
 @click.option(
@@ -28,7 +28,7 @@ ORIGINAL_REPOSITORY_FOLDER_NAME = "Original"
 @click.option(
     "-f",
     "--format",
-    type=click.Choice([GitRepository.fmt, ArchiveRepository.fmt], case_sensitive=False),
+    type=click.Choice([GitRepository.fmt, ArchiveRepository.fmt, LocalFolder.fmt], case_sensitive=False),
     help="Indicate repository format explicitly",
     required=False,
     default=None,
@@ -62,7 +62,7 @@ ORIGINAL_REPOSITORY_FOLDER_NAME = "Original"
 
 def main(**params):
     url, fmt, out, verb, notraverse, evaluate = (
-        params["url"],
+        params["uri"],
         params["format"],
         params["output"],
         params["verbose"],
@@ -73,7 +73,7 @@ def main(**params):
 
     logging.debug(f"{url=}, {fmt=}, {out=}, {verb=}, {notraverse=}")
 
-    repo = Repository.factory(project_url=url, fmt=fmt)
+    repo = Repository.factory(project_uri=url, fmt=fmt)
 
     traceable_output_path = out
     if evaluate:
