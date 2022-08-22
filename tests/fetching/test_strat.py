@@ -1,4 +1,5 @@
 from json import dump
+import logging
 import pathlib
 import typing
 import pytest
@@ -51,20 +52,13 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         self.import_from_found = False
         self.test_found = False
 
-    def __bool__(self) -> bool:
-        return all(
-            [
-                self.sys_import_exists and self.import_found,
-                self.decorator_import_exists and self.import_from_found,
-                self.all_tests_are_traced and self.test_found,
-            ]
-        )
-
     def visit_Import(self, node: cst.Import) -> bool | None:
         self.import_found = True
         self.sys_import_exists = self.sys_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.SYS_IMPORT
         )
+
+        logging.debug(f"{self.import_found=}  {self.sys_import_exists=}")
         return True
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
@@ -72,6 +66,8 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         self.decorator_import_exists = self.decorator_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.DECORATOR_IMPORT
         )
+
+        logging.debug(f"{self.import_from_found=}  {self.decorator_import_exists=}")
         return True
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
@@ -81,6 +77,8 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
                 m.matches(d, ValidPytestApplicationVisitor.TRACE)
                 for d in node.decorators
             )
+
+        logging.debug(f"{self.test_found=}  {self.all_tests_are_traced=}")
         return True
 
 
@@ -111,13 +109,17 @@ def check_file_is_valid(filepath: pathlib.Path):
     visitor = ValidPytestApplicationVisitor()
     module.visit(visitor)
 
-    assert bool(
-        visitor
-    ), f"At least one of these is false! {visitor.sys_import_exists=}, {visitor.decorator_import_exists=}, {visitor.all_tests_are_traced=}\n"
-    f"File: {filepath.open().read()}"
+    assert visitor.import_found, f"No imports found:\n{module.code}"
+    assert visitor.sys_import_exists, f"Could not find sys import:\n{module.code}"
+
+    assert visitor.import_from_found, f"No from x import ys found:\n{module.code}"
+    assert visitor.decorator_import_exists, f"No decorator import found:\n{module.code}"
+
+    assert visitor.test_found, f"No tests found:\n{module.code}"
+    assert visitor.all_tests_are_traced, f"Not all tests are decorated:\n{module.code}"
 
 
-def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_overwrites_test_files(
+def test_if_test_object_searches_for_test_files_in_folders_including_subfolders(
     project_folder, recursed_globs
 ):
     test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
@@ -128,7 +130,7 @@ def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_
         check_file_is_valid(test_file_path)
 
 
-def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders_it_overwrites_test_files(
+def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders(
     project_folder, nonrecursed_globs
 ):
     test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=False)
