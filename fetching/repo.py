@@ -63,6 +63,8 @@ class Repository(ABC):
     def _write_to(
         self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path
     ):
+        if output.is_dir():
+            shutil.rmtree(str(output))
         output.mkdir(parents=True, exist_ok=True)
         shutil.copytree(intermediary.name, str(output), dirs_exist_ok=True)
 

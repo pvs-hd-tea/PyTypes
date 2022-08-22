@@ -36,4 +36,7 @@ class Project:
 
             pathlib.Path("test"),
             pathlib.Path(self.root.name) / "test",
+
+            pathlib.Path("testing"),
+            pathlib.Path(self.root.name) / "testing",
         )

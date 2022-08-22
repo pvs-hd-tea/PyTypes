@@ -83,6 +83,10 @@ def main(**params):
 
     project = repo.fetch(traceable_output_path)
 
-    detector = TestDetector.factory(proj=project)
-    strategy = detector.create_strategy(recurse_into_subdirs=not notraverse)
-    strategy.apply(project)
+    try:
+        detector = TestDetector.factory(proj=project)
+        strategy = detector.create_strategy(recurse_into_subdirs=not notraverse)
+        strategy.apply(project)
+
+    except Exception as e:
+        logging.error(f"{e}; removing fetched repository")

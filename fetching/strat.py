@@ -6,6 +6,7 @@ import re
 
 import libcst as cst
 import libcst.matchers as m
+import tqdm
 
 from .projio import Project
 import constants
@@ -28,7 +29,11 @@ class ApplicationStrategy(ABC):
         assert project.test_directories is not None
 
         for test_directory in project.test_directories:
-            for path in filter(self._is_test_file, self.globber(test_directory, "*")):
+            test_files = list(filter(self._is_test_file, self.globber(test_directory, "*")))
+            for path in tqdm.tqdm(
+                test_files,
+                desc=f"Updating test files in {test_directory}",
+            ):
                 self._apply(path)
 
         generate_cfg(project.root)
