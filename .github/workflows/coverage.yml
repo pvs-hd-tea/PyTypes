@@ -6,14 +6,25 @@ on:
     types: [completed]
 
 jobs:
-  codecov:
-    runs-on: ubuntu-latest
+  on-success:
+
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
 
     steps:
+      - run: echo 'The triggering workflow passed'
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
           files: reports/coverage/coverage.xml
           env_vars: OS,PYTHON
           fail_ci_if_error: true
+
+
+  on-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo 'The triggering workflow failed'
