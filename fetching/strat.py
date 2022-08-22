@@ -105,10 +105,21 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
     )
 
     class State(enum.IntEnum):
-        HAVE_NOT_GENERATED_IMPORTS = 0
-        CAN_GENERATE_IMPORTS = 1
-        IMPORTS_GENERATED = 2
-        FUTURE_IMPORT_FROM_FOUND = 3
+        # No preamble has been generated, and no
+        # viable preamble insertion point has been found
+        INITIAL = 0
+
+        # A fitting preamble insertion point has been found
+        INSERTION_POINT_FOUND = 1
+
+        # The preamble has been added to the AST
+        PREAMBLE_GENERATED = 2
+
+        # Because a file's imports may consist solely of
+        # `from __future__ import x`, it is important to track
+        # this, because then the preamble must be generated before 
+        # the first function
+        ONLY_FUTURE_IMPORT_FOUND = 3
 
     def __init__(
         self,
@@ -118,12 +129,12 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
         self._sys_path_ext = sys_path_ext
         self._state: AppendDecoratorTransformer.State = (
-            AppendDecoratorTransformer.State.HAVE_NOT_GENERATED_IMPORTS
+            AppendDecoratorTransformer.State.INITIAL
         )
 
     def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
         # If there are no imports, then the state may not change completely
-        if self._state != AppendDecoratorTransformer.State.IMPORTS_GENERATED:
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
             ADT_LOGGER.debug("Preamble has not yet been added, adding at fallthru")
             # Generate missing imports at the top
             changes = cst.SimpleStatementLine(
@@ -136,7 +147,7 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
             new_body = list(updated_node.body)
             new_body.insert(0, changes)
 
-            self._state = AppendDecoratorTransformer.State.IMPORTS_GENERATED
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
             return updated_node.with_changes(body=new_body)
 
         return updated_node
@@ -145,7 +156,7 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
         self, _: cst.Import, updated_node: cst.Import
     ) -> cst.FlattenSentinel[cst.BaseSmallStatement]:
         ADT_LOGGER.debug("Adding preamble after Import")
-        self._state = AppendDecoratorTransformer.State.IMPORTS_GENERATED
+        self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
         return cst.FlattenSentinel(
             [
                 updated_node,
@@ -157,27 +168,27 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
         if self._state in (
-            AppendDecoratorTransformer.State.HAVE_NOT_GENERATED_IMPORTS,
-            AppendDecoratorTransformer.State.FUTURE_IMPORT_FROM_FOUND,
+            AppendDecoratorTransformer.State.INITIAL,
+            AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND,
         ):
             if m.matches(node, AppendDecoratorTransformer._FUTURE_IMPORT_MATCH):
                 ADT_LOGGER.debug(
-                    "Detected from __future__ import ..., continuning search for insertion point"
+                    "Detected from __future__ import ..., continuing search for insertion point"
                 )
-                self._state = AppendDecoratorTransformer.State.FUTURE_IMPORT_FROM_FOUND
+                self._state = AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND
 
             else:
                 ADT_LOGGER.debug("ImportFrom detected that is unrelated to __future__")
-                self._state = AppendDecoratorTransformer.State.CAN_GENERATE_IMPORTS
+                self._state = AppendDecoratorTransformer.State.INSERTION_POINT_FOUND
 
         return True
 
     def leave_ImportFrom(
         self, _: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.FlattenSentinel[cst.BaseSmallStatement] | cst.BaseSmallStatement:
-        if self._state == AppendDecoratorTransformer.State.CAN_GENERATE_IMPORTS:
+        if self._state == AppendDecoratorTransformer.State.INSERTION_POINT_FOUND:
             ADT_LOGGER.debug("Adding preamble after ImportFrom")
-            self._state = AppendDecoratorTransformer.State.IMPORTS_GENERATED
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
             return cst.FlattenSentinel(
                 [
                     updated_node,
@@ -209,10 +220,12 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
         else:
             ADT_LOGGER.debug(f"Skipping adding decorator to {updated_node.name.value}")
 
-        if self._state == AppendDecoratorTransformer.State.FUTURE_IMPORT_FROM_FOUND:
-            ADT_LOGGER.debug("FUTURE_IMPORT_FROM_FOUND breaker activated")
+        if self._state == AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND:
+            ADT_LOGGER.debug(
+                "ONLY_FUTURE_IMPORT_FOUND breaker activated; does not match pattern"
+            )
 
-            self._state = AppendDecoratorTransformer.State.IMPORTS_GENERATED
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
             return cst.FlattenSentinel(
                 [
                     cst.SimpleStatementLine(
