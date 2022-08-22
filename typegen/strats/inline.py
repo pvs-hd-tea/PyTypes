@@ -3,7 +3,6 @@ import functools
 import itertools
 import logging
 import operator
-import os
 import pathlib
 from typing import NoReturn
 import typing

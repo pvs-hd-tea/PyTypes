@@ -14,13 +14,11 @@ import pathlib
 
 from constants import Column, Schema
 from tracing.resolver import Resolver
-from tracing.trace_data_category import TraceDataCategory
-from tracing.trace_update import BatchTraceUpdate, TraceUpdate
+from tracing.trace_update import BatchTraceUpdate
 
 from .optimisation import (
     TriggerStatus,
     FrameWithMetadata,
-    Ignore,
     Optimisation,
     TypeStableLoop,
 )

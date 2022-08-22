@@ -1,9 +1,7 @@
 from typegen.strats.imports import AddImportTransformer
 from .inline import InlineGenerator, TypeHintTransformer
-import os
 import pandas as pd
 import libcst as cst
-from constants import Column
 
 
 class RemoveAllTypeHintsTransformer(cst.CSTTransformer):

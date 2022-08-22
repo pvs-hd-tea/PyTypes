@@ -129,7 +129,7 @@ class BatchTraceUpdate:
         if names2types:
             # Line number is 0 and function name is empty to
             # unify matching class members better.
-            # Class Members contain state and can theoretically, at any time, 
+            # Class Members contain state and can theoretically, at any time,
             # on the same line, be of many types
             update = TraceUpdate(
                 file_name=self.file_name,

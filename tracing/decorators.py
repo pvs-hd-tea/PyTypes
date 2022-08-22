@@ -31,7 +31,7 @@ def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]) -> str | N
             call()
         return None
 
-    except:
+    except Exception:
         return traceback.format_exc()
 
 
