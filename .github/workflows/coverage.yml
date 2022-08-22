@@ -1,0 +1,19 @@
+name: CodeCov 
+
+on:
+  workflow_run:
+    workflows: [Python application]
+    types: [completed]
+
+jobs:
+  codecov:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: reports/coverage/coverage.xml
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
