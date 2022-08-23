@@ -169,7 +169,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return True
         else:
             raise TypeError(
-                str(self.file_path) + ": Unhandled case for: " + type(node.target).__name__
+                str(self.file_path)
+                + ": Unhandled case for: "
+                + type(node.target).__name__
             )
         self._add_row(line_number, category, variable_name, type_hint)
         return True
@@ -181,9 +183,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
         # The typehint data contains line numbers instead of column offsets. These are replaced with the column offset.
         self.typehint_data = self.typehint_data.replace(
-            {
-                Column.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number
-            }
+            {Column.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number}
         )
 
     def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
@@ -249,20 +249,20 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return self._get_annotation_value_of_list(annotation)
         elif isinstance(annotation, cst.Ellipsis):
             return "..."
-        raise TypeError(str(self.file_path) + ": Unhandled case for: " + type(annotation).__name__)
+        raise TypeError(
+            str(self.file_path) + ": Unhandled case for: " + type(annotation).__name__
+        )
 
     def _get_annotation_value_of_list(self, annotation: cst.List) -> str:
         inner_content = ""
         for i, list_element in enumerate(annotation.elements):
-            full_list_element_name = self._get_annotation_value(
-                list_element.value
-            )
+            full_list_element_name = self._get_annotation_value(list_element.value)
             assert isinstance(full_list_element_name, str)
             if i == 0:
                 inner_content = full_list_element_name
             else:
                 inner_content += ", " + full_list_element_name
-        return '[' + inner_content + ']'
+        return "[" + inner_content + "]"
 
     def _get_annotation_value_of_name(self, annotation: cst.Name) -> str:
         type_name = annotation.value
@@ -277,13 +277,21 @@ class _TypeHintVisitor(cst.CSTVisitor):
             current_annotation = type_name
         return self._add_full_module_name_to_annotation(current_annotation)
 
-    def _get_annotation_value_of_attribute(self, annotation: cst.Attribute, add_full_module_name: bool =True) -> str:
+    def _get_annotation_value_of_attribute(
+        self, annotation: cst.Attribute, add_full_module_name: bool = True
+    ) -> str:
         if isinstance(annotation.value, cst.Name):
             module_name = annotation.value.value
         elif isinstance(annotation.value, cst.Attribute):
-            module_name = self._get_annotation_value_of_attribute(annotation.value, False)
+            module_name = self._get_annotation_value_of_attribute(
+                annotation.value, False
+            )
         else:
-            raise TypeError(str(self.file_path) + ": Unhandled case for: " + type(annotation.value).__name__)
+            raise TypeError(
+                str(self.file_path)
+                + ": Unhandled case for: "
+                + type(annotation.value).__name__
+            )
         assert isinstance(annotation.attr, cst.Name)
         type_name = annotation.attr.value
         current_annotation = module_name + "." + type_name
