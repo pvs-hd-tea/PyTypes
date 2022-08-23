@@ -491,14 +491,6 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
-name = "tqdm-stubs"
-version = "0.2.1"
-description = "Stub type files for tqdm"
-category = "main"
-optional = false
-python-versions = ">=3.7,<4.0"
-
-[[package]]
 name = "types-requests"
 version = "2.27.30"
 description = "Typing stubs for requests"
@@ -561,7 +553,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4"
-content-hash = "d7b2b498f85ba84263f3bdcf07dc9085ec5336a3607037a062ad81b90f983ffc"
+content-hash = "d7d699d5e91dd01b2e6a818233d5c602cafe5822dd0d0c22aff34593da667e75"
 
 [metadata.files]
 atomicwrites = [
@@ -911,10 +903,6 @@ tomli = [
 tqdm = [
     {file = "tqdm-4.64.0-py2.py3-none-any.whl", hash = "sha256:74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6"},
     {file = "tqdm-4.64.0.tar.gz", hash = "sha256:40be55d30e200777a307a7585aee69e4eabb46b4ec6a4b4a5f2d9f11e7d5408d"},
-]
-tqdm-stubs = [
-    {file = "tqdm-stubs-0.2.1.tar.gz", hash = "sha256:af7044737de561b2816b8b3fae1cb8af024ad0337311b9fc22d121cd3ab5c8e5"},
-    {file = "tqdm_stubs-0.2.1-py3-none-any.whl", hash = "sha256:cb794e89042aac254a77a4322a16f18dfd1d0d2ebe5b39cc4d3e6513fed00251"},
 ]
 types-requests = [
     {file = "types-requests-2.27.30.tar.gz", hash = "sha256:ca8d7cc549c3d10dbcb3c69c1b53e3ffd1270089c1001a65c1e9e1017eb5e704"},
