@@ -49,32 +49,35 @@ def main(**params):
 
     trace_data_path = traced_path / "pytypes"
 
-    # Gets the trace data.
+    # Gets the potentially changed file paths.
     trace_data_file_collector = TraceDataFileCollector()
     trace_data_file_collector.collect_data(trace_data_path, True)
     trace_data = trace_data_file_collector.trace_data
     potential_changed_files_relative_paths = trace_data[constants.Column.FILENAME].unique()
 
-    original_file_paths_to_compare = []
-    traced_file_paths_to_compare = []
-
+    # Gets the changed file paths.
+    original_file_paths_to_compare,  traced_file_paths_to_compare = _get_changed_file_paths(original_path, traced_path, potential_changed_files_relative_paths)
     metric_data_calculator = MetricDataCalculator()
-    for potential_file_relative_path in potential_changed_files_relative_paths:
-        original_file_path = original_path / potential_file_relative_path
-        traced_file_path = traced_path / potential_file_relative_path
-
-        have_same_content = filecmp.cmp(original_file_path, traced_file_path)
-        if not have_same_content:
-            original_file_paths_to_compare.append(original_file_path)
-            traced_file_paths_to_compare.append(traced_file_path)
-            metric_data_calculator.add_filename_mapping(potential_file_relative_path, potential_file_relative_path)
-
     file_type_hints_collector = FileTypeHintsCollector()
     file_type_hints_collector.collect_data(original_path, original_file_paths_to_compare)
     original_typehint_data = file_type_hints_collector.typehint_data
-    file_type_hints_collector.collect_data(original_path, traced_file_paths_to_compare)
+    file_type_hints_collector.collect_data(traced_path, traced_file_paths_to_compare)
     traced_typehint_data = file_type_hints_collector.typehint_data
 
     metric_data = metric_data_calculator.get_metric_data(original_typehint_data, traced_typehint_data)
     completeness, correctness = metric_data_calculator.get_total_completeness_and_correctness(metric_data)
     print(f"Completeness: {completeness * 100}%, Correctness: {correctness * 100}%")
+
+
+def _get_changed_file_paths(original_root_folder_path, traced_root_folder_path, potential_changed_files_relative_paths):
+    original_file_paths_to_compare = []
+    traced_file_paths_to_compare = []
+    for potential_file_relative_path in potential_changed_files_relative_paths:
+        original_file_path = original_root_folder_path / potential_file_relative_path
+        traced_file_path = traced_root_folder_path / potential_file_relative_path
+
+        have_same_content = filecmp.cmp(original_file_path, traced_file_path)
+        if not have_same_content:
+            original_file_paths_to_compare.append(original_file_path)
+            traced_file_paths_to_compare.append(traced_file_path)
+    return original_file_paths_to_compare,  traced_file_paths_to_compare
