@@ -26,7 +26,7 @@ class _TemplateSubstitutes:
     func_name: str
 
 
-def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]) -> str | None:
+def _trace_callable(tracer: TracerBase, call: Callable[[], RetType]) -> str | None:
     try:
         with tracer.active_trace():
             call()
