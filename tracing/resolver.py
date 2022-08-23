@@ -149,5 +149,5 @@ class Resolver:
             return None
 
         relmod = str(rel_path.with_suffix("")).replace(os.path.sep, ".")
-        relmod = relmod.remove_suffix(".__init__")
+        relmod = relmod.removesuffix(".__init__")
         return relmod, ty.__qualname__
