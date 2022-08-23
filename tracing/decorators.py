@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import functools
+import logging
 import os
 import pathlib
 import inspect
@@ -125,13 +126,12 @@ def _execute_tracing(
 
     trace_output_path = config.pytypes.proj_path / trace_subst
     trace_output_path.parent.mkdir(parents=True, exist_ok=True)
+    traced.to_pickle(str(trace_output_path))
 
     if err is not None:
         err_output_path = trace_output_path.with_suffix(".err")
-        err_output_path.open("w").write(err)
-
-    else:
-        traced.to_pickle(str(trace_output_path))
+        with err_output_path.open("w") as f:
+            f.write(err)
 
     return traced, benchmarks
 
