@@ -63,22 +63,22 @@ def main(**params):
     ) = _get_changed_file_paths(
         original_path, traced_path, potential_changed_files_relative_paths
     )
-    metric_data_calculator = MetricDataCalculator()
-    file_type_hints_collector = FileTypeHintsCollector()
-    file_type_hints_collector.collect_data(
+    metricdata_calculator = MetricDataCalculator()
+    file_typehints_collector = FileTypeHintsCollector()
+    file_typehints_collector.collect_data(
         original_path, original_file_paths_to_compare
     )
-    original_typehint_data = file_type_hints_collector.typehint_data
-    file_type_hints_collector.collect_data(traced_path, traced_file_paths_to_compare)
-    traced_typehint_data = file_type_hints_collector.typehint_data
+    original_typehint_data = file_typehints_collector.typehint_data
+    file_typehints_collector.collect_data(traced_path, traced_file_paths_to_compare)
+    traced_typehint_data = file_typehints_collector.typehint_data
 
-    metric_data = metric_data_calculator.get_metric_data(
+    metric_data = metricdata_calculator.get_metric_data(
         original_typehint_data, traced_typehint_data
     )
     (
         completeness,
         correctness,
-    ) = metric_data_calculator.get_total_completeness_and_correctness(metric_data)
+    ) = metricdata_calculator.get_total_completeness_and_correctness(metric_data)
     print(f"Completeness: {completeness * 100}%, Correctness: {correctness * 100}%")
 
 
