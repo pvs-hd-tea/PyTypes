@@ -283,7 +283,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         elif isinstance(annotation.value, cst.Attribute):
             module_name = self._get_annotation_value_of_attribute(annotation.value, False)
         else:
-            raise TypeError(str(self.file_path) + ": Unhandled case for: " + annotation.value.__name__)
+            raise TypeError(str(self.file_path) + ": Unhandled case for: " + type(annotation.value).__name__)
         assert isinstance(annotation.attr, cst.Name)
         type_name = annotation.attr.value
         current_annotation = module_name + "." + type_name
