@@ -18,7 +18,7 @@ class DataFileCollector(ABC):
         self.collected_data: list[typing.Any] = list()
 
     def collect_data(
-        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
+        self, path: pathlib.Path, include_also_files_in_subdirectories: bool
     ) -> None:
         self.collected_data.clear()
         if include_also_files_in_subdirectories:
@@ -57,7 +57,7 @@ class TraceDataFileCollector(DataFileCollector):
         self.trace_data = self.trace_data.astype(Schema.TraceData)
 
     def collect_data(
-        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
+        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = True
     ) -> None:
         """Collects the data in a given path."""
         super().collect_data(path, include_also_files_in_subdirectories)
