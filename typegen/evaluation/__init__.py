@@ -1,6 +1,9 @@
 import click
 import pathlib
 import filecmp
+
+import typing
+
 import constants
 from typegen.trace_data_file_collector import TraceDataFileCollector
 from typegen.evaluation.file_type_hints_collector import FileTypeHintsCollector
@@ -85,7 +88,7 @@ def main(**params):
 def _get_changed_file_paths(
     original_root_folder_path: pathlib.Path,
     traced_root_folder_path: pathlib.Path,
-    potential_changed_files_relative_paths: pathlib.Path,
+    potential_changed_files_relative_paths: typing.Iterable[pathlib.Path],
 ):
     original_file_paths_to_compare = []
     traced_file_paths_to_compare = []
