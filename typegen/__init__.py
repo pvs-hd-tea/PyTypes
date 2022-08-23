@@ -119,7 +119,7 @@ def main(**params):
     filter_list = TraceDataFilter(ident=TraceDataFilterList.ident, filters=filters)
     filtered = filter_list.apply(collector.trace_data)
 
-    print(f"Shape of filtered trace data: {td_df.shape}")
+    print(f"Shape of filtered trace data: {filtered.shape}")
 
     typegen = TypeHintGenerator(ident=strat_name, types=filtered)
     typegen.apply(pytypes_cfg.pytypes.proj_path)
