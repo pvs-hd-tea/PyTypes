@@ -72,7 +72,7 @@ class Repository(ABC):
 class GitRepository(Repository):
     def __init__(self, project_uri: str):
         super().__init__(project_uri)
-        self.pbar = None
+        self.pbar: tqdm.tqdm | None = None
 
     fmt = "Git"
 
