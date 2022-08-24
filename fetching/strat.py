@@ -1,5 +1,7 @@
 import enum
 import logging
+import typing
+
 import libcst as cst
 import libcst.matchers as m
 from abc import ABC, abstractmethod
@@ -172,7 +174,7 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
 
     def leave_FunctionDef(
         self, _: cst.FunctionDef, updated_node: cst.FunctionDef
-    ) -> cst.FlattenSentinel[cst.BaseStatement] | cst.FunctionDef:
+    ) -> cst.FlattenSentinel[cst.BaseStatement] | cst.BaseStatement | cst.RemovalSentinel:
         """
         Called on visiting a function definition node.
         Adds the trace decorator to the decorator list if function name matches test function name pattern.
@@ -198,14 +200,16 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
             self._import_status = AppendDecoratorTransformer.ImportStatus.CAN_ADD
         return self._get_updated_node(updated_node)
 
+    @typing.no_type_check
     def _get_updated_node(
         self, updated_node: cst.CSTNode
-    ) -> cst.FlattenSentinel[cst.BaseSmallStatement]:
+    ) -> cst.FlattenSentinel[cst.BaseSmallStatement] | cst.FlattenSentinel[cst.BaseStatement] | cst.CSTNode:
         if self._import_status == AppendDecoratorTransformer.ImportStatus.CAN_ADD:
             self._import_status = AppendDecoratorTransformer.ImportStatus.ALREADY_ADDED
-            returned_nodes = self.nodes_to_add + [updated_node]
-            if isinstance(updated_node, cst.FunctionDef):
-                returned_nodes = [cst.SimpleStatementLine(self.nodes_to_add), updated_node]
-            return cst.FlattenSentinel(returned_nodes)
-
+            if isinstance(updated_node, cst.BaseSmallStatement):
+                return cst.FlattenSentinel(self.nodes_to_add + [updated_node])
+            elif isinstance(updated_node, cst.FunctionDef):
+                return cst.FlattenSentinel([cst.SimpleStatementLine(self.nodes_to_add), updated_node])
+            else:
+                raise TypeError(type(updated_node).__name__)
         return updated_node
