@@ -100,7 +100,11 @@ class MetricDataCalculator:
         total_completeness_is_true_count = completeness_column[completeness_column].shape[0]
         total_correctness_count = correctness_column[correctness_column].shape[0]
 
-        total_completeness = total_completeness_is_true_count / total_completeness_count
-        total_correctness = total_correctness_count / total_completeness_is_true_count
+        total_completeness = 0
+        if total_completeness_count > 0:
+            total_completeness = total_completeness_is_true_count / total_completeness_count
+        total_correctness = 0
+        if total_completeness_is_true_count > 0:
+            total_correctness = total_correctness_count / total_completeness_is_true_count
 
         return total_completeness, total_correctness

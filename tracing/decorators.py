@@ -106,11 +106,11 @@ def _execute_tracing(
             {
                 "project": subst.project,
                 "test_case": subst.test_case,
-                "func_name": subst.func_name,
+                "func_name": f"{subst.func_name}-{hash(str(benchmarks))}",
             }
         )
         benchmark_output_path = (
-            config.pytypes.proj_path / f"{benchmark_subst}-{hash(str(benchmarks))}"
+            config.pytypes.proj_path / benchmark_subst
         )
         benchmark_output_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(benchmark_output_path, benchmarks)
