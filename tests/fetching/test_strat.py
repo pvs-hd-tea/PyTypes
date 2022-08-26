@@ -164,7 +164,7 @@ def future_test_project():
         "fetching.projio.Project.test_directory",
         new_callable=mock.PropertyMock,
     ) as m:
-        fake_cwd = pathlib.Path("tests", "resource", "fetching")
+        fake_cwd = pathlib.Path("tests", "resource", "fetching_future")
         m.return_value = fake_cwd
         p = Project(fake_cwd)
 
@@ -173,7 +173,7 @@ def future_test_project():
 
 @pytest.fixture
 def has_future_import() -> typing.Iterator[pathlib.Path]:
-    p = pathlib.Path("tests", "resource", "fetching", "test_has_future_import.py")
+    p = pathlib.Path("tests", "resource", "fetching_future", "test_has_future_import.py")
     backup = p.open().read()
 
     yield p
@@ -190,3 +190,35 @@ def test_if_future_has_correct_position(
 
     assert has_future_import.exists()
     check_file_is_valid(has_future_import)
+
+
+@pytest.fixture
+def import_test_project():
+    with mock.patch(
+        "fetching.projio.Project.test_directory",
+        new_callable=mock.PropertyMock,
+    ) as m:
+        fake_cwd = pathlib.Path("tests", "resource", "fetching_imports")
+        m.return_value = fake_cwd
+        p = Project(fake_cwd)
+
+        yield p
+
+
+@pytest.fixture
+def only_has_imports() -> typing.Iterator[pathlib.Path]:
+    p = pathlib.Path("tests", "resource", "fetching_imports", "test_only_has_imports.py")
+    backup = p.open().read()
+
+    yield p
+
+    with p.open("w") as f:
+        f.write(backup)
+
+
+def test_only_imports(import_test_project: Project, only_has_imports: pathlib.Path):
+    strat = PyTestStrategy(pathlib.Path.cwd())
+    strat.apply(import_test_project)
+
+    assert only_has_imports.exists()
+    check_file_is_valid(only_has_imports)

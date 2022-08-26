@@ -72,10 +72,11 @@ class PyTestStrategy(ApplicationStrategy):
         )
 
         with path.open() as f:
-            file_ast = cst.parse_module(f.read()).visit(dec_trans)
+            original = cst.parse_module(f.read())
+            updated = original.visit(dec_trans)
 
         with path.open("w") as f:
-            f.write(file_ast.code)
+            f.write(updated.code)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
         if path.name.startswith("test_"):
@@ -115,12 +116,6 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
         # The preamble has been added to the AST
         PREAMBLE_GENERATED = 2
 
-        # Because a file's imports may consist solely of
-        # `from __future__ import x`, it is important to track
-        # this, because then the preamble must be generated before 
-        # the first function
-        ONLY_FUTURE_IMPORT_FOUND = 3
-
     def __init__(
         self,
         test_function_name_pattern: Pattern[str],
@@ -154,28 +149,27 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
 
     def leave_Import(
         self, _: cst.Import, updated_node: cst.Import
-    ) -> cst.FlattenSentinel[cst.BaseSmallStatement]:
-        ADT_LOGGER.debug("Adding preamble after Import")
-        self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
-        return cst.FlattenSentinel(
-            [
-                updated_node,
-                AppendDecoratorTransformer.SYS_IMPORT,
-                self._sys_path_ext,
-                AppendDecoratorTransformer.PYTYPE_IMPORT,
-            ]
-        )
+    ) -> cst.BaseSmallStatement | cst.FlattenSentinel[cst.BaseSmallStatement]:
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            ADT_LOGGER.debug("Adding preamble after Import")
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    updated_node,
+                    AppendDecoratorTransformer.SYS_IMPORT,
+                    self._sys_path_ext,
+                    AppendDecoratorTransformer.PYTYPE_IMPORT,
+                ]
+            )
+
+        return updated_node
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-        if self._state in (
-            AppendDecoratorTransformer.State.INITIAL,
-            AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND,
-        ):
+        if self._state == AppendDecoratorTransformer.State.INITIAL:
             if m.matches(node, AppendDecoratorTransformer._FUTURE_IMPORT_MATCH):
                 ADT_LOGGER.debug(
                     "Detected from __future__ import ..., continuing search for insertion point"
                 )
-                self._state = AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND
 
             else:
                 ADT_LOGGER.debug("ImportFrom detected that is unrelated to __future__")
@@ -200,31 +194,46 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
 
         return updated_node
 
+    def leave_ClassDef(
+        self, _: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.BaseStatement | cst.FlattenSentinel[cst.BaseStatement]:
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    cst.SimpleStatementLine(
+                        [
+                            AppendDecoratorTransformer.SYS_IMPORT,
+                            self._sys_path_ext,
+                            AppendDecoratorTransformer.PYTYPE_IMPORT,
+                        ]
+                    ),
+                    updated_node,
+                ]
+            )
+
+        return updated_node
+
     def leave_FunctionDef(
         self, _: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FlattenSentinel[cst.BaseStatement] | cst.FunctionDef:
         """
         Called on visiting a function definition node.
         Adds the trace decorator to the decorator list if function name matches test function name pattern.
-
-        Also acts as a breaker for AppendDecoratorTransformer.State.FUTURE_IMPORT_FROM_FOUND,
-        i.e. if only imports so far have been from __future__ import ..., then insert the preamble before the function
         """
         if re.match(self.test_function_name_pattern, updated_node.name.value):
             ADT_LOGGER.debug(f"Adding decorator to {updated_node.name.value}")
-            new_decs = list(updated_node.decorators) + [
-                AppendDecoratorTransformer.TRACE_DECORATOR
-            ]
-            updated_node = updated_node.with_changes(decorators=new_decs)
+            updated_node = updated_node.with_changes(
+                decorators=(
+                    *updated_node.decorators,
+                    AppendDecoratorTransformer.TRACE_DECORATOR,
+                )
+            )
 
         else:
             ADT_LOGGER.debug(f"Skipping adding decorator to {updated_node.name.value}")
 
-        if self._state == AppendDecoratorTransformer.State.ONLY_FUTURE_IMPORT_FOUND:
-            ADT_LOGGER.debug(
-                "ONLY_FUTURE_IMPORT_FOUND breaker activated; does not match pattern"
-            )
-
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
             self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
             return cst.FlattenSentinel(
                 [
