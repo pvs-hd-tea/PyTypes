@@ -25,6 +25,8 @@ def test_inline_generator_generates_expected_content(get_test_data):
         expected_eval_inline_content = test_element[3]
         assert resource_path.is_file()
 
+        print(f"Working on {resource_path}")
+
         gen = TypeHintGenerator(ident=EvaluationInlineGenerator.ident, types=pd.DataFrame())
         hinted = gen._gen_hinted_ast(
             applicable=sample_trace_data, module=load_cst_module(resource_path)
