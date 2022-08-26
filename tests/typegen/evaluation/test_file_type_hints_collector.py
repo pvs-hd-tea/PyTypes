@@ -138,7 +138,7 @@ def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints()
         "dict[str, typegen.evaluation.FileTypeHintsCollector]",
         "None | float | int | str",
         "None | bool | numpy.ndarray | str",
-        "dict[None | typegen.evaluation.FileTypeHintsCollector, dict[float, None | bool | int]] | list[str]",
+        "None | dict[None | typegen.evaluation.FileTypeHintsCollector, dict[float, None | bool | int]] | list[str] | object | str",
     ]
     test_object = FileTypeHintsCollector()
     test_object.collect_data_from_file(sample_folder_path, filename)
