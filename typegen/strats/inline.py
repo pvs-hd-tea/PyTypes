@@ -377,6 +377,11 @@ class TypeHintTransformer(cst.CSTTransformer):
     def leave_Assign(
         self, original_node: cst.Assign, updated_node: cst.Assign
     ) -> cst.Assign | cst.AnnAssign | cst.FlattenSentinel[cst.BaseSmallStatement]:
+        # Generate multiple AnnAssigns without values and retain original node if there
+        # is more than one target.
+
+        # Otherwise, replace Assign by AnnAssign WITH value
+
         global_vars, local_vars, class_members, targets = self._get_trace_for_targets(
             original_node
         )
@@ -385,82 +390,57 @@ class TypeHintTransformer(cst.CSTTransformer):
         logger.debug(f"Set: {all_globals_in_scope}")
         logger.debug(f"DataFrame:\n{global_vars}")
 
-        if len(targets.names) + len(targets.attrs) > 1:
-            hinted_targets: list[cst.BaseSmallStatement] = []
-            for ident, var in itertools.chain(targets.attrs, targets.names):
-                if isinstance(var, cst.Name) and ident in all_globals_in_scope:
-                    logger.debug(f"Searching for '{ident}' in global variables")
-                    hinted = global_vars[global_vars[Column.VARNAME] == ident]
-                elif isinstance(var, cst.Name):
-                    logger.debug(f"Searching for '{ident}' in local variables")
-                    hinted = local_vars[local_vars[Column.VARNAME] == ident]
-                else:
-                    logger.debug(f"Searching for '{ident}' in class attributes")
-                    hinted = class_members[class_members[Column.VARNAME] == ident]
+        hinted_targets: list[cst.AnnAssign] = []
 
-                if hinted.shape[0] > 1:
-                    self._on_multiple_hints_found(ident, hinted, original_node)
+        for ident, var in itertools.chain(targets.attrs, targets.names):
+            if isinstance(var, cst.Name) and ident in all_globals_in_scope:
+                logger.debug(f"Searching for '{ident}' in global variables")
+                hinted = global_vars[global_vars[Column.VARNAME] == ident]
+            elif isinstance(var, cst.Name):
+                logger.debug(f"Searching for '{ident}' in local variables")
+                hinted = local_vars[local_vars[Column.VARNAME] == ident]
+            else:
+                logger.debug(f"Searching for '{ident}' in class attributes")
+                hinted = class_members[class_members[Column.VARNAME] == ident]
 
-                if hinted.empty:
-                    if isinstance(var, cst.Attribute):
-                        logger.debug(
-                            f"Skipping hint for {ident}, as annotating \
-                            class members externally is forbidden"
-                        )
-                    else:
-                        logger.debug(f"Hint for {ident} could not be found")
+            if hinted.shape[0] > 1:
+                self._on_multiple_hints_found(ident, hinted, original_node)
 
-                    logger.debug("Not adding AnnAssign for Assign")
-                    continue
-
-                else:
-                    hint_ty = hinted[Column.VARTYPE].values[0]
-                    assert hint_ty is not None
-
-                    logger.debug(f"Found '{hint_ty}' for '{ident}'")
-                    hinted_targets.append(
-                        cst.AnnAssign(
-                            target=var,
-                            annotation=_create_annotation_from_vartype(hint_ty),
-                            value=None,
-                        )
+            if hinted.empty:
+                if isinstance(var, cst.Attribute):
+                    logger.debug(
+                        f"Skipping hint for {ident}, as annotating \
+                        class members externally is forbidden"
                     )
+                else:
+                    logger.debug(f"Hint for {ident} could not be found")
 
-            hinted_targets.append(original_node)
-            return cst.FlattenSentinel(hinted_targets)
+                logger.debug("Not adding AnnAssign for Assign")
+                continue
 
-        ident, var = next(itertools.chain(targets.attrs, targets.names))
-        if isinstance(var, cst.Name) and ident in all_globals_in_scope:
-            logger.debug(f"Searching for '{ident}' in global variables")
-            hinted = global_vars[global_vars[Column.VARNAME] == ident]
-        elif isinstance(var, cst.Name):
-            logger.debug(f"Searching for '{ident}' in local variables")
-            hinted = local_vars[local_vars[Column.VARNAME] == ident]
-        else:
-            logger.debug(f"Searching for '{ident}' in class attributes")
-            hinted = class_members[class_members[Column.VARNAME] == ident]
+            else:
+                hint_ty = hinted[Column.VARTYPE].values[0]
+                assert hint_ty is not None
 
-        if hinted.shape[0] > 1:
-            self._on_multiple_hints_found(ident, hinted, original_node)
+                logger.debug(f"Found '{hint_ty}' for '{ident}'")
+                hinted_targets.append(
+                    cst.AnnAssign(
+                        target=var,
+                        annotation=_create_annotation_from_vartype(hint_ty),
+                        value=None,
+                    )
+                )
 
-        if hinted.empty:
-            logger.debug(f"No hints found for '{ident}'")
-            logger.debug("Not adding type hint annotation for Assign")
-            return updated_node
+        if len(hinted_targets) == 1:
+            hinted = hinted_targets[0]
+            # Replace simple assignment with annotated assignment
+            return cst.AnnAssign(
+                target=hinted.target,
+                annotation=hinted.annotation,
+                value=original_node.value,
+            )
 
-        hint_ty = hinted[Column.VARTYPE].values[0]
-        assert hint_ty is not None
-
-        logger.debug(
-            f"Replacing Assign for '{ident}' with AnnAssign with hint '{hint_ty}'"
-        )
-
-        # Replace simple assignment with annotated assignment
-        return cst.AnnAssign(
-            target=original_node.targets[0].target,
-            annotation=_create_annotation_from_vartype(hint_ty),
-            value=original_node.value,
-        )
+        return cst.FlattenSentinel((*hinted_targets, updated_node))
 
     def leave_AnnAssign(
         self, original_node: cst.AnnAssign, updated_node: cst.AnnAssign
