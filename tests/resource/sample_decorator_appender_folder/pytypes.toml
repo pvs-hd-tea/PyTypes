@@ -1,0 +1,6 @@
+[pytypes]
+project = "sample_decorator_appender_folder"
+stdlib_path = "stdlib/goes/here"
+proj_path = "/home/benji/Documents/Uni/heidelberg/04/pytype/repo/tests/resource/sample_decorator_appender_folder"
+venv_path = "venv/goes/here"
+benchmark_performance = false
