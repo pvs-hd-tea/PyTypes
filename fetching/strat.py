@@ -148,7 +148,7 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
         return updated_node
 
     def leave_Import(
-        self, original_node: cst.Import, updated_node: cst.Import
+        self, _: cst.Import, updated_node: cst.Import
     ) -> cst.BaseSmallStatement | cst.FlattenSentinel[cst.BaseSmallStatement]:
         if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
             ADT_LOGGER.debug("Adding preamble after Import")
@@ -170,7 +170,6 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
                 ADT_LOGGER.debug(
                     "Detected from __future__ import ..., continuing search for insertion point"
                 )
-                self._state = AppendDecoratorTransformer.State.INITIAL
 
             else:
                 ADT_LOGGER.debug("ImportFrom detected that is unrelated to __future__")
