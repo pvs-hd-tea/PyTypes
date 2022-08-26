@@ -5,7 +5,11 @@ edit_uri : edit/main/docs
 nav:
   - Home: index.md
   - About: about.md
-  - Workflow: workflow.md
+  - Workflow:
+    - Fetching: workflow/fetching.md
+    - Tracing: workflow/tracing.md
+    - Annotating: workflow/annotating.md
+    - Evaluating: workflow/evaluating.md
   - Pyramid: pyramid.md
 
 theme: material  # readthedocs  mkdocs
