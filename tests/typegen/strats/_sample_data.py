@@ -997,19 +997,19 @@ def f():
     exists_outside_of_all_scopes: int = 5  # This is a local variable!
 
     global sneaky_inside_scope
-    sneaky_inside_scope: bool | str = True
+    sneaky_inside_scope = True
 
 
 def g():
-    # This should induce a union type in BOTH functions
+    # This should induce a union type
     global sneaky_inside_scope
-    sneaky_inside_scope: bool | str = "TypeChange"
+    sneaky_inside_scope = "TypeChange"
 
 
 def h():
     # Reference existing global
     global exists_outside_of_all_scopes
-    exists_outside_of_all_scopes: bool | int = 5
+    exists_outside_of_all_scopes = 5
 
 
 def main():
