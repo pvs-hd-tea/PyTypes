@@ -10,7 +10,7 @@ def f():
 
 
 def g():
-    # This should induce a union type in BOTH functions
+    # This should induce a union type
     global sneaky_inside_scope
     sneaky_inside_scope = "TypeChange"
 
