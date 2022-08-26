@@ -3,14 +3,40 @@ import functools
 import os
 
 import libcst as cst
+from libcst import matchers as m
 import pandas as pd
 
 from constants import Column
 
 
-class _AddImportTransformer(cst.CSTTransformer):
+class AddImportTransformer(cst.CSTTransformer):
+    _FUTURE_IMPORT_MATCH = m.ImportFrom(module=m.Name(value="__future__"))
+    _ANNOTATION_MATCH = m.ImportAlias(name=m.Name(value="annotations"))
+
     def __init__(self, applicable: pd.DataFrame) -> None:
         self.applicable = applicable.copy()
+        self._future_imports: set[cst.ImportAlias] = set()
+        self._contains_anno_fut_import: bool = False
+
+    def leave_ImportFrom(
+        self, _: cst.ImportFrom, updated_node: cst.ImportFrom
+    ) -> cst.ImportFrom | cst.RemovalSentinel:
+        # Interestingly, star imports in __future__ are not possible
+        # >>> from __future__ import *
+        # File "<stdin>", line 1
+        # SyntaxError: future feature * is not defined
+        # So no ImportStar can occur here
+        if m.matches(updated_node, AddImportTransformer._FUTURE_IMPORT_MATCH):
+            if any(
+                m.matches(alias, AddImportTransformer._ANNOTATION_MATCH)
+                for alias in updated_node.names   # type: ignore
+            ):
+                self._contains_anno_fut_import = True
+
+            self._future_imports.update(set(updated_node.names))  # type: ignore
+            return cst.RemoveFromParent()
+
+        return updated_node
 
     # There is probably a better implementation using LibCST's AddImportVisitor and CodemodContext
     def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
@@ -28,10 +54,7 @@ class _AddImportTransformer(cst.CSTTransformer):
         not_in_same_mod = (
             self.applicable["modules"] != self.applicable[Column.VARTYPE_MODULE]
         )
-        retain_mask = [
-            non_builtin,
-            not_in_same_mod,
-        ]
+        retain_mask = [non_builtin, not_in_same_mod]
 
         important = self.applicable[functools.reduce(operator.and_, retain_mask)]
         if important.empty:
@@ -59,7 +82,9 @@ class _AddImportTransformer(cst.CSTTransformer):
                     mod_name, cst.Name | cst.Attribute
                 ), f"Accidentally parsed {type(mod_name)}"
 
-                aliases = [cst.ImportAlias(name=cst.Name(ty))]
+                # For inner types, the outermost attr exposes them
+                outer_most = ty.split(".")[0]
+                aliases = [cst.ImportAlias(name=cst.Name(outer_most))]
                 imp_from = cst.ImportFrom(module=mod_name, names=aliases)
                 imports_for_type_hints.append(cst.SimpleStatementLine([imp_from]))
 
@@ -69,11 +94,15 @@ class _AddImportTransformer(cst.CSTTransformer):
         )
         typings_line = cst.SimpleStatementLine([typings_import])
 
-        ann_fut_import = cst.ImportFrom(
+        if not self._contains_anno_fut_import:
+            self._future_imports.add(cst.ImportAlias(cst.Name("annotations")))
+
+        fut_imports = cst.ImportFrom(
             module=cst.Name(value="__future__"),
-            names=[cst.ImportAlias(cst.Name("annotations"))],
+            names=list(self._future_imports),
         )
-        ann_fut_line = cst.SimpleStatementLine([ann_fut_import])
+
+        fut_import_line = cst.SimpleStatementLine([fut_imports])
 
         type_checking_only = cst.If(
             test=cst.Name("TYPE_CHECKING"),
@@ -82,7 +111,7 @@ class _AddImportTransformer(cst.CSTTransformer):
 
         # mypy doesnt like us writing in NewLines into their body, but the codegen is fine
         new_body = [
-            ann_fut_line,
+            fut_import_line,
             typings_line,
             type_checking_only,
         ] + list(updated_node.body)

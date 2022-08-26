@@ -32,6 +32,7 @@ types-requests = "^2.27.30"
 pandas-stubs = "^1.2.0"
 pytest-order = "^1.0.1"
 pytest-dependency = "^0.5.1"
+pytest-cov = "^3.0.0"
 
 [tool.poetry.extras]
 doc-tools = ["mkdocs", "mkdocs-material"]

@@ -1,4 +1,5 @@
 from json import dump
+import logging
 import pathlib
 import typing
 import pytest
@@ -42,36 +43,46 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
         decorator=m.Attribute(value=m.Name("decorators"), attr=m.Name("trace"))
     )
 
+    # from __future__ import ...
+    _FUTURE_IMPORT_MATCH = m.ImportFrom(module=m.Name(value="__future__"))
+
     def __init__(self) -> None:
         self.sys_import_exists = False
         self.decorator_import_exists = False
         self.all_tests_are_traced = True
 
         self.import_found = False
-        self.import_from_found = False
+        self.standard_import_from_found = False
         self.test_found = False
 
-    def __bool__(self) -> bool:
-        return all(
-            [
-                self.sys_import_exists and self.import_found,
-                self.decorator_import_exists and self.import_from_found,
-                self.all_tests_are_traced and self.test_found,
-            ]
-        )
+        self._has_import_future = False
 
     def visit_Import(self, node: cst.Import) -> bool | None:
         self.import_found = True
         self.sys_import_exists = self.sys_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.SYS_IMPORT
         )
+
+        logging.debug(f"{self.import_found=}  {self.sys_import_exists=}")
         return True
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
-        self.import_from_found = True
+        if m.matches(node, ValidPytestApplicationVisitor._FUTURE_IMPORT_MATCH):
+            assert not self.import_found, f"Found __future__ import after imports!"
+
+            # No other ImportFroms may have appeared before this 
+            assert not self.standard_import_from_found, f"Found __future__ import after other import froms!"
+            self._has_import_future = True
+
+        else:
+            # This is an import-from that is NOT a from __future__ import
+            self.standard_import_from_found = True
+
         self.decorator_import_exists = self.decorator_import_exists or m.matches(
             node, ValidPytestApplicationVisitor.DECORATOR_IMPORT
         )
+
+        logging.debug(f"{self.standard_import_from_found=}  {self.decorator_import_exists=}")
         return True
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
@@ -81,6 +92,8 @@ class ValidPytestApplicationVisitor(cst.CSTVisitor):
                 m.matches(d, ValidPytestApplicationVisitor.TRACE)
                 for d in node.decorators
             )
+
+        logging.debug(f"{self.test_found=}  {self.all_tests_are_traced=}")
         return True
 
 
@@ -108,16 +121,22 @@ def nonrecursed_globs() -> typing.Iterator[list[pathlib.Path]]:
 
 def check_file_is_valid(filepath: pathlib.Path):
     module = cst.parse_module(filepath.open().read())
+    logging.info(f"{module.code}")
+
     visitor = ValidPytestApplicationVisitor()
     module.visit(visitor)
 
-    assert bool(
-        visitor
-    ), f"At least one of these is false! {visitor.sys_import_exists=}, {visitor.decorator_import_exists=}, {visitor.all_tests_are_traced=}\n"
-    f"File: {filepath.open().read()}"
+    assert visitor.import_found, f"No imports found:\n{module.code}"
+    assert visitor.sys_import_exists, f"Could not find sys import:\n{module.code}"
+
+    assert visitor.standard_import_from_found, f"No from x import ys found:\n{module.code}"
+    assert visitor.decorator_import_exists, f"No decorator import found:\n{module.code}"
+
+    assert visitor.test_found, f"No tests found:\n{module.code}"
+    assert visitor.all_tests_are_traced, f"Not all tests are decorated:\n{module.code}"
 
 
-def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_it_overwrites_test_files(
+def test_if_test_object_searches_for_test_files_in_folders_including_subfolders(
     project_folder, recursed_globs
 ):
     test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
@@ -128,7 +147,7 @@ def test_if_test_object_searches_for_test_files_in_folders_including_subfolders_
         check_file_is_valid(test_file_path)
 
 
-def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders_it_overwrites_test_files(
+def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders(
     project_folder, nonrecursed_globs
 ):
     test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=False)
@@ -137,3 +156,69 @@ def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders_
     for test_file_path in nonrecursed_globs:
         assert test_file_path.exists()
         check_file_is_valid(test_file_path)
+
+
+@pytest.fixture
+def future_test_project():
+    with mock.patch(
+        "fetching.projio.Project.test_directory",
+        new_callable=mock.PropertyMock,
+    ) as m:
+        fake_cwd = pathlib.Path("tests", "resource", "fetching_future")
+        m.return_value = fake_cwd
+        p = Project(fake_cwd)
+
+        yield p
+
+
+@pytest.fixture
+def has_future_import() -> typing.Iterator[pathlib.Path]:
+    p = pathlib.Path("tests", "resource", "fetching_future", "test_has_future_import.py")
+    backup = p.open().read()
+
+    yield p
+
+    with p.open("w") as f:
+        f.write(backup)
+
+
+def test_if_future_has_correct_position(
+    future_test_project: Project, has_future_import: pathlib.Path
+):
+    test_object = PyTestStrategy(pathlib.Path.cwd(), recurse_into_subdirs=True)
+    test_object.apply(future_test_project)
+
+    assert has_future_import.exists()
+    check_file_is_valid(has_future_import)
+
+
+@pytest.fixture
+def import_test_project():
+    with mock.patch(
+        "fetching.projio.Project.test_directory",
+        new_callable=mock.PropertyMock,
+    ) as m:
+        fake_cwd = pathlib.Path("tests", "resource", "fetching_imports")
+        m.return_value = fake_cwd
+        p = Project(fake_cwd)
+
+        yield p
+
+
+@pytest.fixture
+def only_has_imports() -> typing.Iterator[pathlib.Path]:
+    p = pathlib.Path("tests", "resource", "fetching_imports", "test_only_has_imports.py")
+    backup = p.open().read()
+
+    yield p
+
+    with p.open("w") as f:
+        f.write(backup)
+
+
+def test_only_imports(import_test_project: Project, only_has_imports: pathlib.Path):
+    strat = PyTestStrategy(pathlib.Path.cwd())
+    strat.apply(import_test_project)
+
+    assert only_has_imports.exists()
+    check_file_is_valid(only_has_imports)

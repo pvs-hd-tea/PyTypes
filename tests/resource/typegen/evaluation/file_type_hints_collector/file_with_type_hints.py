@@ -22,7 +22,7 @@ class A:
         self.array: np.ndarray = np.zeros((3, 3))
         self.not_annotated_member = False
 
-        w: MetricDataCalculator.A = ...
+        w: MetricDataCalculator.A.B = ...
         x: evaluation.FileTypeHintsCollector = ...
         y: MetricDataCalculator = MetricDataCalculator()
         z: FileTypeHintsCollector = FileTypeHintsCollector()
@@ -31,7 +31,7 @@ class A:
         c: Optional[bool]; d = a == b, 10
         e: dict[str, evaluation.FileTypeHintsCollector] = ...
         if True:
-            e: int | str | float | None = 12
+            e: int | [str] | [] | None = 12
         e: typing.Union[bool | np.ndarray, typing.Optional[str]] = False
         f: object = None; g: float = 3.14
         h: typing.Union[list[str], dict[None | evaluation.FileTypeHintsCollector, dict[float, Optional[bool | int]]]] = ...

@@ -1,4 +1,7 @@
-import ast
+import enum
+import logging
+import libcst as cst
+import libcst.matchers as m
 from abc import ABC, abstractmethod
 import pathlib
 import re
@@ -52,34 +55,28 @@ class ApplicationStrategy(ABC):
 
 class PyTestStrategy(ApplicationStrategy):
     FUNCTION_PATTERN = constants.PYTEST_FUNCTION_PATTERN
-    SYS_IMPORT = ast.parse("import sys").body[0]
-    PYTYPE_IMPORTS = ast.parse("from tracing import decorators").body[0]
 
     def __init__(self, pytest_root: pathlib.Path, recurse_into_subdirs: bool = True):
         super().__init__(recurse_into_subdirs)
 
         self.pytest_root = pytest_root
-        self.decorator_appended_file_paths: list[pathlib.Path] = []
 
-        self.sys_path_ext_node = ast.parse(f"sys.path.append('{self.pytest_root}')\n").body[0]
-        self.append_register_decorator_transformer = AppendDecoratorTransformer(
-            PyTestStrategy.FUNCTION_PATTERN
+        self.sys_path_ext_node = cst.Expr(
+            cst.parse_expression(f"sys.path.append('{self.pytest_root}')")
         )
 
     def _apply(self, path: pathlib.Path) -> None:
-        with path.open() as file:
-            file_content = file.read()
+        # transformer is stateful, meaning it must be reinstantiated
+        dec_trans = AppendDecoratorTransformer(
+            PyTestStrategy.FUNCTION_PATTERN, self.sys_path_ext_node
+        )
 
-        file_ast = ast.parse(file_content)
-        file_ast = self.append_register_decorator_transformer.visit(file_ast)
-        self._add_nodes_necessary_for_tracing(file_ast)
-        file_content = ast.unparse(file_ast)
+        with path.open() as f:
+            original = cst.parse_module(f.read())
+            updated = original.visit(dec_trans)
 
-        output = path
-        with output.open("w") as file:
-            file.write(file_content)
-
-        self.decorator_appended_file_paths.append(output)
+        with path.open("w") as f:
+            f.write(updated.code)
 
     def _is_test_file(self, path: pathlib.Path) -> bool:
         if path.name.startswith("test_"):
@@ -87,32 +84,168 @@ class PyTestStrategy(ApplicationStrategy):
 
         return path.name.endswith("_test.py")
 
-    def _add_nodes_necessary_for_tracing(
-        self, abstract_syntax_tree: ast.Module
-    ) -> None:
-        """Appends the imports, sys path extension statement and the entrypoint to the provided AST."""
-        abstract_syntax_tree.body.insert(0, PyTestStrategy.SYS_IMPORT)
-        abstract_syntax_tree.body.insert(1, self.sys_path_ext_node)
-        abstract_syntax_tree.body.insert(2, PyTestStrategy.PYTYPE_IMPORTS)
+
+ADT_LOGGER = logging.getLogger("AppendDecoratorTransformer")
 
 
-class AppendDecoratorTransformer(ast.NodeTransformer):
+class AppendDecoratorTransformer(cst.CSTTransformer):
     """
-    Transforms an AST such that the register decorator is appended on each test function.
+    Transforms an AST such that the trace decorator is appended on each test function.
+    Additionally, imports are generated in the correct locations so that using
+    the decorator is possible
     """
 
-    TRACE = "decorators.trace"
+    TRACE_DECORATOR = cst.Decorator(
+        decorator=cst.Attribute(value=cst.Name("decorators"), attr=cst.Name("trace"))
+    )
+    _FUTURE_IMPORT_MATCH = m.ImportFrom(module=m.Name(value="__future__"))
 
-    def __init__(self, test_function_name_pattern: Pattern[str]):
+    SYS_IMPORT = cst.Import(names=[cst.ImportAlias(name=cst.Name("sys"))])
+    PYTYPE_IMPORT = cst.ImportFrom(
+        module=cst.Name("tracing"), names=[cst.ImportAlias(name=cst.Name("decorators"))]
+    )
+
+    class State(enum.IntEnum):
+        # No preamble has been generated, and no
+        # viable preamble insertion point has been found
+        INITIAL = 0
+
+        # A fitting preamble insertion point has been found
+        INSERTION_POINT_FOUND = 1
+
+        # The preamble has been added to the AST
+        PREAMBLE_GENERATED = 2
+
+    def __init__(
+        self,
+        test_function_name_pattern: Pattern[str],
+        sys_path_ext: cst.BaseSmallStatement,
+    ):
         self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
-        self.register_decorator_node = ast.Name(
-            AppendDecoratorTransformer.TRACE
+        self._sys_path_ext = sys_path_ext
+        self._state: AppendDecoratorTransformer.State = (
+            AppendDecoratorTransformer.State.INITIAL
         )
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+    def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
+        # If there are no imports, then the state may not change completely
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            ADT_LOGGER.debug("Preamble has not yet been added, adding at fallthru")
+            # Generate missing imports at the top
+            changes = cst.SimpleStatementLine(
+                [
+                    AppendDecoratorTransformer.SYS_IMPORT,
+                    self._sys_path_ext,
+                    AppendDecoratorTransformer.PYTYPE_IMPORT,
+                ]
+            )
+            new_body = list(updated_node.body)
+            new_body.insert(0, changes)
+
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return updated_node.with_changes(body=new_body)
+
+        return updated_node
+
+    def leave_Import(
+        self, _: cst.Import, updated_node: cst.Import
+    ) -> cst.BaseSmallStatement | cst.FlattenSentinel[cst.BaseSmallStatement]:
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            ADT_LOGGER.debug("Adding preamble after Import")
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    updated_node,
+                    AppendDecoratorTransformer.SYS_IMPORT,
+                    self._sys_path_ext,
+                    AppendDecoratorTransformer.PYTYPE_IMPORT,
+                ]
+            )
+
+        return updated_node
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        if self._state == AppendDecoratorTransformer.State.INITIAL:
+            if m.matches(node, AppendDecoratorTransformer._FUTURE_IMPORT_MATCH):
+                ADT_LOGGER.debug(
+                    "Detected from __future__ import ..., continuing search for insertion point"
+                )
+
+            else:
+                ADT_LOGGER.debug("ImportFrom detected that is unrelated to __future__")
+                self._state = AppendDecoratorTransformer.State.INSERTION_POINT_FOUND
+
+        return True
+
+    def leave_ImportFrom(
+        self, _: cst.ImportFrom, updated_node: cst.ImportFrom
+    ) -> cst.FlattenSentinel[cst.BaseSmallStatement] | cst.BaseSmallStatement:
+        if self._state == AppendDecoratorTransformer.State.INSERTION_POINT_FOUND:
+            ADT_LOGGER.debug("Adding preamble after ImportFrom")
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    updated_node,
+                    AppendDecoratorTransformer.SYS_IMPORT,
+                    self._sys_path_ext,
+                    AppendDecoratorTransformer.PYTYPE_IMPORT,
+                ]
+            )
+
+        return updated_node
+
+    def leave_ClassDef(
+        self, _: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.BaseStatement | cst.FlattenSentinel[cst.BaseStatement]:
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    cst.SimpleStatementLine(
+                        [
+                            AppendDecoratorTransformer.SYS_IMPORT,
+                            self._sys_path_ext,
+                            AppendDecoratorTransformer.PYTYPE_IMPORT,
+                        ]
+                    ),
+                    updated_node,
+                ]
+            )
+
+        return updated_node
+
+    def leave_FunctionDef(
+        self, _: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FlattenSentinel[cst.BaseStatement] | cst.FunctionDef:
         """
         Called on visiting a function definition node.
-        Adds the register decorator to the decorator list if function name matches test function name pattern."""
-        if re.match(self.test_function_name_pattern, node.name):
-            node.decorator_list.append(self.register_decorator_node)
-        return node
+        Adds the trace decorator to the decorator list if function name matches test function name pattern.
+        """
+        if re.match(self.test_function_name_pattern, updated_node.name.value):
+            ADT_LOGGER.debug(f"Adding decorator to {updated_node.name.value}")
+            updated_node = updated_node.with_changes(
+                decorators=(
+                    *updated_node.decorators,
+                    AppendDecoratorTransformer.TRACE_DECORATOR,
+                )
+            )
+
+        else:
+            ADT_LOGGER.debug(f"Skipping adding decorator to {updated_node.name.value}")
+
+        if self._state != AppendDecoratorTransformer.State.PREAMBLE_GENERATED:
+            self._state = AppendDecoratorTransformer.State.PREAMBLE_GENERATED
+            return cst.FlattenSentinel(
+                [
+                    cst.SimpleStatementLine(
+                        [
+                            AppendDecoratorTransformer.SYS_IMPORT,
+                            self._sys_path_ext,
+                            AppendDecoratorTransformer.PYTYPE_IMPORT,
+                        ]
+                    ),
+                    updated_node,
+                ]
+            )
+
+        return updated_node

@@ -1,5 +1,3 @@
-from tracing.decorators import register, entrypoint
-
 class AClass:
     def __init__(self, a):
         self.aclass_attr = a # set attribute in class C, TYPE HINT!
@@ -24,11 +22,6 @@ def func_taking_anotherc(anotherc):
     return i
 
 
-@register()
-def test_fs():
+def main():
     func_taking_aclass(AClass(5))
     func_taking_anotherc(AnotherC(36))
-
-@entrypoint()
-def main():
-    ...
