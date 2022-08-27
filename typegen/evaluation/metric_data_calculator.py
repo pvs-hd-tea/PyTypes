@@ -91,3 +91,21 @@ class MetricDataCalculator:
 
         return processed_data
 
+
+def get_total_completeness_and_correctness(metric_data: pd.DataFrame) -> tuple[float, float]:
+    """Gets the total completeness & correctness of a given metric data."""
+    completeness_column = metric_data[Column.COMPLETENESS]
+    correctness_column = metric_data[Column.CORRECTNESS]
+
+    total_completeness_count = completeness_column[~completeness_column.isna()].shape[0]
+    total_completeness_is_true_count = completeness_column[completeness_column].shape[0]
+    total_correctness_count = correctness_column[correctness_column].shape[0]
+
+    total_completeness = 0
+    if total_completeness_count > 0:
+        total_completeness = total_completeness_is_true_count / total_completeness_count
+    total_correctness = 0
+    if total_completeness_is_true_count > 0:
+        total_correctness = total_correctness_count / total_completeness_is_true_count
+
+    return total_completeness, total_correctness
