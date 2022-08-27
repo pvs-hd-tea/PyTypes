@@ -4,6 +4,9 @@ import filecmp
 
 import typing
 
+import numpy as np
+import pandas as pd
+
 import constants
 from typegen.trace_data_file_collector import TraceDataFileCollector
 from typegen.evaluation.file_type_hints_collector import FileTypeHintsCollector
@@ -46,8 +49,30 @@ __all__ = [
     help="Path to traced project directory",
     required=True,
 )
+@click.option(
+    "-s",
+    "--store",
+    type=click.Path(
+        exists=False,
+        dir_okay=True,
+        writable=True,
+        readable=True,
+        path_type=pathlib.Path,
+    ),
+    help="Path to store performance & metric data",
+    required=True,
+)
+@click.option(
+    "-d",
+    "--data_name",
+    type=str,
+    help="Name for data files",
+    required=False,
+    default="data",
+)
 def main(**params):
-    original_path, traced_path = (params["original"], params["traced"])
+    original_path, traced_path, path_to_store, data_name = (params["original"], params["traced"], params["store"], params["data_name"])
+    path_to_store.mkdir(parents=True, exist_ok=True)
 
     trace_data_path = traced_path / "pytypes"
 
@@ -78,11 +103,16 @@ def main(**params):
     metric_data = metricdata_calculator.get_metric_data(
         original_typehint_data, traced_typehint_data
     )
-    (
-        completeness,
-        correctness,
-    ) = metricdata_calculator.get_total_completeness_and_correctness(metric_data)
-    print(f"Completeness: {completeness * 100}%, Correctness: {correctness * 100}%")
+
+    metric_data_path = path_to_store / (data_name + constants.TRACE_DATA_FILE_ENDING)
+    pd.to_pickle(metric_data, metric_data_path)
+
+    # Stores the performance data.
+    performancedata_file_collector = PerformanceDataFileCollector()
+    performancedata_file_collector.collect_data(trace_data_path, True)
+    performance_data = performancedata_file_collector.performance_data
+    performance_data_path = path_to_store / (data_name + constants.NP_ARRAY_FILE_ENDING)
+    np.save(performance_data_path, performance_data)
 
 
 def _get_changed_file_paths(
