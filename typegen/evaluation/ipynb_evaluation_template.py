@@ -1,10 +1,17 @@
+# This is a jupyter notebook file.
+#
+# The module jupytext is used to use .py files in jupyter notebook. To generate a .ipynb file and store the results of the file, go to "File" -> "Jupytext" -> "Pair Notebook with ipynb document". This generates the corresponding .ipynb file.
+#
+# To install jupytext, use:
+#
+# # !pip install jupytext
+#
 # Note: Before executing the notebook, make sure your anaconda environment does not use python 3.9. Recommended is: 3.10.
 #
 # If a package has to be installed, use the following command:
 #
 # # !pip install python_module_to_install
 #
-# Note: Used the module jupytext to use .py files in jupyter notebook. To generate a .ipynb file and store the results of the file, go to "File" -> "Jupytext" -> "Pair Notebook with ipynb document". This generates the corresponding .ipynb file.
 
 # +
 import numpy as np
@@ -110,7 +117,7 @@ print(file_metric_data.head(5))
 print(f"Amount of data: {performance_data.shape[0]}")
 
 
-def plot_performance_data(performance_data):
+def plot_performance_data(performance_data: np.ndarray) -> None:
     time_normal = performance_data[:, 0]
     time_tracer_base = performance_data[:, 1]
     time_standard_tracer = performance_data[:, 2]
