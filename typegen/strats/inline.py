@@ -301,6 +301,11 @@ class TypeHintTransformer(cst.CSTTransformer):
 
         rettypes = self._get_trace_for_rettype(original_node)
 
+        if updated_node.returns is not None:
+            logger.debug(
+                f"'{original_node.name.value}' already has an annotation, returning.")
+            return updated_node
+
         if rettypes.shape[0] > 1:
             self._on_multiple_hints_found(
                 original_node.name.value, rettypes, original_node
