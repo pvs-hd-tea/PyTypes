@@ -3,14 +3,13 @@ import typing
 
 import pandas as pd
 from constants import Column, Schema
-from typegen.evaluation import FileTypeHintsCollector
-from typegen.evaluation.normalize_types import normalize_type
+from evaluation.file_type_hints_collector import FileTypeHintsCollector
+from evaluation.normalize_types import normalize_type
 
 root = pathlib.Path.cwd()
 relative_sample_folder_path = (
     pathlib.Path("tests")
     / "resource"
-    / "typegen"
     / "evaluation"
     / "file_type_hints_collector"
 )
@@ -135,10 +134,10 @@ def test_file_type_hints_collector_returns_correct_data_for_complex_type_hints()
     filename = "file_with_complex_type_hints.py"
     expected_typehints = [
         "None | bool",
-        "dict[str, typegen.evaluation.FileTypeHintsCollector]",
+        "dict[str, evaluation.FileTypeHintsCollector]",
         "None | float | int | str",
         "None | bool | numpy.ndarray | str",
-        "None | dict[None | typegen.evaluation.FileTypeHintsCollector, dict[float, None | bool | int]] | list[str] | object | str",
+        "None | dict[None | evaluation.FileTypeHintsCollector, dict[float, None | bool | int]] | list[str] | object | str",
     ]
     test_object = FileTypeHintsCollector()
     test_object.collect_data_from_file(sample_folder_path, filename)

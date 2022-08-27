@@ -15,22 +15,20 @@
 
 # +
 import numpy as np
-import pathlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
 import sys
-sys.path.append('./../../')
+sys.path.append('../')
 
 from constants import Column, Schema
-from tracing import TraceDataCategory
-from typegen.evaluation.metric_data_calculator import get_total_completeness_and_correctness
+from evaluation.metric_data_calculator import get_total_completeness_and_correctness
 # -
 
 # Use the data file paths stored by the evaluate command.
 
-METRIC_DATA_FILE_PATH = "./../../evaluation_data/data.pytype"
-PERFORMANCE_DATA_FILE_PATH = "./../../evaluation_data/poetry.npy_pytype.npy"
+METRIC_DATA_FILE_PATH = "../evaluation_data/data.pytype"
+PERFORMANCE_DATA_FILE_PATH = "../evaluation_data/data.npy_pytype.npy"
 
 # +
 metric_data_template = pd.DataFrame(columns=Schema.Metrics.keys())
@@ -116,3 +114,5 @@ plot_performance_data(performance_data)
 plt.xscale('log')
 plt.yscale('log')
 plot_performance_data(performance_data)
+
+

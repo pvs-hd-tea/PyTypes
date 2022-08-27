@@ -3,7 +3,7 @@ import click
 import fetching
 import typegen
 import confgen
-import typegen.evaluation as evaluation
+import evaluation
 
 if __name__ == "__main__":
     # Ordered by workflow usage

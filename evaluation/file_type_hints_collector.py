@@ -4,7 +4,7 @@ import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
 from tracing import TraceDataCategory
-from typegen.evaluation.normalize_types import normalize_type
+from evaluation.normalize_types import normalize_type
 
 from constants import Column, Schema
 
