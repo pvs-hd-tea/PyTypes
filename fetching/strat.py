@@ -9,7 +9,7 @@ from re import Pattern
 
 from .projio import Project
 import constants
-from tracing.ptconfig import write_config, TomlCfg, PyTypes
+from common.ptconfig import write_config, TomlCfg, PyTypes
 
 
 class ApplicationStrategy(ABC):

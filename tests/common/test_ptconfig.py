@@ -1,6 +1,6 @@
 import pathlib
 
-from tracing import ptconfig
+from common import ptconfig
 
 
 def test_full():

@@ -7,7 +7,7 @@ from types import NoneType
 
 import pytest
 
-from tracing.resolver import Resolver
+from common.resolver import Resolver
 
 
 @pytest.fixture
