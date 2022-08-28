@@ -1,11 +1,9 @@
 import os
-import sys
 import pathlib
 import logging
-import tempfile
 
 import pandas as pd
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 
 from typegen.unification.filter_base import TraceDataFilter
 from typegen.unification.subtyping import UnifySubTypesFilter
