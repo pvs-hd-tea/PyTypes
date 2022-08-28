@@ -7,10 +7,10 @@ nav:
   - About: about.md
   - Workflow:
     - Fetching: workflow/fetching.md
+    - Configuration: workflow/config.md
     - Tracing: workflow/tracing.md
     - Annotating: workflow/annotating.md
     - Evaluating: workflow/evaluating.md
-  - Pyramid: pyramid.md
 
 theme: material  # readthedocs  mkdocs
 
