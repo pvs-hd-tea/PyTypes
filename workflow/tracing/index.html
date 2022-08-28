@@ -702,7 +702,8 @@ Therefore, along a codepath that uses the entrypoint in question, determining co
 <h3 id="decoratorstrace-minimally-intrusive-tracing-api"><code>@decorators.trace</code> - Minimally Intrusive Tracing API<a class="headerlink" href="#decoratorstrace-minimally-intrusive-tracing-api" title="Permanent link">&para;</a></h3>
 <p><a href="../fetching/">The fetching process</a> generates instances of this decorator function where applicable.
 Each invocation parses the <a href="../../misc/config/">config file</a> from the root of the project, and executes the tracing process on the marked callable.
-After tracing has concluded, the accumulated <code>DataFrame</code> in the <code>Tracer</code> is serialised under <code>pytypes/{project}/{test_case}/{func_name}-{hash(df)}.pytype</code>.
+This decorator takes care to forward all arguments that <code>pytest</code> may inject into the decorated function so that all kinds of <a href="https://docs.pytest.org/en/latest/how-to/monkeypatch.html">monkeypatching</a>, <a href="https://docs.pytest.org/en/latest/how-to/fixtures.html">fixtures</a> and much else.</p>
+<p>After tracing has concluded, the accumulated <code>DataFrame</code> in the <code>Tracer</code> is serialised under <code>pytypes/{project}/{test_case}/{func_name}-{hash(df)}.pytype</code>.
 The hashing is performed to force tests that are executed in loops (e.g. by <code>@pytest.mark.parametrize</code>) to not overwrite their predecessor's data, which could cause valuable information that would indicate union types, to be lost.
 If the traced test causes an uncaught exception, then a similarly named file with an <code>.err</code> suffix is generated containing the traceback.</p>
 <p>Additionally, if the <code>benchmark_performance</code> value has been set to true in <code>pytypes.toml</code>, then additional tracing will be performed that does not store any trace data, and again with logging enabled but with optimisations turned off.
