@@ -1,8 +1,8 @@
 import pathlib
-import numpy as np
 
-from tracing import ptconfig, decorators
-from constants import Column, Schema
+from tracing import decorators
+from common import ptconfig
+from constants import Column
 
 
 def trace_function():
