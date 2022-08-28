@@ -13,7 +13,7 @@ import typing
 import pathlib
 
 from constants import Column, Schema
-from tracing.resolver import Resolver
+from common.resolver import Resolver
 from tracing.trace_update import BatchTraceUpdate
 
 from .optimisation import (

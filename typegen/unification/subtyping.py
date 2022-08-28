@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 import pathlib
 
-from tracing.resolver import Resolver
+from common.resolver import Resolver
 
 from .filter_base import TraceDataFilter
 from constants import Column, Schema

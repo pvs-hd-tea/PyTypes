@@ -12,7 +12,7 @@ import libcst as cst
 from libcst.metadata import PositionProvider
 
 from constants import Column
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 from typegen.strats.gen import TypeHintGenerator
 from typegen.strats.imports import AddImportTransformer
 

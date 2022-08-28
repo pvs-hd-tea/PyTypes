@@ -1,13 +1,12 @@
 import logging
 import os
 import pathlib
-import sys
 
 import pandas as pd
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 
 from tracing.tracer import Tracer
-from constants import Column, Schema
+from constants import Schema
 
 # NOTE: Ignored has been made defunct;
 # NOTE: the tracer will ignore the pathlib calls by itself
