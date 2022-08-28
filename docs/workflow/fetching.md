@@ -14,9 +14,3 @@
 
 
 
-
-## Developer Documentation
-
-
-
-
