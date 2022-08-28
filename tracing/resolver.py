@@ -31,9 +31,7 @@ def _attempt_module_lookup(
             return module
 
     except FileNotFoundError:
-        logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
-    #except ModuleNotFoundError:
-    #    logger.debug(f"No module named {module_name} in {str(root / lookup_path)}")
+        logger.warning(f"Could not import {module_name} from {str(root / lookup_path)}")
 
     return None
 
@@ -115,16 +113,14 @@ class Resolver:
         module = sys.modules[ty.__module__]
         logger.debug(f"{(module.__name__, ty.__name__)} as builtin?")
         if module.__name__ == "builtins":
-            return None, ty.__name__
+            return None, ty.__qualname__
 
         # Special case:
         # The __file__ attribute is not present for C modules that are statically linked into the interpreter;
         # for extension modules loaded dynamically from a shared library,
         # it is the pathname of the shared library file.
         if not hasattr(module, "__file__"):
-            if module.__name__ == "lib-dynload._hashlib.cpython-310-x86_64-linux-gnu":
-                raise ValueError
-            return module.__name__, ty.__name__
+            return module.__name__, ty.__qualname__
 
         assert module.__file__ is not None
         module_file = pathlib.Path(module.__file__)
@@ -132,18 +128,18 @@ class Resolver:
         # 1. project path
         if module_file.is_relative_to(self.proj_path):
             logger.debug(
-                f"{(module.__name__, ty.__name__)} is relative to project path"
+                f"{(module.__name__, ty.__qualname__)} is relative to project path"
             )
             rel_path = module_file.relative_to(self.proj_path)
 
         # 2. stdlib
         elif module_file.is_relative_to(self.stdlib_path):
-            logger.debug(f"{(module.__name__, ty.__name__)} is relative to stdlib path")
+            logger.debug(f"{(module.__name__, ty.__qualname__)} is relative to stdlib path")
             rel_path = module_file.relative_to(self.stdlib_path)
 
         # 3. venv
         elif module_file.is_relative_to(self.site_packages):
-            logger.debug(f"{(module.__name__, ty.__name__)} is a venv dependency")
+            logger.debug(f"{(module.__name__, ty.__qualname__)} is a venv dependency")
             rel_path = module_file.relative_to(self.site_packages)
 
         else:
