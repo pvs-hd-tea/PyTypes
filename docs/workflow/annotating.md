@@ -41,8 +41,21 @@ TODO: Add motivation, functionality and example for every unifier
 
 ### Transformers
 
+TODO: Add motivation, functionality and example for every transformer
 
-#### 
+#### TypeHintTransformer
+
+
+#### RemoveAllTypeHintsTransformer
+
+
+#### AddImportTransformer
+
+
+#### MyPyHintTransformer
+
+
+#### ImportUnionTransformer
 
 
 ### Inline Annotation Generation
