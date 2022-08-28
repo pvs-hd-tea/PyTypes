@@ -67,7 +67,7 @@ __all__ = [
 @click.option(
     "-v",
     "--verbose",
-    help="INFO if not given, else CRITICAL",
+    help="INFO if not given, else DEBUG",
     is_flag=True,
     callback=lambda ctx, _, val: logging.DEBUG if val else logging.INFO,
     required=False,

@@ -2,6 +2,36 @@
 The evaluation module contains classes/functions to evaluate the traced type hints by using the previously existing type hints. 
 A requirement for successful/meaningful evaluation is the usage of the evaluation inline generator when annotating the traced type hints to the files.
 Additionally, also contains classes/functions to evaluate the speed of the tracing compared and without tracing. 
+
+```
+λ poetry run python main.py evaluate --help
+Usage: main.py evaluate [OPTIONS]
+
+  Evaluate given original and traced repository
+
+Options:
+  -o, --original PATH   Path to original project directory  [required]
+  -t, --traced PATH     Path to traced project directory  [required]
+  -s, --store PATH      Path to store performance & metric data  [required]
+  -d, --data_name TEXT  Name for data files
+  --help                Show this message and exit. 
+```
+
+Example usage: 
+
+```
+λ poetry run python main.py evaluate \
+    -o original_project_path \
+    -t traced_project_path \
+    -s path_to_save_evaluation_data \
+    -d data_file_name
+```    
+
+Note: The command does not evaluate the repositories, it stores the data necessary for evaluation. 
+The actual evaluation can be done by loading the data and analyzing it.
+The template file ipynb_evaluation_template.py in evaluation can be used as a [template / base implementation](#bonus-evaluation-template) for the jupyter notebook file to evaluate the data.
+On executing the command, the following steps are done:
+
 ## Foundations & Principles
 
 The project's approach to evaluation is to compare the repository/project before, and after annotating the type hints from tracing (will be called original repository and traced repository).
@@ -48,39 +78,21 @@ The merged data which the new schema is called "metric data".
 | GeneratedType | Name of the type hint in the traced files                   | string | When not existing in the traced typehint data   |
 | Completeness  | Do OriginalType and GeneratedType exist?                    | bool   | When OriginalType is null                       |
 | Correctness   | Do OriginalType and GeneratedType match?                    | bool   | When OriginalType is null                       |
+
 Apart from determining the total completeness and correctness, it can also be used to determine the completeness and correctness for each file. 
 It can be evaluated which files have high completeness and/or high correctness or which don't. With this, the files with low completeness/low correctness can be traced and figure out the issues.
 Thus, improvements can be figured out to improve the quality of the [tracing](tracing.md) and [traced type hint annotation](annotating.md).
 
-To determine the metric data given two typehint data instances, the [metric data calculator](#MetricDataCalculator) is used.
+To determine the metric data given two typehint data instances, the [metric data calculator](#metricdatacalculator) is used.
 ### Performance data
-Apart from generating the trace data, the tracing can also generate the so-called performance data. This can be done by setting the `benchmark_performance` value to `True` in the [configuration](config.md).
+Apart from generating the trace data, the tracing can also generate the so-called performance data. This can be done by setting the `benchmark_performance` value to `True` in the [configuration](../misc/config.md).
 It contains the execution times of the test function without tracing, with tracing without optimizations and with optimizations. Additionally, the tracing is also benchmarked by the the minimum implementation of a tracer (The TracerBase/the NoOperationTracer).
 It can be used to evaluate whether the tracer is faster with/without optimizations and how much slower it is compared to execution without tracing.
 Compared to other data schemas, the times are stored in an array (`np.ndarray`).
-Collecting and deserializing the performance data is done by the [PerformanceDataFileCollector](#PerformanceDataFileCollector)
-## Command
-Options are:
-```
--o, --original PATH   Path to original project directory  [required]
--t, --traced PATH     Path to traced project directory  [required]
--s, --store PATH      Path to store performance & metric data  [required]
--d, --data_name TEXT  Name for data files
---help                Show this message and exit.
-```
-Original: The path to the original project repository (matches with the repository before the tracing).
-Traced: The path to the traced project repository (matches with the repository after the tracing).
-Store: The path to store the metric and performance data.
-Data name: The name of the data files without extension. Default is `data`.
+Collecting and deserializing the performance data is done by the [PerformanceDataFileCollector](#performancedatafilecollector)
 
-Example usage: 
 
-`python3.10 main.py evaluate -o /original_project_path/ -t /traced_project_path/ -s /path_to_save_evaluation_data/ -d data_file_name`
 
-Note: The command does not evaluate the repositories, it stores the data necessary for evaluation. 
-The actual evaluation can be done by loading the data and analyzing it.
-The template file ipynb_evaluation_template.py in evaluation can be used as a [template/base implementation](#bonus-evaluation-template) for the jupyter notebook file to evaluate the data.
-On executing the command, the following steps are done:
 ### Trace Data File Collection & Deserialization
 
 The trace data files which have been generated by [tracing](tracing.md) have to be collected and deserialized into one single dataframe. 

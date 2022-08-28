@@ -3,7 +3,7 @@
 For this project's multi-stage workflow, some variables remain constant across multiple commands.
 For example, the paths necessary to differentiate between standard project types, standard library types and types from third-party dependencies in the virtualenv are needed for both the tracing and unification processes.
 
-All such variables are stored in a `pytypes.toml` file in the root of the prject to trace, which will be read in by the program without the user having to respecify them.
+All such variables are stored in a `pytypes.toml` file in the root of the project to trace, which will be read in by the program without the user having to respecify them.
 
 ## Example
 
