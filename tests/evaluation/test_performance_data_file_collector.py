@@ -1,7 +1,7 @@
 import pathlib
 import numpy as np
 import constants
-from typegen.evaluation import PerformanceDataFileCollector
+from evaluation import PerformanceDataFileCollector
 
 
 cwd = pathlib.Path.cwd() / "tests" / "resource" / "external" / "PyTypes_BinaryFiles" / "sample_performance_data_files"

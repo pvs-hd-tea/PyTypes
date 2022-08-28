@@ -9,9 +9,9 @@ import pandas as pd
 
 import constants
 from typegen.trace_data_file_collector import TraceDataFileCollector
-from typegen.evaluation.file_type_hints_collector import FileTypeHintsCollector
-from typegen.evaluation.metric_data_calculator import MetricDataCalculator
-from typegen.evaluation.performance_data_file_collector import (
+from evaluation.file_type_hints_collector import FileTypeHintsCollector
+from evaluation.metric_data_calculator import MetricDataCalculator
+from evaluation.performance_data_file_collector import (
     PerformanceDataFileCollector,
 )
 

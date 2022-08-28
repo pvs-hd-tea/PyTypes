@@ -1,7 +1,7 @@
 import typing
 from typing import Optional
 import numpy as np
-from typegen import evaluation
+import evaluation
 
 a: Optional[bool] = ...
 b: dict[str, evaluation.FileTypeHintsCollector] = ...

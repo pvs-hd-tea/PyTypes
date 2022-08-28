@@ -3,17 +3,17 @@ import typing
 from pathlib import Path
 from pathlib import PosixPath, WindowsPath
 import numpy as np
-from typegen import evaluation
-from tests.resource.typegen.evaluation.file_type_hints_collector.sample_to_import import FileTypeHintsCollector
-from typegen.evaluation import FileTypeHintsCollector
-from tests.resource.typegen.evaluation.file_type_hints_collector import MetricDataCalculator
+import evaluation
+from tests.resource.evaluation.file_type_hints_collector.sample_to_import import FileTypeHintsCollector
+from evaluation import FileTypeHintsCollector
+from tests.resource.evaluation.file_type_hints_collector import MetricDataCalculator
 from typing import Optional
 
 
 class MetricDataCalculator:
     pass
 
-from typegen.evaluation.metric_data_calculator import MetricDataCalculator
+from evaluation import MetricDataCalculator
 
 
 class A:

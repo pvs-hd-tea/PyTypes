@@ -1,7 +1,7 @@
 import pandas as pd
 from tracing import TraceDataCategory
-from typegen.evaluation import MetricDataCalculator
-from typegen.evaluation.metric_data_calculator import get_total_completeness_and_correctness
+from evaluation.metric_data_calculator import MetricDataCalculator
+from evaluation.metric_data_calculator import get_total_completeness_and_correctness
 from constants import Schema
 
 def get_sample_data():
