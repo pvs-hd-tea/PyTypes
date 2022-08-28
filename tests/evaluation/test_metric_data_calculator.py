@@ -1,8 +1,7 @@
 import pandas as pd
-import constants
 from tracing import TraceDataCategory
-from typegen.evaluation import MetricDataCalculator
-
+from evaluation.metric_data_calculator import MetricDataCalculator
+from evaluation.metric_data_calculator import get_total_completeness_and_correctness
 from constants import Schema
 
 def get_sample_data():
@@ -190,7 +189,7 @@ def test_metric_calculator_returns_correct_completeness_and_correctness():
     test_object = MetricDataCalculator()
     test_object.add_filename_mapping("sample_original_filename", "sample_generated_filename")
     metric_data = test_object.get_metric_data(sample_original_data, sample_generated_data)
-    total_completeness, total_correctness = test_object.get_total_completeness_and_correctness(metric_data)
+    total_completeness, total_correctness = get_total_completeness_and_correctness(metric_data)
 
     assert abs(total_completeness - expected_completeness) < 1e-8
     assert abs(total_correctness - expected_correctness) < 1e-8

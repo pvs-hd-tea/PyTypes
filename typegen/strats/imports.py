@@ -5,8 +5,11 @@ import os
 import libcst as cst
 from libcst import matchers as m
 import pandas as pd
-
+import logging
 from constants import Column
+
+
+logger = logging.getLogger(__name__)
 
 
 class AddImportTransformer(cst.CSTTransformer):
@@ -78,10 +81,12 @@ class AddImportTransformer(cst.CSTTransformer):
                     continue
 
                 mod_name = cst.parse_expression(module)
-                assert isinstance(
-                    mod_name, cst.Name | cst.Attribute
-                ), f"Accidentally parsed {type(mod_name)}"
 
+                if not isinstance(
+                        mod_name, cst.Name | cst.Attribute
+                    ):
+                    logger.warning(f"{group[Column.FILENAME].values[0]}: Accidentally parsed {type(mod_name)} | {module} | {ty}")
+                    continue
                 # For inner types, the outermost attr exposes them
                 outer_most = ty.split(".")[0]
                 aliases = [cst.ImportAlias(name=cst.Name(outer_most))]

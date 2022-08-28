@@ -4,7 +4,7 @@ import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
 from tracing import TraceDataCategory
-from typegen.evaluation.normalize_types import normalize_type
+from evaluation.normalize_types import normalize_type
 
 from constants import Column, Schema
 
@@ -163,6 +163,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         elif isinstance(node.target, cst.Name):
             category = TraceDataCategory.LOCAL_VARIABLE
             variable_name = node.target.value
+            if len(self._scope_stack) == 0:
+                category = TraceDataCategory.GLOBAL_VARIABLE
+                line_number = 0
         elif isinstance(node.target, cst.Subscript):
             # Example: a[0]: int = 1
             # These cases are not handled.
@@ -185,6 +188,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self.typehint_data = self.typehint_data.replace(
             {Column.COLUMN_OFFSET: self.smallest_column_offsets_by_line_number}
         )
+
+        self._unify_globals_in_data()
+
 
     def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
         return node.name.value
@@ -371,3 +377,23 @@ class _TypeHintVisitor(cst.CSTVisitor):
             return module_name
         else:
             raise NotImplementedError(type(module_node))
+
+    def _unify_globals_in_data(self) -> None:
+        if self.typehint_data.shape[0] == 0:
+            return
+        grouped_data = self.typehint_data.groupby(
+            by=[Column.CATEGORY, Column.VARNAME],
+            dropna=False,
+            sort=False,
+        )
+
+        data_with_unified_globals = pd.concat([self._update_group(group) for _, group in grouped_data]).reset_index(drop=True)
+        self.typehint_data = pd.DataFrame(data_with_unified_globals, columns=list(Schema.TypeHintData.keys())).astype(Schema.TypeHintData)
+
+    def _update_group(self, group):
+        updated_group = group.copy()
+        if (updated_group[Column.CATEGORY] == TraceDataCategory.GLOBAL_VARIABLE).all():
+            types = updated_group[Column.VARTYPE].tolist()
+            updated_group[Column.VARTYPE] = normalize_type(" | ".join(types))
+            updated_group = updated_group.drop_duplicates()
+        return updated_group
