@@ -57,11 +57,11 @@ class Outer:
 @pytest.mark.parametrize(
     ("ty", "module", "name"),
     [
-        (UserClass, "tests.tracing.test_resolver", "UserClass"),
-        (Outer.Inner, "tests.tracing.test_resolver", "Outer.Inner"),
+        (UserClass, "tests.common.test_resolver", "UserClass"),
+        (Outer.Inner, "tests.common.test_resolver", "Outer.Inner"),
         (
             Outer.Inner.EvenMoreInner,
-            "tests.tracing.test_resolver",
+            "tests.common.test_resolver",
             "Outer.Inner.EvenMoreInner",
         ),
     ],
