@@ -60,7 +60,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-mkdocs" class="md-skip">
+        <a href="#welcome-to-pytypes" class="md-skip">
           Skip to content
         </a>
       
@@ -237,8 +237,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    Commands
+  <a href="#workflow" class="md-nav__link">
+    Workflow
   </a>
   
 </li>
@@ -321,6 +321,20 @@
   
   
     <li class="md-nav__item">
+      <a href="workflow/config/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="workflow/tracing/" class="md-nav__link">
         Tracing
       </a>
@@ -363,21 +377,6 @@
   
 
     
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="pyramid/" class="md-nav__link">
-        Pyramid
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -405,8 +404,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    Commands
+  <a href="#workflow" class="md-nav__link">
+    Workflow
   </a>
   
 </li>
@@ -436,15 +435,27 @@
 
 
 
-<h1 id="welcome-to-mkdocs">Welcome to MkDocs<a class="headerlink" href="#welcome-to-mkdocs" title="Permanent link">&para;</a></h1>
-<p>For full documentation visit <a href="https://www.mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs -h</code> - Print help message and exit.</li>
-</ul>
+<h1 id="welcome-to-pytypes">Welcome to PyTypes<a class="headerlink" href="#welcome-to-pytypes" title="Permanent link">&para;</a></h1>
+<div class="highlight"><pre><span></span><code>λ poetry run python main.py --help
+Usage: main.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  confgen   Generate pytypes.toml
+  evaluate  Evaluate given original and traced repository
+  fetch     Download repositories and apply tracing decorators
+  typegen   Generate type hinted files using trace data
+</code></pre></div>
+<h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Fetching: <a href="workflow/fetching/"><code>poetry run python main.py fetch --help</code></a></li>
+<li>Configuration: <a href="workflow/fetching/"><code>poetry run python main.py confgen --help</code></a></li>
+<li><a href="workflow/tracing/">Tracing</a></li>
+<li>Typegen: <a href="workflow/annotating/"><code>poetry run python main.py typegen --help</code></a></li>
+<li>Evaluating: <a href="workflow/evaluating/"><code>poetry run python main.py evaluate --help</code></a></li>
+</ol>
 <h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>mkdocs.yml    # The configuration file.
 docs/

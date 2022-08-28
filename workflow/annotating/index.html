@@ -60,7 +60,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#synopsis" class="md-skip">
+        <a href="#foundations-principles" class="md-skip">
           Skip to content
         </a>
       
@@ -275,6 +275,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tracing/" class="md-nav__link">
         Tracing
       </a>
@@ -295,12 +309,195 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Annotating
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         Annotating
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#foundations-principles" class="md-nav__link">
+    Foundations &amp; Principles
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unifiers" class="md-nav__link">
+    Unifiers
+  </a>
+  
+    <nav class="md-nav" aria-label="Unifiers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+    <nav class="md-nav" aria-label="Filtering">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drop-duplication" class="md-nav__link">
+    Drop Duplication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#min-threshold" class="md-nav__link">
+    Min-Threshold
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reducing" class="md-nav__link">
+    Reducing
+  </a>
+  
+    <nav class="md-nav" aria-label="Reducing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subtypes" class="md-nav__link">
+    Subtypes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unions" class="md-nav__link">
+    Unions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotations" class="md-nav__link">
+    Annotations
+  </a>
+  
+    <nav class="md-nav" aria-label="Annotations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transformers" class="md-nav__link">
+    Transformers
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typehinttransformer" class="md-nav__link">
+    TypeHintTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removealltypehintstransformer" class="md-nav__link">
+    RemoveAllTypeHintsTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#addimporttransformer" class="md-nav__link">
+    AddImportTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mypyhinttransformer" class="md-nav__link">
+    MyPyHintTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importuniontransformer" class="md-nav__link">
+    ImportUnionTransformer
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inline-annotation-generation" class="md-nav__link">
+    Inline Annotation Generation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bonus-stub-file-generation" class="md-nav__link">
+    Bonus: Stub File Generation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unifier-api" class="md-nav__link">
+    Unifier API
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotation-generation-api" class="md-nav__link">
+    Annotation Generation API
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -327,21 +524,6 @@
   
 
     
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../pyramid/" class="md-nav__link">
-        Pyramid
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -359,8 +541,177 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#foundations-principles" class="md-nav__link">
+    Foundations &amp; Principles
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unifiers" class="md-nav__link">
+    Unifiers
+  </a>
+  
+    <nav class="md-nav" aria-label="Unifiers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering" class="md-nav__link">
+    Filtering
+  </a>
+  
+    <nav class="md-nav" aria-label="Filtering">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drop-duplication" class="md-nav__link">
+    Drop Duplication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#min-threshold" class="md-nav__link">
+    Min-Threshold
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reducing" class="md-nav__link">
+    Reducing
+  </a>
+  
+    <nav class="md-nav" aria-label="Reducing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subtypes" class="md-nav__link">
+    Subtypes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unions" class="md-nav__link">
+    Unions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotations" class="md-nav__link">
+    Annotations
+  </a>
+  
+    <nav class="md-nav" aria-label="Annotations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transformers" class="md-nav__link">
+    Transformers
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typehinttransformer" class="md-nav__link">
+    TypeHintTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removealltypehintstransformer" class="md-nav__link">
+    RemoveAllTypeHintsTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#addimporttransformer" class="md-nav__link">
+    AddImportTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mypyhinttransformer" class="md-nav__link">
+    MyPyHintTransformer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#importuniontransformer" class="md-nav__link">
+    ImportUnionTransformer
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inline-annotation-generation" class="md-nav__link">
+    Inline Annotation Generation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bonus-stub-file-generation" class="md-nav__link">
+    Bonus: Stub File Generation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unifier-api" class="md-nav__link">
+    Unifier API
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotation-generation-api" class="md-nav__link">
+    Annotation Generation API
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -378,15 +729,36 @@
 
 
 
-<h1 id="synopsis">Synopsis<a class="headerlink" href="#synopsis" title="Permanent link">&para;</a></h1>
-<ul>
-<li>Transformer based approach</li>
-</ul>
-<h1 id="inline-annotation-generation">Inline Annotation Generation<a class="headerlink" href="#inline-annotation-generation" title="Permanent link">&para;</a></h1>
-<p>If the trace data does not contain a type hint, but the original has an annotation, this can be retained by XXX.</p>
-<h1 id="bonus-stub-file-generation">Bonus: Stub File Generation<a class="headerlink" href="#bonus-stub-file-generation" title="Permanent link">&para;</a></h1>
-<h2 id="_1"><a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h1 id="developer-documentation">Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permanent link">&para;</a></h1>
+  <h1>Annotating</h1>
+
+<h2 id="foundations-principles">Foundations &amp; Principles<a class="headerlink" href="#foundations-principles" title="Permanent link">&para;</a></h2>
+<p>The project's approach to annotating is AST-based transformation; </p>
+<p>We offer both inline and stub-based annotation generation, whose mechanics, both shared and individual, have been split into AST transformers.
+By reading in files that have been traced, which are stored in the <a href="../tracing/#api">'Filename' column of the trace data</a>, trace data can be collected on a per-file basis and applied appropriately.
+Specifically, from this per-file basis trace data, annotations (also called type hints) can be generated for each file using the aforementioned transformers, and output appropriately.</p>
+<p>But first, the trace data must be cleaned and appropriately unified.
+To this extent, unifiers with a common interface have been implemented to cover unification (read filtering and reducing) needs.</p>
+<h2 id="unifiers">Unifiers<a class="headerlink" href="#unifiers" title="Permanent link">&para;</a></h2>
+<p>TODO: Add motivation, functionality and example for every unifier</p>
+<h3 id="filtering">Filtering<a class="headerlink" href="#filtering" title="Permanent link">&para;</a></h3>
+<h4 id="drop-duplication">Drop Duplication<a class="headerlink" href="#drop-duplication" title="Permanent link">&para;</a></h4>
+<h4 id="min-threshold">Min-Threshold<a class="headerlink" href="#min-threshold" title="Permanent link">&para;</a></h4>
+<h3 id="reducing">Reducing<a class="headerlink" href="#reducing" title="Permanent link">&para;</a></h3>
+<h4 id="subtypes">Subtypes<a class="headerlink" href="#subtypes" title="Permanent link">&para;</a></h4>
+<h4 id="unions">Unions<a class="headerlink" href="#unions" title="Permanent link">&para;</a></h4>
+<h2 id="annotations">Annotations<a class="headerlink" href="#annotations" title="Permanent link">&para;</a></h2>
+<h3 id="transformers">Transformers<a class="headerlink" href="#transformers" title="Permanent link">&para;</a></h3>
+<p>TODO: Add motivation, functionality and example for every transformer</p>
+<h4 id="typehinttransformer">TypeHintTransformer<a class="headerlink" href="#typehinttransformer" title="Permanent link">&para;</a></h4>
+<h4 id="removealltypehintstransformer">RemoveAllTypeHintsTransformer<a class="headerlink" href="#removealltypehintstransformer" title="Permanent link">&para;</a></h4>
+<h4 id="addimporttransformer">AddImportTransformer<a class="headerlink" href="#addimporttransformer" title="Permanent link">&para;</a></h4>
+<h4 id="mypyhinttransformer">MyPyHintTransformer<a class="headerlink" href="#mypyhinttransformer" title="Permanent link">&para;</a></h4>
+<h4 id="importuniontransformer">ImportUnionTransformer<a class="headerlink" href="#importuniontransformer" title="Permanent link">&para;</a></h4>
+<h3 id="inline-annotation-generation">Inline Annotation Generation<a class="headerlink" href="#inline-annotation-generation" title="Permanent link">&para;</a></h3>
+<p>If the trace data does not contain a type hint, but the original has an annotation, this can be retained by doing XXX.</p>
+<h3 id="bonus-stub-file-generation">Bonus: Stub File Generation<a class="headerlink" href="#bonus-stub-file-generation" title="Permanent link">&para;</a></h3>
+<h2 id="unifier-api">Unifier API<a class="headerlink" href="#unifier-api" title="Permanent link">&para;</a></h2>
+<h2 id="annotation-generation-api">Annotation Generation API<a class="headerlink" href="#annotation-generation-api" title="Permanent link">&para;</a></h2>
 
 
 
