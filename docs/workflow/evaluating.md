@@ -121,10 +121,10 @@ The array is also serialized in the same data file path; only with a different f
 After executing the command, the metric and performance data are stored in the data file paths. 
 A jupyter notebook can be used to analyze the data. 
 The template file ipynb_evaluation_template.py in evaluation can be used as a [template/base implementation](#bonus-evaluation-template) for the jupyter notebook file to evaluate the data.
-## API
-You can find the usage of the classes/its instances by checking their corresponding tests.
+
 
 ### FileTypeHintsCollector
+
 Given a folder path/ or one or more file paths, collects the type hints in the .py files and stores these in a typehint data instance.
 It does this by parsing the code of each file to a CST (common syntax tree) and finding the type hints of each variable/function return.with a visitor. 
 To ensure that matching types are stored in the typehint data with the same type name, multiple normalization algorithms are used to include the modules to the name and unify type unions.
