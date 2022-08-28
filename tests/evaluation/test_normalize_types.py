@@ -1,4 +1,4 @@
-from typegen.evaluation.normalize_types import normalize_type
+from evaluation.normalize_types import normalize_type
 
 
 def test_union_normalized_returns_correct_values():

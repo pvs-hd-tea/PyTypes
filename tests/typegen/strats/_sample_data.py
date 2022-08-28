@@ -739,7 +739,7 @@ def function(parameter: Clazz):
     def __init__(self):
         self.class_member: int = 5
 
-    def change_value(self, parameter1: int, parameter2: str) -> bool:
+    def change_value(self, parameter1: int, parameter2: str) -> None:
         local_variable = parameter1 == parameter2
         self.class_member: int = int(local_variable)
         return local_variable
@@ -752,7 +752,7 @@ def function(parameter: Clazz):
     expected_stub_content = """class Clazz:
     class_member: int
     def __init__(self) -> None: ...
-    def change_value(self, parameter1: int, parameter2: str) -> bool: ...
+    def change_value(self, parameter1: int, parameter2: str) -> None: ...
 
 def function(parameter: Clazz): ...
 """

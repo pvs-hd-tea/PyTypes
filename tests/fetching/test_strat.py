@@ -120,7 +120,9 @@ def nonrecursed_globs() -> typing.Iterator[list[pathlib.Path]]:
 
 
 def check_file_is_valid(filepath: pathlib.Path):
+    print(filepath.open().read())
     module = cst.parse_module(filepath.open().read())
+    print(module.code)
     logging.info(f"{module.code}")
 
     visitor = ValidPytestApplicationVisitor()

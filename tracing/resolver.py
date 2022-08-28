@@ -32,6 +32,8 @@ def _attempt_module_lookup(
 
     except FileNotFoundError:
         logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
+    #except ModuleNotFoundError:
+    #    logger.debug(f"No module named {module_name} in {str(root / lookup_path)}")
 
     return None
 
@@ -120,6 +122,8 @@ class Resolver:
         # for extension modules loaded dynamically from a shared library,
         # it is the pathname of the shared library file.
         if not hasattr(module, "__file__"):
+            if module.__name__ == "lib-dynload._hashlib.cpython-310-x86_64-linux-gnu":
+                raise ValueError
             return module.__name__, ty.__name__
 
         assert module.__file__ is not None

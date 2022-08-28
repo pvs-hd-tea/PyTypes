@@ -19,7 +19,7 @@ def test_factory():
     ), f"{type(gen)} should be {StubFileGenerator.__name__}"
 
 
-def test_stube_file_generator_generates_expected_content(get_test_data):
+def test_stub_file_generator_generates_expected_content(get_test_data):
     for test_element in get_test_data:
         resource_path = test_element[0]
         sample_trace_data = test_element[1]
