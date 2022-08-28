@@ -1,6 +1,6 @@
 import logging
 import pathlib
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 from typegen.unification.filter_base import TraceDataFilter
 from typegen.unification.union import UnionFilter
 

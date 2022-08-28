@@ -1,7 +1,7 @@
 import libcst as cst
 import pathlib
 from constants import Schema
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 from typegen import StubFileGenerator
 from typegen.strats.gen import TypeHintGenerator
 from tests.typegen.strats._sample_data import get_test_data

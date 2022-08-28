@@ -1,5 +1,5 @@
 import pandas as pd
-from tracing import TraceDataCategory
+from common import TraceDataCategory
 from evaluation.metric_data_calculator import MetricDataCalculator
 from evaluation.metric_data_calculator import get_total_completeness_and_correctness
 from constants import Schema
