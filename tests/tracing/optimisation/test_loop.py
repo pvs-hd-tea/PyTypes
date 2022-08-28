@@ -4,7 +4,7 @@ import pathlib
 
 
 import pandas as pd
-from tracing.trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 
 from tracing.tracer import Tracer
 from constants import Schema

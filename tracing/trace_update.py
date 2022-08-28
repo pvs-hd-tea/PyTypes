@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import pathlib
 import operator
 
-from .trace_data_category import TraceDataCategory
+from common import TraceDataCategory
 
 import pandas as pd
 

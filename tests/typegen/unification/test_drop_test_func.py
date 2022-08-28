@@ -1,12 +1,9 @@
-import logging
-from tracing.trace_data_category import TraceDataCategory
-
 from typegen.unification.filter_base import TraceDataFilter
 from typegen.unification.drop_test_func import DropTestFunctionDataFilter
 
 from .data import sample_trace_data
 
-from constants import Schema, Column
+from constants import Schema
 
 drop_test_filter = TraceDataFilter(  # type: ignore
     ident=DropTestFunctionDataFilter.ident, test_name_pat="test_"
