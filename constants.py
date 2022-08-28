@@ -38,31 +38,31 @@ class Column:
 
 class Schema:
     TraceData = {
-        # relative path to file of variable,
+        # relative path to file of traced instance,
         # from project root
         Column.FILENAME: pd.StringDtype(),
-        # module of class this variable is in.
+        # module of class this traced instance is in.
         # None if not in a class' scope
         Column.CLASS_MODULE: pd.StringDtype(),
-        # name of class this variable is in.
+        # name of class this traced instance is in.
         # None if not in a class' scope
         Column.CLASS: pd.StringDtype(),
-        # module of function this variable is in
+        # name of function this traced instance is in
         # None if not in a function's scope
         Column.FUNCNAME: pd.StringDtype(),
-        # line number the variable occurs on
+        # line number the traced instance occurs on
         Column.LINENO: pd.UInt64Dtype(),
-        # number identifying context said variable appears in
+        # number identifying context said traced instance appears in
         # See TraceDataCategory for more information
         Column.CATEGORY: pd.Int64Dtype(),
-        # name of the variableor, when CATEGORY indicates a FUNCTION_RETURN,
+        # name of the traced instance or, when CATEGORY indicates a FUNCTION_RETURN,
         # it is the name of the returning function
         # never None
         Column.VARNAME: pd.StringDtype(),
-        # the module of the variable's type
+        # the module of the traced instance's type
         # None if it is a builtin type
         Column.VARTYPE_MODULE: pd.StringDtype(),
-        # the name of the variable's type
+        # the name of the traced instance's type
         # never None
         Column.VARTYPE: pd.StringDtype(),
     }

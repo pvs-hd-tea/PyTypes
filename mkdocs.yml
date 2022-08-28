@@ -1,7 +1,7 @@
 site_name: PyTypes Documentation
 repo_url: https://github.com/pvs-hd-tea/PyTypes
 site_dir: site
-edit_uri : edit/main/docs
+edit_uri : edit/gh-pages/docs
 nav:
   - Home: index.md
   - About: about.md
