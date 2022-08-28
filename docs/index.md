@@ -1,13 +1,26 @@
-# Welcome to MkDocs
+# Welcome to PyTypes
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+```
+λ poetry run python main.py --help
+Usage: main.py [OPTIONS] COMMAND [ARGS]...
 
-## Commands
+Options:
+  --help  Show this message and exit.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+Commands:
+  confgen   Generate pytypes.toml
+  evaluate  Evaluate given original and traced repository
+  fetch     Download repositories and apply tracing decorators
+  typegen   Generate type hinted files using trace data
+```
+
+## Workflow
+
+1. Fetching: [`poetry run python main.py fetch --help`](workflow/fetching.md)
+2. Configuration: [`poetry run python main.py confgen --help`](workflow/fetching.md)
+3. [Tracing](workflow/tracing.md)
+4. Typegen: [`poetry run python main.py typegen --help`](workflow/annotating.md)
+5. Evaluating: [`poetry run python main.py evaluate --help`](workflow/evaluating.md)
 
 ## Project layout
 
