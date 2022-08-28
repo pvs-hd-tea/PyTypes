@@ -17,7 +17,22 @@ nav:
     - Configuration: misc/config.md
     - Types, Modules & Qualified Names: misc/resolver.md
 
+  - API:
+    - Fetching: api/fetching.md
+    - Tracing: api/tracing.md
+    - Annotating: api/typegen.md
+    - Evaluation: api/evaluation.md
+
 theme: material  # readthedocs  mkdocs
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [common, fetching, tracing, typegen, evaluation]  # search packages in the src folder
+          options:
+            docstring_style: sphinx
+            show_source: false
 
 markdown_extensions:
   - pymdownx.highlight

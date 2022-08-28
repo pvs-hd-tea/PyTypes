@@ -10,12 +10,17 @@ class DataFileCollector(ABC):
     """Collects data files in a given path."""
 
     def __init__(self, file_pattern: str):
+        """Creates an instance of DataFileCollector.
+        :param file_pattern: The file pattern of the data files."""
         self.file_pattern = file_pattern
         self.collected_data: list[typing.Any] = list()
 
     def collect_data(
         self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
     ) -> None:
+        """Collects the data in a given path.
+        :param path: The path of the folder containing the files. 
+        :param include_also_files_in_subdirectories: Whether the data files in the subfolders should also be collected."""
         self.collected_data.clear()
         if include_also_files_in_subdirectories:
             potential_trace_data_file_paths = path.rglob(self.file_pattern)

@@ -10,11 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class UnionFilter(TraceDataFilter):
-    """Replaces rows containing types in the data with the union of these types."""
+    """Unify rows containing types in the data with the union of these types."""
 
     ident = "union"
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Unify rows containing types using corresponding type union. 
+
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
+        """
         grouped = trace_data.groupby(
             by=[
                 Column.CLASS_MODULE,

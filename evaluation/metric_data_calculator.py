@@ -4,21 +4,26 @@ from constants import Column, Schema
 
 
 class MetricDataCalculator:
+    """Calculates the metric data."""
     INDEX = "Index"
     INDEX2 = "Index 2"
     CUMCOUNT = "CumCount"
 
-    """Calculates the metric data containing the correctness & completeness."""
     def __init__(self):
+        """Creates an instance of MetricDataCalculator."""
         self.generated_filenames_by_original: dict[str, str] = {}
 
     def add_filename_mapping(self, original_filename: str, generated_filename: str) -> None:
-        """Adds a mapping: generated filename -> original filename. Used to calculate the metric data."""
+        """Adds a mapping: generated file name -> original file name. Used to determine which generated file corresponds to which original file. calculate the metric data.
+        :param original_filename: The original file name.
+        :param generated_filename: The generated file name."""
         self.generated_filenames_by_original[generated_filename] = original_filename
 
     def get_metric_data(self, original_type_hint_data: pd.DataFrame, generated_type_hint_data: pd.DataFrame) \
             -> pd.DataFrame:
-        """Calculates the metric data containing the correctness & completeness."""
+        """Calculates the metric data containing the correctness & completeness.
+        :param original_type_hint_data: The original typehint data.
+        :param generated_type_hint_data: The generated typehint data."""
         # Replaces the filenames of the traced type hint data with the original filename.
         generated_type_hint_data = generated_type_hint_data.replace(
             {Column.FILENAME: self.generated_filenames_by_original})
@@ -93,7 +98,9 @@ class MetricDataCalculator:
 
 
 def get_total_completeness_and_correctness(metric_data: pd.DataFrame) -> tuple[float, float]:
-    """Gets the total completeness & correctness of a given metric data."""
+    """Gets the total completeness & correctness of a given metric data.
+    :param metric_data: The metric data.
+    :returns: The total completeness & correctness."""
     completeness_column = metric_data[Column.COMPLETENESS]
     correctness_column = metric_data[Column.CORRECTNESS]
 

@@ -20,7 +20,9 @@ class MinThresholdFilter(TraceDataFilter):
         Drops all rows whose types appear less often than the minimum
         threshold in the provided trace data and returns the processed trace data.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
         """
         subset = list(Schema.TraceData.keys())
         grouped_trace_data = (

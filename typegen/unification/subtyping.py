@@ -15,7 +15,7 @@ def _none_if_builtin(module: str) -> str | None:
 
 
 class UnifySubTypesFilter(TraceDataFilter):
-    """Replaces rows containing types in the data with their common base type."""
+    """Unify rows containing types in the data with their common base type."""
 
     ident = "unify_subty"
 
@@ -32,7 +32,9 @@ class UnifySubTypesFilter(TraceDataFilter):
         If only_unify_if_base_was_traced is True, only rows of types whose base type is already in the data
         are replaced.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
         """
         self._resolver = Resolver(self.stdlib_path, self.proj_path, self.venv_path)
 

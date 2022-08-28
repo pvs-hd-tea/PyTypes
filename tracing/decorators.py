@@ -146,7 +146,15 @@ class _Traceable(Protocol):
 def trace(c: Callable[..., RetType]) -> _Traceable:
     """
     Execute the tracer upon a callable marked with this decorator.
-    Supports performance benchmarking when specified in the config file
+    Serialises the accumulated trace data after the callable has finished to the location given 
+    by the config file.
+    Uncaught exceptions are logged next to these pickled DataFrames.
+    Supports performance benchmarking when specified in the config file.
+
+    The implementation makes sure to preserve all arguments to the decorated callable, so that features like
+    py.test's monkeypatching, fixtures etc. are all still supported.
+
+    :params c: Any given callable, with any amount of arguments, and any sort of return
     """
     current_frame = inspect.currentframe()
     if current_frame is None:

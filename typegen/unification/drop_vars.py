@@ -17,7 +17,9 @@ class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
         Drops rows containing variables if the amount of inferred types is higher than self.min_amount_types_to_drop
         and returns the processed data.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
         """
         subset = list(Schema.TraceData.keys())
         subset.remove(Column.VARTYPE)

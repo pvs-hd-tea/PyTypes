@@ -2,6 +2,8 @@ import enum
 
 
 class TraceDataCategory(enum.IntEnum):
+    """The trace data category."""
+
     INVALID = 0
     LOCAL_VARIABLE = 1
     FUNCTION_PARAMETER = 2

@@ -1,7 +1,9 @@
 def normalize_type(type_hint: str) -> str:
     """Gets the type union written as a type union using only | .
     Normalizes typing.Union, typing.Optional and | unions.
-    Does also normalize inner type unions, for example: list[int | str]."""
+    Does also normalize inner type unions, for example: list[int | str].
+    :param type_hint: The type hint name to normalize.
+    :returns: the normalized type hint name."""
     types = _normalize_type(type_hint)
 
     returned_type = ""

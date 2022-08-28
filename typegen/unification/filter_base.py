@@ -6,7 +6,9 @@ import pandas as pd
 
 
 class TraceDataFilter(abc.ABC):
-    """Base class for different strategies of trace data filtering"""
+    """Base class for different trace data filters.
+    
+    To implement a new filter class, inherit from this class and overwrite the abstract methods."""
 
     _REGISTRY: dict[str, typing.Type["TraceDataFilter"]] = {}
 
@@ -33,7 +35,9 @@ class TraceDataFilter(abc.ABC):
         """
         Processes the provided trace data and returns the processed trace data and the difference between the old and new data.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
         """
         pass
 
@@ -45,14 +49,16 @@ class TraceDataFilterList(TraceDataFilter):
     filters: list[TraceDataFilter] = []
 
     def append(self, trace_data_filter: TraceDataFilter) -> None:
-        """Appends a filter to the list."""
+        """Appends a filter to the list.
+        :param trace_data_filter: The filter to append."""
         self.filters.append(trace_data_filter)
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
         Applies the filters on the provided trace data and returns the processed trace data.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
         """
         for trace_data_filter in self.filters:
             trace_data = trace_data_filter.apply(trace_data)

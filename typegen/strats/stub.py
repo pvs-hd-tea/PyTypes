@@ -11,10 +11,17 @@ from typegen.strats.inline import TypeHintTransformer
 
 
 class ImportUnionTransformer(cst.CSTTransformer):
+    """Transforms the CST by adding the ImportFrom node (from typing import Union) if the corresponding code contains a union type hint."""
     def __init__(self):
+        """Creates an instance of ImportUnionTransformer."""
         self.requires_union_import = False
 
-    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module):
+    def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
+        """Adds the ImportFrom node to the CST if a union type hint has been found.
+        :param updated_node: The updated node.
+        :returns: The updated node with the added ImportFrom node if a union type hint has been found, otherwise the updated node without any changes.
+        
+        """
         if self.requires_union_import:
             typing_union_import = cst.ImportFrom(
                 module=cst.Name(value="typing"),
@@ -29,16 +36,22 @@ class ImportUnionTransformer(cst.CSTTransformer):
         return updated_node
 
     def visit_Param(self, node: cst.Param) -> bool | None:
+        """Checks whether the parameter node contains a union type hint.
+        :param node: The visited node."""
         if not hasattr(node, "annotation") or node.annotation is None:
             return True
         self._check_annotation_union(node.annotation.annotation)
         return True
 
     def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
+        """Checks whether the function def node contains a union type hint for the return type.
+        :param node: The visited node."""
         if node.returns:
             self._check_annotation_union(node.returns.annotation)
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+        """Checks whether the annotated assignment node contains a union type hint.
+        :param node: The visited node."""
         self._check_annotation_union(node.annotation.annotation)
         return True
 
@@ -51,9 +64,15 @@ class ImportUnionTransformer(cst.CSTTransformer):
 
 
 class MyPyHintTransformer(cst.CSTTransformer):
+    """Replaces the CST with the corresponding stub CST, generated using mypy.stubgen."""
     def leave_Module(
-        self, original_node: cst.Module, updated_node: cst.Module
+        self, _: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
+        """Replaces the CST with the corresponding stub CST, generated using mypy.stubgen.
+        :param updated_node: The updated node.
+        :returns: The stub CST.
+        
+        """
         # Store inline hinted ast in temporary file so that mypy can
         # extract our applied hints to it
         with tempfile.NamedTemporaryFile() as temphinted, tempfile.NamedTemporaryFile() as tempstub:

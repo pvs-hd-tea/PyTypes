@@ -20,6 +20,11 @@ class TestDetector(ABC):
 
     @staticmethod
     def factory(proj: Project) -> "TestDetector":
+        """
+        Attempt to detect compatible test suites
+
+        :param proj: Folder of fetched repository
+        """
         if (d := PyTestDetector(proj)).matches():
             logging.info(f"Detected pytest in {proj.root}")
             return d

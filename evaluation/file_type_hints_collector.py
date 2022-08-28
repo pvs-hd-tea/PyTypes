@@ -15,12 +15,23 @@ class FileTypeHintsCollector:
     typehint_data: pd.DataFrame
 
     def __init__(self):
+        """Creates an instance of FileTypeHintsCollector."""
         self.typehint_data = pd.DataFrame(columns=Schema.TypeHintData.keys())
 
     def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
+        """Collects the typehint data from a file.
+
+        :param root: The root folder path of the file.
+        :param filename: The file name.
+        """
+
         self.collect_data_from_files(root, [filename])
 
     def collect_data_from_files(self, root: pathlib.Path, filenames: list[str]) -> None:
+        """Collects the typehint data from multiple files.
+        :param root: The root folder path of the files.
+        :param filenames: The file names.
+        """
         file_paths = []
         for filename in filenames:
             file_path = (root / filename).resolve()
@@ -32,8 +43,13 @@ class FileTypeHintsCollector:
         self,
         root: pathlib.Path,
         folder: pathlib.Path,
-        include_also_files_in_subdirectories: bool = False,
+        include_also_files_in_subdirectories: bool = True,
     ) -> None:
+        """Collects the typehint data from the files in the folder.
+        :param root: The root folder path.
+        :param folder: The path of the folder containing the files. 
+        :param include_also_files_in_subdirectories: Whether the type hints in the files in the subfolders should also be collected.
+        """
         assert folder.is_dir(), f"{folder} is not a folder path."
         file_pattern = "*.py"
         file_paths = (
@@ -48,6 +64,10 @@ class FileTypeHintsCollector:
     def collect_data(
         self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]
     ) -> None:
+        """Collects the typehint data from the files in the provided file paths.
+        :param root: The root folder path.
+        :param file_paths: The file paths.
+        """
         self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
@@ -69,6 +89,7 @@ class FileTypeHintsCollector:
 
 
 class _TypeHintVisitor(cst.CSTVisitor):
+    """Visits and collects the type hints in the CST."""
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, file_path: str) -> None:
@@ -83,6 +104,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self.defined_classes: list[str] = list()
 
     def _innermost_class(self) -> cst.ClassDef | None:
+        """Gets the inner most class def node or None if the scope does not contain any class def node.
+        :returns: The inner most class def node or None if the scope does not contain any class def node."""
         fromtop = reversed(self._scope_stack)
         classes = filter(lambda p: isinstance(p, cst.ClassDef), fromtop)
 
@@ -90,6 +113,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return first
 
     def _innermost_function(self) -> cst.FunctionDef | None:
+        """Gets the inner most function def node if the scope does not contain any function def node.
+        :returns: The inner most function def node or None if the scope does not contain any function def node."""
         fromtop = reversed(self._scope_stack)
         fdefs = filter(lambda p: isinstance(p, cst.FunctionDef), fromtop)
 
@@ -97,6 +122,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return first
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> bool | None:
+        """Stores the import module name to resolve the module name of an imported element."""
         module_name = self._get_module_name(node)
         if not isinstance(node.names, cst.ImportStar):
             iterator = iter(node.names)
@@ -110,6 +136,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return True
 
     def visit_Import(self, node: cst.Import) -> bool | None:
+        """Stores the import module name to resolve import aliases."""
         try:
             iterator = iter(node.names)
             for name in iterator:
@@ -123,21 +150,29 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return True
 
     def visit_ClassDef(self, cdef: cst.ClassDef) -> bool | None:
+        """Adds the node to the scope stack. Also adds the class name to the list of defined classes.
+        :param cdef: The visited node."""
         self.defined_classes.append(cdef.name.value)
         self._scope_stack.append(cdef)
         return True
 
     def leave_ClassDef(self, _: cst.ClassDef) -> None:
+        """Removes the node from the scope stack."""
         self._scope_stack.pop()
 
     def visit_FunctionDef(self, fdef: cst.FunctionDef) -> bool | None:
+        """Adds the node to the scope stack.
+        :param fdef: The visited node."""
         self._scope_stack.append(fdef)
         return True
 
-    def leave_FunctionDef(self, fdef: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, _: cst.FunctionDef) -> None:
+        """Removes the node from the scope stack."""
         self._scope_stack.pop()
 
     def visit_Param(self, node: cst.Param) -> bool | None:
+        """Adds the parameter type annotation of the visited param node to the collected data if it exists.
+        :param node: The visited node."""
         if not hasattr(node, "annotation") or node.annotation is None:
             return True
         variable_name = self._get_variable_name(node)
@@ -146,6 +181,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return True
 
     def visit_FunctionDef_returns(self, node: cst.FunctionDef) -> None:
+        """Adds the function return type annotation of the visited function def node to the collected data if it exists.
+        :param node: The visited node."""
         variable_name = self._get_variable_name(node)
         if node.returns:
             type_hint = self._get_annotation_value(node.returns.annotation)
@@ -154,6 +191,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._add_row(0, TraceDataCategory.FUNCTION_RETURN, variable_name, type_hint)
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
+        """Adds the variable type annotation of the visited annotated assignment node to the collected data if it exists.
+        :param node: The visited node."""
         line_number = self._get_line_number(node)
 
         type_hint = self._get_annotation_value(node.annotation.annotation)
@@ -179,7 +218,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._add_row(line_number, category, variable_name, type_hint)
         return True
 
-    def leave_Module(self, original_node: cst.Module) -> None:
+    def leave_Module(self, _: cst.Module) -> None:
+        """Generates the typehint data from the collected data and replaces the line numbers with the corresponding column offsets."""
         self.typehint_data = pd.DataFrame(
             self.collected_data, columns=Schema.TypeHintData.keys()
         )
@@ -193,9 +233,13 @@ class _TypeHintVisitor(cst.CSTVisitor):
 
 
     def _get_variable_name(self, node: cst.FunctionDef | cst.Param) -> str:
+        """Gets the variable name of the visited node.
+        :param node: The visited node."""
         return node.name.value
 
     def _get_line_number(self, node: cst.CSTNode) -> int:
+        """Gets the line number of the visited node.
+        :param node: The visited node."""
         pos = self.get_metadata(PositionProvider, node).start
         line_number = pos.line
 
@@ -216,6 +260,11 @@ class _TypeHintVisitor(cst.CSTVisitor):
         variable_name: str | None,
         type_hint: str | None,
     ):
+        """Adds a new element to the collected data given the function arguments.
+        :param line_number: The line number.
+        :param category: The trace data category.
+        :param variable_name: The variable name.
+        :param type_hint: The type hint."""
         class_node = self._innermost_class()
         class_name = None
         if class_node:
@@ -239,6 +288,8 @@ class _TypeHintVisitor(cst.CSTVisitor):
         )
 
     def _get_annotation_value(self, annotation: cst.CSTNode) -> str | None:
+        """Gets the type hint name of the annotation node. Includes the full module name.
+        :param annotation: The annotation node."""
         if annotation is None:
             return None
         if isinstance(annotation, cst.BinaryOperation):
@@ -271,6 +322,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return "[" + inner_content + "]"
 
     def _get_annotation_value_of_name(self, annotation: cst.Name) -> str:
+        """Gets the annotation value of the name node. It is related the full annotation node.
+        :param annotation: The name node.
+        :returns: The annotation name."""
         type_name = annotation.value
         if type_name in self.defined_classes:
             # If an import imports a class but a class with the same name is defined in the file,
@@ -286,6 +340,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def _get_annotation_value_of_attribute(
         self, annotation: cst.Attribute, add_full_module_name: bool = True
     ) -> str:
+        """Gets the annotation value of the name node. It is part of the full annotation name.
+        :param annotation: The name node.
+        :returns: The annotation name."""
         if isinstance(annotation.value, cst.Name):
             module_name = annotation.value.value
         elif isinstance(annotation.value, cst.Attribute):
@@ -308,6 +365,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def _get_annotation_value_of_binary_operation_union(
         self, annotation: cst.BinaryOperation
     ) -> str:
+        """Gets the annotation value of the binary operation node. It is part of the full annotation name.
+        :param annotation: The name node.
+        :returns: The annotation name."""
         types_in_union = []
 
         left_node = annotation.left
@@ -325,6 +385,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
     def _get_annotation_value_of_subscript(
         self, actual_annotation: cst.Subscript
     ) -> str:
+        """Gets the annotation value of the subscript node. It is part of the full annotation name.
+        :param annotation: The name node.
+        :returns: The annotation name."""
         outer_type_node = actual_annotation.value
         full_outer_type_name = self._get_annotation_value(outer_type_node)
         assert isinstance(full_outer_type_name, str)
@@ -344,6 +407,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return full_outer_type_name + "[" + inner_value + "]"
 
     def _add_full_module_name_to_annotation(self, current_annotation: str) -> str:
+        """Adds the full module name to the annotation name. Also replaces module aliases with the actual module names.
+        :param current_annotation: The current annotation.
+        :returns: The type annotation name with the full module name."""
         if "." not in current_annotation:
             return current_annotation
 
@@ -363,6 +429,9 @@ class _TypeHintVisitor(cst.CSTVisitor):
         return first_module_element + "." + remaining_annotation
 
     def _get_module_name(self, import_from_node: cst.ImportFrom) -> str:
+        """Gets the module name of the ImportFrom node.
+        :param import_from_node: The ImportFrom node.
+        :returns: The module name of the ImportFrom node."""
         module_node = import_from_node.module
         if isinstance(module_node, cst.Name):
             return module_node.value
@@ -379,6 +448,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
             raise NotImplementedError(type(module_node))
 
     def _unify_globals_in_data(self) -> None:
+        """Unifies the data of global variables. If multiple types hint of the same global variable exist, they are placed with the corresponding type union."""
         if self.typehint_data.shape[0] == 0:
             return
         grouped_data = self.typehint_data.groupby(

@@ -14,7 +14,9 @@ class KeepOnlyFirstFilter(TraceDataFilter):
         """
         Keeps only the first row of each variable in the provided trace data and returns the processed trace data.
 
-        @param trace_data The provided trace data to process.
+        :param trace_data: The provided trace data to process.
+        :returns: The processed trace data.
+        
         """
 
         subset = list(Schema.TraceData.keys())
