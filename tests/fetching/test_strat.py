@@ -167,7 +167,7 @@ def future_test_project():
         new_callable=mock.PropertyMock,
     ) as m:
         fake_cwd = pathlib.Path("tests", "resource", "fetching_future")
-        m.return_value = fake_cwd
+        m.return_value = [fake_cwd]
         p = Project(fake_cwd)
 
         yield p
@@ -201,7 +201,7 @@ def import_test_project():
         new_callable=mock.PropertyMock,
     ) as m:
         fake_cwd = pathlib.Path("tests", "resource", "fetching_imports")
-        m.return_value = fake_cwd
+        m.return_value = [fake_cwd]
         p = Project(fake_cwd)
 
         yield p
