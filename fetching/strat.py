@@ -10,6 +10,8 @@ import tqdm
 
 from .projio import Project
 import constants
+
+from confgen import generate_cfg
 from common.ptconfig import write_config, TomlCfg, PyTypes
 
 
