@@ -415,7 +415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../fetching.md" class="md-nav__link">
+      <a href="../fetching/" class="md-nav__link">
         Fetching
       </a>
     </li>
@@ -542,6 +542,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#common.ptconfig.PyTypes" class="md-nav__link">
+    PyTypes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.TomlCfg" class="md-nav__link">
+    TomlCfg
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.load_config" class="md-nav__link">
+    load_config()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.write_config" class="md-nav__link">
+    write_config()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#common.trace_data_category.TraceDataCategory" class="md-nav__link">
     TraceDataCategory
   </a>
@@ -638,6 +666,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../accounting/" class="md-nav__link">
+        Accounting
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -686,6 +729,34 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.PyTypes" class="md-nav__link">
+    PyTypes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.TomlCfg" class="md-nav__link">
+    TomlCfg
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.load_config" class="md-nav__link">
+    load_config()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common.ptconfig.write_config" class="md-nav__link">
+    write_config()
+  </a>
   
 </li>
       
@@ -1070,6 +1141,220 @@ Fails if the type lies outside of the three paths specified in the constructor.<
 
 
 
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="common.ptconfig.PyTypes" class="doc doc-heading">
+        <code>PyTypes</code>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#common.ptconfig.PyTypes" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Object representation of the [pytypes] section</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="common.ptconfig.TomlCfg" class="doc doc-heading">
+        <code>TomlCfg</code>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#common.ptconfig.TomlCfg" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Object representation of the config file</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="common.ptconfig.load_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">load_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span></code>
+
+<a href="#common.ptconfig.load_config" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Load the config file</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>config_path</code></td>
+          <td>
+                <code>pathlib.<span title="pathlib.Path">Path</span></code>
+          </td>
+          <td><p>Path to the configuration file</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="common.ptconfig.TomlCfg" href="#common.ptconfig.TomlCfg">TomlCfg</a></code>
+          </td>
+          <td><p>A config object</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>e</code>
+          </td>
+          <td><p>DaciteError when deserialising fails</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="common.ptconfig.write_config" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">write_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="n">pttoml</span><span class="p">)</span></code>
+
+<a href="#common.ptconfig.write_config" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Store the config file</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>config_path</code></td>
+          <td>
+                <code>pathlib.<span title="pathlib.Path">Path</span></code>
+          </td>
+          <td><p>Path to output config</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>pttoml</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="common.ptconfig.TomlCfg" href="#common.ptconfig.TomlCfg">TomlCfg</a></code>
+          </td>
+          <td><p>The object to be serialised</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
 
 
 
@@ -1462,6 +1747,21 @@ Fails if the type lies outside of the three paths specified in the constructor.<
           </div>
         </a>
       
+      
+        
+        <a href="../../accounting/" class="md-footer__link md-footer__link--next" aria-label="Next: Accounting" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Accounting
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
       
     </nav>
   

@@ -574,7 +574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api/fetching.md" class="md-nav__link">
+      <a href="../../api/fetching/" class="md-nav__link">
         Fetching
       </a>
     </li>
@@ -654,6 +654,21 @@
           
         </ul>
       </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../accounting/" class="md-nav__link">
+        Accounting
+      </a>
     </li>
   
 
@@ -870,6 +885,9 @@ The unifiers are applied to the trace data in the order specified on the command
 <p>Every unifier performs a different operation upon the trace data.
 These can largely be segmented into two categories, namely 'filtering' and 'reducing'.
 The former removes occurrences of trace data that are undesirable, and the latter groups rows and make replacements where appropriate.</p>
+<p>Each unifier implements the <code>TraceDataFilter</code> class from <code>typegen.unification.filter_base</code>, which can simply be derived from to implement the desired behaviour.
+It is automatically registered in the factory, i.e. no further updates are required.</p>
+<p>If a user should be able to reference this new unifier from the command line, then <code>common.ptconfig</code> must also be updated with a matching entry to create the unifier from.</p>
 <h3 id="filtering-unifiers">Filtering Unifiers<a class="headerlink" href="#filtering-unifiers" title="Permanent link">&para;</a></h3>
 <h4 id="drop-duplicates">Drop Duplicates<a class="headerlink" href="#drop-duplicates" title="Permanent link">&para;</a></h4>
 <p>While the <a href="../tracing/#tracer---setting-syssettrace-and-collecting-data">tracer implementation</a> may deduplicate trace data after halting, when the trace data is loaded into memory, every test that shares a call-path usually holds the same information, which is redundant, and can therefore be removed.</p>
@@ -1281,7 +1299,56 @@ If the user does not want to retain this information, then this filter should be
 This unifier uses the <a href="../../misc/resolver/">Resolver</a> implementation to load the <a href="https://www.python.org/download/releases/2.3/mro/">MRO</a>s for such rows in order to find the said shared base type.
 The instance can also be defined so that only type hints are replaced if the common base type is also in the trace data.
 No replacement occurs for undesirable base types, such as <code>abc.ABC</code>, <code>abc.ABCMeta</code> and <code>object</code>.</p>
-<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify_subtypes_relaxed&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify_subty&quot;</span><span class="w"></span>
+<span class="n">only_unify_if_base_was_traced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>pathlib</td>
+<td>WindowsPath</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>pathlib</td>
+<td>PosixPath</td>
+</tr>
+</tbody>
+</table>
+<p>(In this example, pathlib.WindowsPath and pathlib.PosixPath inherit from pathlib.Path)</p>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>pathlib</td>
+<td>Path</td>
+</tr>
+</tbody>
+</table>
 <p>Configuration File:</p>
 <div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
 <span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify_subtypes_strict&quot;</span><span class="w"></span>
@@ -1325,7 +1392,7 @@ No replacement occurs for undesirable base types, such as <code>abc.ABC</code>, 
 </tr>
 </tbody>
 </table>
-<p>(In this example, module_name.SubClass inherits from module_name.BaseClass.)</p>
+<p>(In this example, module_name.SubClass inherits from module_name.BaseClass)</p>
 <p>After applying the filter:</p>
 <table>
 <thead>
@@ -1391,13 +1458,13 @@ No replacement occurs for undesirable base types, such as <code>abc.ABC</code>, 
 <tr>
 <td>2</td>
 <td>parameter2</td>
-<td>module_name</td>
+<td>module_name1</td>
 <td>SubClass</td>
 </tr>
 <tr>
 <td>2</td>
 <td>parameter2</td>
-<td>module_name</td>
+<td>module_name2</td>
 <td>BaseClass</td>
 </tr>
 </tbody>
@@ -1422,7 +1489,7 @@ No replacement occurs for undesirable base types, such as <code>abc.ABC</code>, 
 <tr>
 <td>2</td>
 <td>parameter2</td>
-<td>module_name,module_name</td>
+<td>module_name1,module_name2</td>
 <td>SubClass|BaseClass</td>
 </tr>
 </tbody>
@@ -1453,6 +1520,7 @@ Used by the stub file generator to generate the stub CST after adding the traced
 Used by the stub file generator to add the missing import in the stub CST as <code>mypy.stubgen</code> annotates with <code>Union</code>, but does not add the corresponding import.</p>
 </li>
 </ul>
+<p>These transformers all derive from <code>cst.CSTTransformer</code>; if a new transformer needs to be made, then deriving from this class is sufficient to reuse said transformer in an annotation generator.</p>
 <h3 id="type-hint-generators">Type Hint Generators<a class="headerlink" href="#type-hint-generators" title="Permanent link">&para;</a></h3>
 <p>After unifying the trace data, a type hint generator is used to generate files with. 
 Which type hint generator is used is specified by the <code>--gen-strat</code> option.</p>
