@@ -11,10 +11,11 @@ from typegen.strats.inline import TypeHintTransformer
 
 
 class ImportUnionTransformer(cst.CSTTransformer):
+    """Transforms the CST by adding the ImportFrom node (from typing import Union) if the corresponding code contains a union type hint."""
     def __init__(self):
         self.requires_union_import = False
 
-    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module):
+    def leave_Module(self, _: cst.Module, updated_node: cst.Module) -> cst.Module:
         if self.requires_union_import:
             typing_union_import = cst.ImportFrom(
                 module=cst.Name(value="typing"),
@@ -51,8 +52,9 @@ class ImportUnionTransformer(cst.CSTTransformer):
 
 
 class MyPyHintTransformer(cst.CSTTransformer):
+    """Replaces the CST with the corresponding stub CST, generated using mypy.stubgen."""
     def leave_Module(
-        self, original_node: cst.Module, updated_node: cst.Module
+        self, _: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
         # Store inline hinted ast in temporary file so that mypy can
         # extract our applied hints to it

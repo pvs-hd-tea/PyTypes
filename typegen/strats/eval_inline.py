@@ -28,6 +28,7 @@ class RemoveAllTypeHintsTransformer(cst.CSTTransformer):
 
 
 class EvaluationInlineGenerator(InlineGenerator):
+    """Overwrites the files by removing the existing and then adding the traced type hints."""
     ident = "eval_inline"
 
     def _transformers(

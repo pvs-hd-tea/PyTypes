@@ -28,12 +28,21 @@ logger = logging.getLogger(__name__)
 
 
 class TracerBase(abc.ABC):
+    """Base class for all Tracers. If more tracers need to be implemented, this class should be inherited from 
+    and the abstract method is to be implemented"""
     def __init__(
         self,
         proj_path: pathlib.Path,
         stdlib_path: pathlib.Path,
         venv_path: pathlib.Path,
     ):
+        """
+        Construct instance with provided paths.
+        
+        :param proj_path: Path to project's directory that shall be traced
+        :param stdlib_path: Path to standard library's directory of the Python binary used to run the project's tests
+        :param venv_path: Path to project's virtual environment's directory used to run the project's tests
+        """
         self.trace_data = pd.DataFrame(columns=Schema.TraceData.keys()).astype(
             Schema.TraceData
         )
@@ -62,22 +71,35 @@ class TracerBase(abc.ABC):
 
         self._old_trace: typing.Callable | None = None
 
-    def start_trace(self) -> None:
-        """Starts the trace."""
+    def start_trace(self: "TracerBase") -> None:
+        """Starts the trace by calling `sys.settrace` and backing-up the previous one.
+        All Python code run after this will now be traced.
+        
+        :param self: An instance of a deriving class"""
         logger.info("Starting trace")
         self._old_trace = sys.gettrace()
         sys.settrace(self._on_trace_is_called)
         self._prev_line.clear()
 
     @contextlib.contextmanager
-    def active_trace(self) -> typing.Iterator[None]:
+    def active_trace(self: "TracerBase") -> typing.Iterator[None]:
+        """Wrapper around the `start_trace` and `stop_trace` methods for with statements.
+        Python code run after this will no longer be traced.
+        
+        :param self: An instance of a deriving class"""
         self.start_trace()
         try:
             yield None
         finally:
             self.stop_trace()
 
-    def stop_trace(self):
+    def stop_trace(self: "TracerBase"):
+        """
+        Stops the trace and reinstates the previously set trace function.
+        Also deduplicates the accumulated trace data.
+
+        :param self: An instance of a deriving class
+        """
         logger.info("Stopping trace")
         sys.settrace(self._old_trace)
 
@@ -99,18 +121,35 @@ class TracerBase(abc.ABC):
 
 
 class NoOperationTracer(TracerBase):
+    """
+    Tracer that does nothing except be invoked whenever a tracing-related event is emitted.
+    Used to provide benchmarking, i.e. to measure the overhead by the "real" Tracer
+    """
     def _on_trace_is_called(self, frame, event, arg: typing.Any) -> typing.Callable:
         return self._on_trace_is_called
 
 
 class Tracer(TracerBase):
+    """
+    Tracer that is invoked everytime a tracing-related event is emitted.
+    Traces and stores information about each instance in a DataFrame using `BatchTraceUpdate`
+    """
     def __init__(
         self,
         proj_path: pathlib.Path,
         stdlib_path: pathlib.Path,
         venv_path: pathlib.Path,
-        apply_opts=True,
+        apply_opts: bool=True,
     ):
+        """
+        Construct instance with provided paths.
+        Additionally accepts an extra argument that indicates whether optimisations should be enabled
+        
+        :param proj_path: Path to project's directory that shall be traced
+        :param stdlib_path: Path to standard library's directory of the Python binary used to run the project's tests
+        :param venv_path: Path to project's virtual environment's directory used to run the project's tests
+        :param apply_opts: When set to True, tries to optimise loop execution by turning off tracing if enough iterations have passed since any types have changed
+        """
         super().__init__(proj_path, stdlib_path, venv_path)
         self.class_names_to_drop.append(Tracer.__name__)
         self.apply_opts = apply_opts
@@ -119,7 +158,6 @@ class Tracer(TracerBase):
             self.optimisation_stack: list[Optimisation] = list()
 
     def stop_trace(self) -> None:
-        """Stops the trace."""
         # Clear out all optimisations
         if self.apply_opts:
             self.optimisation_stack.clear()
@@ -128,7 +166,7 @@ class Tracer(TracerBase):
 
     def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
         """Remove optimisations that are marked as TriggerStatus.EXITED, and insert new ones as needed."""
-        # Remove dead optimisations
+                # Remove dead optimisations
         while self.optimisation_stack:
             top = self.optimisation_stack[-1]
             if top.status() == TriggerStatus.EXITED:

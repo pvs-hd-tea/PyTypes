@@ -11,12 +11,6 @@ class KeepOnlyFirstFilter(TraceDataFilter):
     ident = "keep_only_first"
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Keeps only the first row of each variable in the provided trace data and returns the processed trace data.
-
-        @param trace_data The provided trace data to process.
-        """
-
         subset = list(Schema.TraceData.keys())
         subset.remove(Column.VARTYPE_MODULE)
         subset.remove(Column.VARTYPE)

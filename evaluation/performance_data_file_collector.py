@@ -15,6 +15,7 @@ class PerformanceDataFileCollector(DataFileCollector):
     TARGET_SHAPE = np.array([4])
 
     def __init__(self):
+        """Creates an instance of PerformanceDataFileCollector."""
         super().__init__(file_pattern=f"*{constants.NP_ARRAY_FILE_ENDING}.npy")
         self.performance_data = np.zeros(PerformanceDataFileCollector.TARGET_SHAPE)
         self.performance_data = np.expand_dims(self.performance_data, axis=0)
@@ -22,7 +23,9 @@ class PerformanceDataFileCollector(DataFileCollector):
     def collect_data(
             self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
     ) -> None:
-        """Collects the data in a given path."""
+        """Collects the data in a given path.
+        :param path: The path of the folder containing the files. 
+        :param include_also_files_in_subdirectories: Whether the data files in the subfolders should also be collected."""
         super().collect_data(path, include_also_files_in_subdirectories)
 
         if len(self.collected_data) > 0:

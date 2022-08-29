@@ -16,6 +16,10 @@ class Project:
 
     @functools.cached_property
     def test_directories(self) -> list[pathlib.Path] | None:
+        """Search for directories in the repository that could contain tests
+
+        :return: List of existing candidate folders, None if none are found
+        """
         tests: list[pathlib.Path] = []
 
         for candidate_subdir in self._candidate_subdirs():

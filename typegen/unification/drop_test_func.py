@@ -15,7 +15,6 @@ class DropTestFunctionDataFilter(TraceDataFilter):
     test_name_pat: Pattern[str] | None = None
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        """Drops the data about test functions in the provided trace data and returns the processed trace data."""
         if self.test_name_pat is None:
             raise AttributeError(
                 f"{DropTestFunctionDataFilter.__name__} was not initialised properly: {self.test_name_pat=}"

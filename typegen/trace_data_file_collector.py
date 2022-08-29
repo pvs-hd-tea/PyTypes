@@ -14,6 +14,7 @@ class TraceDataFileCollector(DataFileCollector):
     """Collects trace data files in a given path."""
 
     def __init__(self):
+        """Creates an instance of TraceDataFileCollector."""
         super().__init__(f"*{constants.TRACE_DATA_FILE_ENDING}")
         self.trace_data = pd.DataFrame(columns=Schema.TraceData.keys())
         self.trace_data = self.trace_data.astype(Schema.TraceData)
@@ -21,7 +22,9 @@ class TraceDataFileCollector(DataFileCollector):
     def collect_data(
         self, path: pathlib.Path, include_also_files_in_subdirectories: bool = True
     ) -> None:
-        """Collects the data in a given path."""
+        """Collects the data in a given path.
+        :param path: The path of the folder containing the files. 
+        :param include_also_files_in_subdirectories: Whether the data files in the subfolders should also be collected."""
         super().collect_data(path, include_also_files_in_subdirectories)
 
         if len(self.collected_data) > 0:

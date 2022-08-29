@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class UnionFilter(TraceDataFilter):
-    """Replaces rows containing types in the data with their common base type."""
+    """Unify rows containing types in the data with the union of these types."""
 
     ident = "union"
 

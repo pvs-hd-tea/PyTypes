@@ -16,12 +16,6 @@ class MinThresholdFilter(TraceDataFilter):
     min_threshold: float = 0.25
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Drops all rows whose types appear less often than the minimum
-        threshold in the provided trace data and returns the processed trace data.
-
-        @param trace_data The provided trace data to process.
-        """
         subset = list(Schema.TraceData.keys())
         grouped_trace_data = (
             trace_data.groupby(subset, dropna=False)[Column.VARTYPE]

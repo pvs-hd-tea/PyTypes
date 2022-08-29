@@ -15,7 +15,14 @@ from .projio import Project
 
 
 class Repository(ABC):
+    """Base class for facilitating fetching of resources for tracing
+    """
     def __init__(self, project_uri: str):
+        """Construct an instance with an URI to the requested resource,
+        should be called from deriving classes
+
+        :param project_uri: URI to the resource
+        """
         self.project_uri = project_uri
 
     def fetch(self, output: pathlib.Path) -> Project:
@@ -30,6 +37,14 @@ class Repository(ABC):
 
     @staticmethod
     def factory(project_uri: str, fmt: str | None = None) -> "Repository":
+        """Factory method for instantiating subtypes of this class with the
+        purpose of fetching the requested resource
+
+        :param project_uri: URI to the resource
+        :param fmt: Indicator / Tag for forcing factory to select certain subtype
+        :raises LookupError: When no fitting subtype can be chosen
+        :return: An appropriate subtype instance
+        """
         if fmt == GitRepository.fmt or project_uri.endswith(".git"):
             logging.info(f"Interpreted {project_uri} as Git repository")
             return GitRepository(project_uri)
@@ -63,6 +78,12 @@ class Repository(ABC):
     def _write_to(
         self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path
     ):
+        """Private method for handling the writing of the fetched resource,
+        and any intermediate operations that may have performed, to the correct location
+
+        :param intermediary: The location of the fetched resource
+        :param output: Where to store the resource
+        """
         if output.is_dir():
             shutil.rmtree(str(output))
         output.mkdir(parents=True, exist_ok=True)
@@ -70,6 +91,7 @@ class Repository(ABC):
 
 
 class GitRepository(Repository):
+    """Fetch Git Repositories from .git URIs"""
     def __init__(self, project_uri: str):
         super().__init__(project_uri)
         self.pbar: tqdm.tqdm | None = None
@@ -114,6 +136,8 @@ class GitRepository(Repository):
 
 
 class ArchiveRepository(Repository):
+    """Fetch archives from specified URI 
+    """
     def __init__(self, project_uri: str):
         super().__init__(project_uri)
 
@@ -163,6 +187,9 @@ class ArchiveRepository(Repository):
 
 
 class LocalFolder(Repository):
+    """Use local folders as a basis for a resource. 
+    Useful if you want to trace smaller projects or private ones, etc. 
+    """
     fmt = "Local"
 
     def __init__(self, filepath: str):

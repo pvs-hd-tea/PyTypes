@@ -10,6 +10,7 @@ import tqdm
 
 from .projio import Project
 import constants
+from common.ptconfig import write_config, TomlCfg, PyTypes
 
 from confgen import generate_cfg
 
@@ -26,6 +27,10 @@ class ApplicationStrategy(ABC):
         self.globber = pathlib.Path.rglob if recurse_into_subdirs else pathlib.Path.glob
 
     def apply(self, project: Project):
+        """Apply the subclass-specific strategy to the test files found in the project
+
+        :param project: Path to the fetched resource, now a project
+        """
         assert project.test_directories is not None
 
         for test_directory in project.test_directories:
@@ -213,10 +218,6 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
     def leave_FunctionDef(
         self, _: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FlattenSentinel[cst.BaseStatement] | cst.FunctionDef:
-        """
-        Called on visiting a function definition node.
-        Adds the trace decorator to the decorator list if function name matches test function name pattern.
-        """
         if re.match(self.test_function_name_pattern, updated_node.name.value):
             ADT_LOGGER.debug(f"Adding decorator to {updated_node.name.value}")
             updated_node = updated_node.with_changes(

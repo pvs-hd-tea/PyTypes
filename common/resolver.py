@@ -31,13 +31,22 @@ def _attempt_module_lookup(
             return module
 
     except FileNotFoundError:
-        logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
+        logger.warning(f"Could not import {module_name} from {str(root / lookup_path)}")
 
     return None
 
 
 @dataclass
 class Resolver:
+    """
+    Bidirectional lookup of types and modules
+
+    :param proj_path: Path to root directory containing the project's types
+    :param stdlib_path: Path to standard library's directory of the Python binary, containing stdlib types
+    :param venv_path: Path to project's virtual environment's directory containing third-party deps
+
+    :raises ValueError: If any of the three specified paths is not a directory
+    """
     stdlib_path: pathlib.Path
     proj_path: pathlib.Path
     venv_path: pathlib.Path
@@ -64,7 +73,13 @@ class Resolver:
     def type_lookup(
         self, module_name: str | None | pd._libs.missing.NAType, type_name: str
     ) -> type | None:
-        # Follow import order specified by sys.path
+        """Create a type from a module path and qualified type name.
+        Fails if the given paths lies outside of the module
+
+        :param module_name: The module of the type e.g. pathlib
+        :param type_name: The fully qualified name of the type, e.g. Path
+        :return: The requested type if found, e.g. pathlib.Path, else None
+        """
 
         # 0. builtin types
         logger.debug(f"{(module_name, type_name)} as builtin?")
@@ -109,20 +124,24 @@ class Resolver:
             return variable_type
 
     def get_module_and_name(self, ty: type) -> tuple[str | None, str] | None:
+        """Retrieve module path and qualified type name from a type.
+        Fails if the type lies outside of the three paths specified in the constructor.
+
+        :param ty: Any given type whose defining file is relative to the specified paths
+        :return: a pair of (module name, type name) if successful, where module_name is None is the type is a builtin
+        """
         # 0. builtin types
         module = sys.modules[ty.__module__]
         logger.debug(f"{(module.__name__, ty.__name__)} as builtin?")
         if module.__name__ == "builtins":
-            return None, ty.__name__
+            return None, ty.__qualname__
 
         # Special case:
         # The __file__ attribute is not present for C modules that are statically linked into the interpreter;
         # for extension modules loaded dynamically from a shared library,
         # it is the pathname of the shared library file.
         if not hasattr(module, "__file__"):
-            if module.__name__ == "lib-dynload._hashlib.cpython-310-x86_64-linux-gnu":
-                raise ValueError
-            return module.__name__, ty.__name__
+            return module.__name__, ty.__qualname__
 
         assert module.__file__ is not None
         module_file = pathlib.Path(module.__file__)
@@ -130,18 +149,18 @@ class Resolver:
         # 1. project path
         if module_file.is_relative_to(self.proj_path):
             logger.debug(
-                f"{(module.__name__, ty.__name__)} is relative to project path"
+                f"{(module.__name__, ty.__qualname__)} is relative to project path"
             )
             rel_path = module_file.relative_to(self.proj_path)
 
         # 2. stdlib
         elif module_file.is_relative_to(self.stdlib_path):
-            logger.debug(f"{(module.__name__, ty.__name__)} is relative to stdlib path")
+            logger.debug(f"{(module.__name__, ty.__qualname__)} is relative to stdlib path")
             rel_path = module_file.relative_to(self.stdlib_path)
 
         # 3. venv
         elif module_file.is_relative_to(self.site_packages):
-            logger.debug(f"{(module.__name__, ty.__name__)} is a venv dependency")
+            logger.debug(f"{(module.__name__, ty.__qualname__)} is a venv dependency")
             rel_path = module_file.relative_to(self.site_packages)
 
         else:

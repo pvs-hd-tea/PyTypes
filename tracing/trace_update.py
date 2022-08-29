@@ -13,6 +13,18 @@ from constants import Column, Schema
 
 @dataclass(frozen=True)
 class TraceUpdate:
+    """
+    A simple dataclass holding the contents of a singular update
+
+    :params file_name: The file name in which the variables are declared
+    :params class_module: Module of the class the variable is in
+    :params class_name: Name of the class the variable is in
+    :params function_name: The function which declares the variable
+    :params line_number: The line number
+    :params category: The data category of the row
+    :params names2types: A dictionary containing the variable name, the type's module and the type's name
+
+    """
 
     # The file name in which the variables are declared
     file_name: pathlib.Path
@@ -41,6 +53,23 @@ TRACE_MAP = dict[str, tuple[str | None, str]]
 
 @dataclass
 class BatchTraceUpdate:
+    """
+    A builder-pattern style interface for each relevant category, allowing updates to be chained as each event requires. 
+    After all updates have been handled, a DataFrame can be produced that is to added to the otherwise accumulated trace data.
+
+    The constructor accepts values that are used by default to create instances of `TraceUpdate`,
+    unless overwritten by an argument in one of the builder methods.
+    
+    TRACE_MAP is defined as `dict[str, tuple[str | None, str]]`, which is a map of identifiers to (module name, type name).
+    The module_name is None if the type is builtin, such as int, str, float etc.
+
+    :params file_name: The file name in which the variables are declared
+    :params class_module: Module of the class the variable is in
+    :params class_name: Name of the class the variable is in
+    :params function_name: The function which declares the variable
+    :params line_number: The line number
+    """
+
     file_name: pathlib.Path
     class_module: str | None
     class_name: str | None
@@ -54,6 +83,14 @@ class BatchTraceUpdate:
         line_number: int,
         names2types: TRACE_MAP,
     ) -> BatchTraceUpdate:
+        """
+        Create an update consisting of local variables
+
+        :params line_number: Because the line number that a variable is written on is not the same 
+            as the one it is put on the stack, this must be manually specified
+        :params names2types: Names of local variables mapped to the module and type names of their types
+        :returns: A reference to newly updated batch
+        """
         if names2types:
             update = TraceUpdate(
                 file_name=self.file_name,
@@ -72,6 +109,14 @@ class BatchTraceUpdate:
         self,
         names2types: TRACE_MAP,
     ) -> BatchTraceUpdate:
+        """
+        Create an update consisting of global variables.
+        Because they are stateful, their line number is always 0, and can only be
+        differentiated by their name and the file they occur in
+
+        :params names2types: Names of global variables mapped to the module and type names of their types
+        :returns: A reference to newly updated batch
+        """
         if names2types:
             update = TraceUpdate(
                 file_name=self.file_name,
@@ -90,6 +135,13 @@ class BatchTraceUpdate:
         self,
         names2types: TRACE_MAP,
     ) -> BatchTraceUpdate:
+        """
+        Create an update consisting of return types from functions.
+        Their line number is always 0, so that unifiers can group them together appropriately later.
+
+        :params names2types: Names of functions mapped to the module and type name of their return types
+        :returns: A reference to newly updated batch
+        """
         if names2types:
             update = TraceUpdate(
                 file_name=self.file_name,
@@ -108,6 +160,12 @@ class BatchTraceUpdate:
         self,
         names2types: TRACE_MAP,
     ) -> BatchTraceUpdate:
+        """
+        Create an update consisting of parameters for a callable.
+
+        :params names2types: Names of the parameters to a callable mapped to the module and type names of their types
+        :returns: A reference to newly updated batch
+        """
         if names2types:
             update = TraceUpdate(
                 file_name=self.file_name,
@@ -126,6 +184,14 @@ class BatchTraceUpdate:
         self,
         names2types: TRACE_MAP,
     ) -> BatchTraceUpdate:
+        """
+        Create an update consisting of attributes of a class.
+        Because they are stateful, their line number is always 0, and can only be
+        differentiated by the file they occur in, their identifier and the class they occur in
+
+        :params names2types: Names of the members of a class mapped to the module and type names of their types
+        :returns: A reference to newly updated batch
+        """
         if names2types:
             # Line number is 0 and function name is empty to
             # unify matching class members better.
@@ -145,7 +211,13 @@ class BatchTraceUpdate:
 
         return self
 
-    def to_frame(self) -> pd.DataFrame:
+    def to_frame(self: BatchTraceUpdate) -> pd.DataFrame:
+        """
+        Consume this batch of updates in order to produce a DataFrame.
+
+        :params self: Nothing else :)
+        :returns: A DataFrame encompassing the entire batch 
+        """
         updates = list()
         for update in self._updates:
             names2types = update.names2types

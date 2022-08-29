@@ -512,6 +512,7 @@ class TypeHintTransformer(cst.CSTTransformer):
 
 
 class InlineGenerator(TypeHintGenerator):
+    """Overwrites the files by adding the traced type hints to the variables. Does not overwrite existing type hints."""
     ident = "inline"
 
     def _transformers(

@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class AddImportTransformer(cst.CSTTransformer):
+    """Transforms the CST by adding ImportFrom nodes to import the modules of 
+    the type hints according to the trace data."""
     _FUTURE_IMPORT_MATCH = m.ImportFrom(module=m.Name(value="__future__"))
     _ANNOTATION_MATCH = m.ImportAlias(name=m.Name(value="annotations"))
 

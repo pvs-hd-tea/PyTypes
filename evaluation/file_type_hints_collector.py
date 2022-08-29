@@ -15,12 +15,23 @@ class FileTypeHintsCollector:
     typehint_data: pd.DataFrame
 
     def __init__(self):
+        """Creates an instance of FileTypeHintsCollector."""
         self.typehint_data = pd.DataFrame(columns=Schema.TypeHintData.keys())
 
     def collect_data_from_file(self, root: pathlib.Path, filename: str) -> None:
+        """Collects the typehint data from a file.
+
+        :param root: The root folder path of the file.
+        :param filename: The file name.
+        """
+
         self.collect_data_from_files(root, [filename])
 
     def collect_data_from_files(self, root: pathlib.Path, filenames: list[str]) -> None:
+        """Collects the typehint data from multiple files.
+        :param root: The root folder path of the files.
+        :param filenames: The file names.
+        """
         file_paths = []
         for filename in filenames:
             file_path = (root / filename).resolve()
@@ -32,8 +43,13 @@ class FileTypeHintsCollector:
         self,
         root: pathlib.Path,
         folder: pathlib.Path,
-        include_also_files_in_subdirectories: bool = False,
+        include_also_files_in_subdirectories: bool = True,
     ) -> None:
+        """Collects the typehint data from the files in the folder.
+        :param root: The root folder path.
+        :param folder: The path of the folder containing the files. 
+        :param include_also_files_in_subdirectories: Whether the type hints in the files in the subfolders should also be collected.
+        """
         assert folder.is_dir(), f"{folder} is not a folder path."
         file_pattern = "*.py"
         file_paths = (
@@ -48,6 +64,10 @@ class FileTypeHintsCollector:
     def collect_data(
         self, root: pathlib.Path, file_paths: Iterable[pathlib.Path]
     ) -> None:
+        """Collects the typehint data from the files in the provided file paths.
+        :param root: The root folder path.
+        :param file_paths: The file paths.
+        """
         self.typehint_data = self.typehint_data.iloc[0:0]
         """Collects the type hints of the provided file paths."""
         for file_path in file_paths:
@@ -69,6 +89,7 @@ class FileTypeHintsCollector:
 
 
 class _TypeHintVisitor(cst.CSTVisitor):
+    """Visits and collects the type hints in the CST. Additionally, the collected type hints contain the full module name."""
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, file_path: str) -> None:
@@ -134,7 +155,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._scope_stack.append(fdef)
         return True
 
-    def leave_FunctionDef(self, fdef: cst.FunctionDef) -> None:
+    def leave_FunctionDef(self, _: cst.FunctionDef) -> None:
         self._scope_stack.pop()
 
     def visit_Param(self, node: cst.Param) -> bool | None:
@@ -179,7 +200,7 @@ class _TypeHintVisitor(cst.CSTVisitor):
         self._add_row(line_number, category, variable_name, type_hint)
         return True
 
-    def leave_Module(self, original_node: cst.Module) -> None:
+    def leave_Module(self, _: cst.Module) -> None:
         self.typehint_data = pd.DataFrame(
             self.collected_data, columns=Schema.TypeHintData.keys()
         )
