@@ -510,6 +510,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-tqdm"
+version = "4.64.6"
+description = "Typing stubs for tqdm"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-urllib3"
 version = "1.26.15"
 description = "Typing stubs for urllib3"
@@ -553,7 +561,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4"
-content-hash = "d7d699d5e91dd01b2e6a818233d5c602cafe5822dd0d0c22aff34593da667e75"
+content-hash = "37297d19ba783074551e74b1608905a3db9d3d4fe7f1d8924cbcc6b28eec232f"
 
 [metadata.files]
 atomicwrites = [
@@ -911,6 +919,10 @@ types-requests = [
 types-toml = [
     {file = "types-toml-0.10.7.tar.gz", hash = "sha256:a567fe2614b177d537ad99a661adc9bfc8c55a46f95e66370a4ed2dd171335f9"},
     {file = "types_toml-0.10.7-py3-none-any.whl", hash = "sha256:05a8da4bfde2f1ee60e90c7071c063b461f74c63a9c3c1099470c08d6fa58615"},
+]
+types-tqdm = [
+    {file = "types-tqdm-4.64.6.tar.gz", hash = "sha256:106e7cca7023b63270d8d3feaaa9b347b953e835d9d47e08781244b356fdb552"},
+    {file = "types_tqdm-4.64.6-py3-none-any.whl", hash = "sha256:bb4f35cdc7f90bc75f5b4bc893171ba5d41895e14b7ac436a6e95eb74f79276e"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.15.tar.gz", hash = "sha256:c89283541ef92e344b7f59f83ea9b5a295b16366ceee3f25ecfc5593c79f794e"},
