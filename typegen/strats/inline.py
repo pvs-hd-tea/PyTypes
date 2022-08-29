@@ -324,7 +324,7 @@ class TypeHintTransformer(cst.CSTTransformer):
             logger.debug(
                 f"Applying return type hint '{rettype}' to '{original_node.name.value}'"
             )
-            returns = cst.Annotation(cst.Name(rettype))
+            returns = _create_annotation_from_vartype(rettype)
 
         return updated_node.with_changes(returns=returns)
 
@@ -493,7 +493,7 @@ class TypeHintTransformer(cst.CSTTransformer):
             # Replace simple assignment with annotated assignment
             return updated_node.with_changes(
                 target=original_node.target,
-                annotation=cst.Annotation(cst.Name(value=hint_ty)),
+                annotation=_create_annotation_from_vartype(hint_ty),
                 value=original_node.value,
             )
 
