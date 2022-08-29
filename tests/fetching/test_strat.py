@@ -197,7 +197,7 @@ def test_if_future_has_correct_position(
 @pytest.fixture
 def import_test_project():
     with mock.patch(
-        "fetching.projio.Project.test_directory",
+        "fetching.projio.Project.test_directories",
         new_callable=mock.PropertyMock,
     ) as m:
         fake_cwd = pathlib.Path("tests", "resource", "fetching_imports")
