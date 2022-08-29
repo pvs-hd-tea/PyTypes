@@ -89,4 +89,5 @@ def main(**params):
         strategy.apply(project)
 
     except Exception as e:
-        logging.error(f"{e}; removing fetched repository")
+        print(f"{e}")
+

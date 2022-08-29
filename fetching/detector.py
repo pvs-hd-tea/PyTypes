@@ -76,7 +76,7 @@ class PyTestDetector(TestDetector):
 
         # Check for pytest in dev-dependencies
         if "poetry" in pyproj_cfg["tool"]:
-            if "dev-dependencies" not in pyproj_cfg["tool"]["poetry"]:
+            if "dev-dependencies" in pyproj_cfg["tool"]["poetry"]:
                 if "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]:
                     return True
 
