@@ -20,7 +20,7 @@ def cfg(monkeypatch) -> ptconfig.TomlCfg:
         lambda _: ptconfig.TomlCfg(
             pytypes=ptconfig.PyTypes(
                 project="pytest-mocks",
-                proj_path=pathlib.Path.cwd(),
+                proj_path=MOCK_PATH,
                 venv_path=pathlib.Path(os.environ["VIRTUAL_ENV"]),
                 stdlib_path=pathlib.Path(pathlib.__file__).parent,
             ),

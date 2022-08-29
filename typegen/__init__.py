@@ -14,6 +14,7 @@ from .unification.drop_test_func import DropTestFunctionDataFilter
 from .unification.drop_vars import DropVariablesOfMultipleTypesFilter
 from .unification.filter_base import TraceDataFilterList
 from .unification.subtyping import UnifySubTypesFilter
+from .unification.union import UnionFilter
 from .unification.drop_min_threshold import MinThresholdFilter
 from .unification.keep_only_first import KeepOnlyFirstFilter
 
@@ -30,6 +31,7 @@ __all__ = [
     DropVariablesOfMultipleTypesFilter.__name__,
     UnifySubTypesFilter.__name__,
     MinThresholdFilter.__name__,
+    UnionFilter.__name__,
     KeepOnlyFirstFilter.__name__,
 ]
 
@@ -67,7 +69,7 @@ __all__ = [
 @click.option(
     "-v",
     "--verbose",
-    help="INFO if not given, else DEBUG",
+    help="DEBUG if not given, else CRITICAL",
     is_flag=True,
     callback=lambda ctx, _, val: logging.DEBUG if val else logging.INFO,
     required=False,

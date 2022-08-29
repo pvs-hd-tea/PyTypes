@@ -718,6 +718,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-tqdm"
+version = "4.64.6"
+description = "Typing stubs for tqdm"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-urllib3"
 version = "1.26.23"
 description = "Typing stubs for urllib3"
@@ -1261,6 +1269,10 @@ types-requests = [
 types-toml = [
     {file = "types-toml-0.10.8.tar.gz", hash = "sha256:b7e7ea572308b1030dc86c3ba825c5210814c2825612ec679eb7814f8dd9295a"},
     {file = "types_toml-0.10.8-py3-none-any.whl", hash = "sha256:8300fd093e5829eb9c1fba69cee38130347d4b74ddf32d0a7df650ae55c2b599"},
+]
+types-tqdm = [
+    {file = "types-tqdm-4.64.6.tar.gz", hash = "sha256:106e7cca7023b63270d8d3feaaa9b347b953e835d9d47e08781244b356fdb552"},
+    {file = "types_tqdm-4.64.6-py3-none-any.whl", hash = "sha256:bb4f35cdc7f90bc75f5b4bc893171ba5d41895e14b7ac436a6e95eb74f79276e"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.23.tar.gz", hash = "sha256:b78e819f0e350221d0689a5666162e467ba3910737bafda14b5c2c85e9bb1e56"},

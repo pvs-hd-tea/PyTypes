@@ -73,11 +73,18 @@ class PyTestDetector(TestDetector):
         pyproj_cfg = toml.load(pyproj.open())
         if "tool" not in pyproj_cfg:
             return False
-        elif "poetry" not in pyproj_cfg["tool"]:
-            return False
-        elif "dev-dependencies" not in pyproj_cfg["tool"]["poetry"]:
-            return False
-        return "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]
+
+        # Check for pytest in dev-dependencies
+        if "poetry" in pyproj_cfg["tool"]:
+            if "dev-dependencies" not in pyproj_cfg["tool"]["poetry"]:
+                if "pytest" in pyproj_cfg["tool"]["poetry"]["dev-dependencies"]:
+                    return True
+
+        # Check for [tool.pytest.*]
+        if "pytest" in pyproj_cfg["tool"]:
+            return True
+
+        return False
 
     def _has_pytest_in_requirements(self) -> bool:
         for candidate in ("requirements", "requirements-dev"):
