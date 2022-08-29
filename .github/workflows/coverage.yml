@@ -1,0 +1,37 @@
+name: CodeCov 
+
+on:
+  workflow_run:
+    workflows: [Python application]
+    types: [completed]
+
+jobs:
+  on-success:
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo 'The triggering workflow passed'
+
+      - name: Retrieve Coverage Artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: coverage-report
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          path: reports/coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: reports/coverage/coverage.xml
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+
+
+  on-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo 'The triggering workflow failed'

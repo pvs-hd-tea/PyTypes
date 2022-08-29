@@ -127,3 +127,21 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea/
+
+
+# PyType artifacts
+*.pytype
+
+!tests/resource/sample_trace_data_files/*.pytype
+!tests/resource/sample_trace_data_files/*/*.pytype
+
+*.npy_pytype.npy
+
+pytypes/
+# Others
+*_decorators_appended.py
+tests/fetching/repos/*
+!tests/fetching/repos/.gitkeep
+.vscode
+site/

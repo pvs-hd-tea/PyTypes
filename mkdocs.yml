@@ -1,0 +1,49 @@
+site_name: PyTypes Documentation
+repo_url: https://github.com/pvs-hd-tea/PyTypes
+site_dir: site
+edit_uri : edit/gh-pages/docs
+nav:
+  - Home: index.md
+
+  - Workflow:
+    - Fetching: workflow/fetching.md
+    - Tracing: workflow/tracing.md
+    - Annotating: workflow/annotating.md
+    - Evaluating: workflow/evaluating.md
+
+  
+  - Misc:
+    - Configuration: misc/config.md
+    - Types, Modules & Qualified Names: misc/resolver.md
+    - Confgen: misc/confgen.md
+
+  - API:
+    - Fetching: api/fetching.md
+    - Tracing: api/tracing.md
+    - Optimising: api/optimising.md
+    - Annotating: api/typegen.md
+    - Evaluation: api/evaluation.md
+    - Common: api/common.md
+
+  - Accounting: accounting.md
+
+theme: material  # readthedocs  mkdocs
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [common, fetching, tracing, typegen, evaluation]  # search packages in the src folder
+          options:
+            docstring_style: sphinx
+            show_source: false
+            show_root_toc_entry: false
+            members_order: source
+  - search:
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - admonition
+  - toc:
+      permalink: true

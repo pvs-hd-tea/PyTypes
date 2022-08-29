@@ -1,0 +1,3 @@
+[submodule "tests/resource/external/PyTypes_BinaryFiles"]
+	path = tests/resource/external/PyTypes_BinaryFiles
+	url = https://github.com/RecurvedBow/PyTypes_BinaryFiles
