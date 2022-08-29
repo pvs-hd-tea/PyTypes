@@ -109,19 +109,6 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
 
     pt = deserialised.pytypes
 
-    if not pt.proj_path.is_dir():
-        raise ValueError(
-            f"The provided project path ({pt.proj_path}) in your config file does not exist"
-        )
-    if not pt.venv_path.is_dir():
-        raise ValueError(
-            f"The provided virtualenv path ({pt.venv_path}) in your config file does not exist"
-        )
-    if not pt.stdlib_path.is_dir():
-        raise ValueError(
-            f"The provided stdlib path ({pt.stdlib_path}) in your config file does not exist"
-        )
-
     if pt.venv_path.is_relative_to(pt.proj_path):
         raise ValueError(
             "The provided virtualenv path in your config file may not be relative to the project's path"
