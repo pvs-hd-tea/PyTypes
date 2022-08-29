@@ -239,6 +239,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#dependencies-tests-documentation" class="md-nav__link">
+    Dependencies, Tests &amp; Documentation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#workflow" class="md-nav__link">
     Workflow
   </a>
@@ -413,6 +420,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="misc/confgen/" class="md-nav__link">
+        Confgen
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -579,6 +600,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#dependencies-tests-documentation" class="md-nav__link">
+    Dependencies, Tests &amp; Documentation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#workflow" class="md-nav__link">
     Workflow
   </a>
@@ -630,10 +658,31 @@ Commands:
   fetch     Download repositories and apply tracing decorators
   typegen   Generate type hinted files using trace data
 </code></pre></div>
+<h2 id="dependencies-tests-documentation">Dependencies, Tests &amp; Documentation<a class="headerlink" href="#dependencies-tests-documentation" title="Permanent link">&para;</a></h2>
+<p>The dependencies can be installed by simply running
+<div class="highlight"><pre><span></span><code>λ poetry install
+</code></pre></div></p>
+<p>The tests can be executed by running
+<div class="highlight"><pre><span></span><code>λ poetry run pytest
+</code></pre></div></p>
+<p>And finally, documentation can be generated installing the mkdocs package from the <code>extra</code>s group, and rendered using
+<div class="highlight"><pre><span></span><code>λ poetry run mkdocs serve
+</code></pre></div></p>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>λ poetry run python main.py --help
+Usage: main.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  confgen   Generate pytypes.toml
+  evaluate  Evaluate given original and traced repository
+  fetch     Download repositories and apply tracing decorators
+  typegen   Generate type hinted files using trace data
+</code></pre></div>
 <ol>
 <li>Fetching: <a href="workflow/fetching/"><code>poetry run python main.py fetch --help</code></a></li>
-<li>Confgen: <a href="confgen/"><code>poetry run python main.py confgen --help</code></a></li>
 <li><a href="workflow/tracing/">Tracing</a></li>
 <li>Typegen: <a href="workflow/annotating/"><code>poetry run python main.py typegen --help</code></a></li>
 <li>Evaluating: <a href="workflow/evaluating/"><code>poetry run python main.py evaluate --help</code></a></li>
@@ -642,6 +691,7 @@ Commands:
 <ul>
 <li><a href="misc/resolver/">Resolver</a></li>
 <li><a href="misc/config/">Config</a></li>
+<li><a href="misc/confgen/">Confgen</a></li>
 </ul>
 <h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>├── common
