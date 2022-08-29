@@ -6,7 +6,7 @@ from typegen.trace_data_file_collector import TraceDataFileCollector, DataFileCo
 
 from constants import CONFIG_FILE_NAME
 
-from tracing import ptconfig
+from common import ptconfig
 
 from .unification import TraceDataFilter
 from .unification.drop_dupes import DropDuplicatesFilter

@@ -3,8 +3,8 @@ import pathlib
 import pytest
 from tests.tracing.decorators.test_trace_all import MOCK_PATH
 
-from tracing import decorators, ptconfig
-
+from tracing import decorators
+from common import ptconfig
 
 MOCK_PATH = pathlib.Path.cwd()
 

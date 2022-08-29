@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from constants import Schema
-from tracing import TraceDataCategory
+from common import TraceDataCategory
 from typegen import TraceDataFilter, DropDuplicatesFilter
 from typegen.unification.union import UnionFilter
 

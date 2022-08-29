@@ -1,7 +1,7 @@
 import constants
 import pathlib
 import os
-from tracing import ptconfig
+from common import ptconfig
 
 import click
 

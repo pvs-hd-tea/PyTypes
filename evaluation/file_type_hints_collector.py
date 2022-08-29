@@ -3,7 +3,7 @@ from typing import Iterable
 import pandas as pd
 import libcst as cst
 from libcst.metadata import PositionProvider
-from tracing import TraceDataCategory
+from common import TraceDataCategory
 from evaluation.normalize_types import normalize_type
 
 from constants import Column, Schema

@@ -3,7 +3,7 @@ import sys
 import pathlib
 import pandas as pd
 from typing import List, Union
-from tracing import Tracer, TraceDataCategory
+from tracing import Tracer
 from constants import Column, Schema
 
 
@@ -91,6 +91,7 @@ import pathlib
 stdlib_path = pathlib.Path(pathlib.__file__).parent
 
 import pytest
+from common import TraceDataCategory
 
 
 @pytest.fixture(scope="function")

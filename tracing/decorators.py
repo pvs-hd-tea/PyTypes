@@ -13,7 +13,7 @@ from pandas.util import hash_pandas_object
 import numpy as np
 
 import constants
-from tracing import ptconfig
+from common import ptconfig
 from tracing.tracer import NoOperationTracer, Tracer, TracerBase
 
 RetType = TypeVar("RetType")
