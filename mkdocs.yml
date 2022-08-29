@@ -4,7 +4,6 @@ site_dir: site
 edit_uri : edit/gh-pages/docs
 nav:
   - Home: index.md
-  - About: about.md
 
   - Workflow:
     - Fetching: workflow/fetching.md
