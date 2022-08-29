@@ -17,16 +17,16 @@ Commands:
 ## Workflow
 
 1. Fetching: [`poetry run python main.py fetch --help`](workflow/fetching.md)
-2. Confgen: [`poetry run python main.py confgen --help`](confgen.md)
-3. [Tracing](workflow/tracing.md)
-4. Typegen: [`poetry run python main.py typegen --help`](workflow/annotating.md)
-5. Evaluating: [`poetry run python main.py evaluate --help`](workflow/evaluating.md)
+2. [Tracing](workflow/tracing.md)
+3. Typegen: [`poetry run python main.py typegen --help`](workflow/annotating.md)
+4. Evaluating: [`poetry run python main.py evaluate --help`](workflow/evaluating.md)
 
 
 ## Miscellaneous
 
 * [Resolver](misc/resolver.md)
 * [Config](misc/config.md)
+* [Confgen](misc/confgen.md)
 
 ## Project layout
 

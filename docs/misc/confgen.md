@@ -1,7 +1,6 @@
 ## Functionality
 
-The confgen module contains a short script intended to help facililate creation of an initial [`pytypes.toml`](misc/config.md) that can later be extended as the user wishes.
-It also offers a command to execute the typegen workflow.
+The confgen module contains a short script intended to help facililate creation of an initial [`pytypes.toml`](config.md) that can later be extended as the user wishes.
 
 ```
 λ poetry run python main.py confgen --help
