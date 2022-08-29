@@ -187,6 +187,9 @@ class ArchiveRepository(Repository):
 
 
 class LocalFolder(Repository):
+    """Use local folders as a basis for a resource. 
+    Useful if you want to trace smaller projects or private ones, etc. 
+    """
     fmt = "Local"
 
     def __init__(self, filepath: str):
