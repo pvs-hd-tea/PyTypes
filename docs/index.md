@@ -14,19 +14,53 @@ Commands:
   typegen   Generate type hinted files using trace data
 ```
 
+
+## Dependencies, Tests & Documentation
+
+The dependencies can be installed by simply running
+```
+λ poetry install
+```
+
+The tests can be executed by running
+```
+λ poetry run pytest
+```
+
+And finally, documentation can be generated installing the mkdocs package from the `extra`s group, and rendered using
+```
+λ poetry run mkdocs serve
+```
+
+
 ## Workflow
 
+```
+λ poetry run python main.py --help
+Usage: main.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  confgen   Generate pytypes.toml
+  evaluate  Evaluate given original and traced repository
+  fetch     Download repositories and apply tracing decorators
+  typegen   Generate type hinted files using trace data
+```
+
+
 1. Fetching: [`poetry run python main.py fetch --help`](workflow/fetching.md)
-2. Confgen: [`poetry run python main.py confgen --help`](confgen.md)
-3. [Tracing](workflow/tracing.md)
-4. Typegen: [`poetry run python main.py typegen --help`](workflow/annotating.md)
-5. Evaluating: [`poetry run python main.py evaluate --help`](workflow/evaluating.md)
+2. [Tracing](workflow/tracing.md)
+3. Typegen: [`poetry run python main.py typegen --help`](workflow/annotating.md)
+4. Evaluating: [`poetry run python main.py evaluate --help`](workflow/evaluating.md)
 
 
 ## Miscellaneous
 
 * [Resolver](misc/resolver.md)
 * [Config](misc/config.md)
+* [Confgen](misc/confgen.md)
 
 ## Project layout
 

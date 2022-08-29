@@ -15,6 +15,7 @@ nav:
   - Misc:
     - Configuration: misc/config.md
     - Types, Modules & Qualified Names: misc/resolver.md
+    - Confgen: misc/confgen.md
 
   - API:
     - Fetching: api/fetching.md
