@@ -6,22 +6,24 @@ import typing
 import tokenize
 
 
-# Start with characters or underscore, rest is the same plus numbers
 @dataclass
 class FrameWithMetadata:
-    # TODO: Discover typings for inspect's frames
+    """A wrapper dataclass that takes the current frame and checks properties of the frame's state"""
     _frame: typing.Any
 
     @functools.cached_property
     def co_filename(self) -> str:
+        """Get the filename of the code referenced by the frame"""
         return self._frame.f_code.co_filename
 
     @functools.cached_property
     def f_lineno(self) -> int:
+        """Get the line number referenced by the frame"""
         return self._frame.f_lineno
 
     @functools.cached_property
     def tokens(self) -> list[tokenize.TokenInfo] | str:
+        """Get a representation of the line currently being executed"""
         # Adapted from https://stackoverflow.com/a/22363519 and
         # https://stackoverflow.com/a/62167093
         filename = self._frame.f_code.co_filename
@@ -37,18 +39,19 @@ class FrameWithMetadata:
             return line
 
     def is_return(self) -> bool:
+        """Return True if the frame represents a return statement"""
         if isinstance(self.tokens, list):
             return self.tokens[0].string == "return"
         return self.tokens.startswith("return")
 
     def is_break(self) -> bool:
+        """Return True if the frame represents a break statement"""
         if isinstance(self.tokens, list):
             return self.tokens[0].string == "break"
         return self.tokens.startswith("break")
 
     def is_for_loop(self) -> bool:
-        # TODO #1: this is very rudimentary, perhaps make this safer, but try to avoid runtime costs?
-        # TODO #2: does this trigger on list comprehensions
+        """Return True if the frame represents a for loop"""
         if isinstance(self.tokens, list):
             fors = filter(lambda tok: tok.string == "for", self.tokens)
             has_for = next(fors, None)

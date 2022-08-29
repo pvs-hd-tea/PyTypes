@@ -23,14 +23,14 @@ Options:
   --help                      Show this message and exit.
 ```
 
-Example usage:
-
+Copy a local folder for `pytest` into a new one called `pytest-typed`, and apply decorators.
 ```
 λ poetry run python main.py fetch \
     --url pytest \
     --output pytest-typed
 ```
 
+Clone the `thefuck` project into a local folder called `thefuck`, and apply decorators.
 ```
 λ python run python main.py fetch \
     --url "git@github.com:nvbn/thefuck.git" \
@@ -39,21 +39,12 @@ Example usage:
 ```    
 
 
-# Foundations & Principles
+As shown above on the command line interface, the project accepts links to Git repositories, .zip archives and paths to local directories.
+Regardless of whatever resource is given, it is written to the specified output directory.
+Thereafter, test directories are searched for inside the project for so that the [decorators for tracing](tracing.md#decoratorstrace---minimally-intrusive-tracing-api) can be applied to testing callables.
+Currently, only pytest suites are supported
 
+Further resource formats can be supported by implementing the `Repository` class in `fetching.repo` and updating the `factory` method.
 
-
-* Modify given codebase by detecting test folders and applying decorator for tracing to test functions
-
-
-## Supported Formats
-
-* Git repository
-* Local folder
-* Archives
-
-
-## Decorator Application
-
-[This is further documented here](fetching.md#decorator-application).
+If more testing suites should be supported, a subclass of `TestDetector` has to be created, and methods should be implemented, which means most likely that a corresponding subclass of `ApplicationStrategy` needs to be implemented. These classes are in `fetching.detector` and `fetching.strat` respectively.
 

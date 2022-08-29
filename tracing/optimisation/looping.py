@@ -17,8 +17,8 @@ class TypeStableLoop(Optimisation):
 
     def __init__(self, frame: FrameWithMetadata, iterations_until_entry: int = 5):
         """
-        @param frame Data about the very first line (e.g. `for x in xs:`) obtained from the `inspect` module
-        @param iterations_until_entry The amount of iterations that shall pass until the optimisation starts firing
+        :param frame: Representation of stack frame that points to head of for loop
+        :param iterations_until_entry: The amount of iterations that shall pass until the optimisation starts firing
         """
         super().__init__(frame)
         self.until_entry = iterations_until_entry

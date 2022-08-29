@@ -11,6 +11,7 @@ import constants
 
 @dataclass
 class PyTypes:
+    """Object representation of the [pytypes] section"""
     project: str
 
     stdlib_path: pathlib.Path
@@ -85,11 +86,19 @@ Unifier = typing.Union[
 
 @dataclass
 class TomlCfg:
+    """Object representation of the config file
+    """
     pytypes: PyTypes
     unifier: list[Unifier] = field(default_factory=list)
 
 
 def load_config(config_path: pathlib.Path) -> TomlCfg:
+    """Load the config file
+
+    :param config_path: Path to the configuration file
+    :raises e: DaciteError when deserialising fails
+    :return: A config object
+    """
     cfg = toml.load(config_path.open())
 
     try:
@@ -109,6 +118,11 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
 
 
 def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
+    """Store the config file
+
+    :param config_path: Path to output config
+    :param pttoml: The object to be serialised
+    """
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Not the nicest way to do this, but Path's repr operator
@@ -121,4 +135,5 @@ def write_config(config_path: pathlib.Path, pttoml: TomlCfg):
     ad["pytypes"].pop("output_template")
     ad["pytypes"].pop("output_npy_template")
 
-    toml.dump(ad, config_path.open("w"))
+    with config_path.open("w") as f:
+        toml.dump(ad, f)

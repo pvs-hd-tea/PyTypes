@@ -15,13 +15,6 @@ class UnionFilter(TraceDataFilter):
     ident = "union"
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Unify rows containing types using corresponding type union. 
-
-        :param trace_data: The provided trace data to process.
-        :returns: The processed trace data.
-        
-        """
         grouped = trace_data.groupby(
             by=[
                 Column.CLASS_MODULE,

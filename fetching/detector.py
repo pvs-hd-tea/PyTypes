@@ -43,6 +43,8 @@ class TestDetector(ABC):
 
 
 class PyTestDetector(TestDetector):
+    """Search for signs that a project uses PyTest
+    """
     def __init__(self, project: Project):
         super().__init__(project)
 

@@ -20,8 +20,12 @@ nav:
   - API:
     - Fetching: api/fetching.md
     - Tracing: api/tracing.md
+    - Optimising: api/optimising.md
     - Annotating: api/typegen.md
     - Evaluation: api/evaluation.md
+    - Common: api/common.md
+
+  - Accounting: accounting.md
 
 theme: material  # readthedocs  mkdocs
 
@@ -33,6 +37,9 @@ plugins:
           options:
             docstring_style: sphinx
             show_source: false
+            show_root_toc_entry: false
+            members_order: source
+  - search:
 
 markdown_extensions:
   - pymdownx.highlight

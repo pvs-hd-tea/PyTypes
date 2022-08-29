@@ -44,13 +44,18 @@ The trace data must be cleaned and appropriately unified to remove redundant dat
 To this extent, [unifiers](#unifiers) with a common interface have been implemented to cover unification needs.
 The unifiers are applied to the trace data in the order specified on the command line; the value given to each `-u` flag references a unifier by the `name` key given in the [config file](../misc/config.md#example).
 
-The examples in the following section only contain ["Category", "VarName", "TypeModule" and "Type"](tracing.md#api) for brevity's sake.
+The examples in the following section will contain ["Category", "FunctionName", "VarName", "TypeModule" and "Type"](tracing.md#api) at a minimum for brevity's sake.
 
 ## Unifiers
 
 Every unifier performs a different operation upon the trace data.
 These can largely be segmented into two categories, namely 'filtering' and 'reducing'.
 The former removes occurrences of trace data that are undesirable, and the latter groups rows and make replacements where appropriate.
+
+Each unifier implements the `TraceDataFilter` class from `typegen.unification.filter_base`, which can simply be derived from to implement the desired behaviour.
+It is automatically registered in the factory, i.e. no further updates are required.
+
+If a user should be able to reference this new unifier from the command line, then `common.ptconfig` must also be updated with a matching entry to create the unifier from.
 
 
 ### Filtering Unifiers
@@ -60,13 +65,30 @@ The former removes occurrences of trace data that are undesirable, and the latte
 
 While the [tracer implementation](tracing.md#tracer---setting-syssettrace-and-collecting-data) may deduplicate trace data after halting, when the trace data is loaded into memory, every test that shares a call-path usually holds the same information, which is redundant, and can therefore be removed.
 
+Example:
 
-<details>
-<summary>Example:</summary>
-```py
-print("Hello World")
+Configuration File: 
+
+```toml
+[[unifier]]
+name = "remove_dups"
+kind = "dedup"
 ```
-</details>
+
+Trace Data: 
+
+| FunctionName  | VarName        | TypeModule | Type |
+|---------------|----------------|------------|------|
+| test_function | local_variable | NA         | str  |
+| function      | parameter      | NA         | int  |
+| function      | parameter      | NA         | int  |
+
+After applying the filter:
+
+| FunctionName  | VarName        | TypeModule | Type |
+|---------------|----------------|------------|------|
+| test_function | local_variable | NA         | str  |
+| function      | parameter      | NA         | int  |
 
 
 #### Drop Test Functions
@@ -76,7 +98,29 @@ If the user does not want to retain this information, then this filter should be
 
 Example:
 
+Configuration File: 
 
+```toml
+[[unifier]]
+name = "ignore_test"
+kind = "drop_test"
+test_name_pat = "test_"
+```
+
+Trace Data:
+
+| Category | FunctionName  | VarName        | TypeModule | Type |
+|----------|---------------|----------------|------------|------|
+| 1        | test_function | local_variable | NA         | str  |
+| 2        | function      | parameter      | NA         | int  |
+| 2        | function      | parameter      | NA         | int  |
+
+After applying the filter:
+
+| Category | FunctionName  | VarName        | TypeModule | Type |
+|----------|---------------|----------------|------------|------|
+| 2        | function      | parameter      | NA         | int  |
+| 2        | function      | parameter      | NA         | int  |
 
 #### Min-Threshold
 
@@ -85,6 +129,106 @@ Drop all rows whose types appear less often than the minimum threshold.
 This is a simple attempt to detect API misusage in tests; if a statistically significant amount of tests use a certain signature, and a very low amount of other tests use a different one, then this unifier will remove those rows.
 
 Example:
+
+Configuration File: 
+
+```toml
+[[unifier]]
+name = "min_threshold"
+kind = "drop_min_threshold"
+min_threshold = 0.3
+```
+
+Trace Data:
+
+| Category | VarName   | TypeModule | Type |
+|----------|-----------|------------|------|
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | str  |
+
+After applying the filter:
+
+| Category | VarName   | TypeModule | Type |
+|----------|-----------|------------|------|
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+| 2        | parameter | NA         | int  |
+
+#### Drop of multiple types 
+
+Drops rows containing variables of multiple types. It can be used to drop variables which do not have any distinct type hint as they have too many different type hints.
+
+Example:
+
+Configuration File: 
+
+```toml
+
+[[unifier]]
+name = "drop_explicit_3"
+kind = "drop_mult_var"
+min_amount_types_to_drop = 3
+```
+
+Trace Data:
+
+
+| Category | VarName    | TypeModule | Type  |
+|----------|------------|------------|-------|
+| 2        | parameter  | NA         | int   |
+| 2        | parameter  | NA         | str   |
+| 2        | parameter  | NA         | bool  |
+| 2        | parameter  | NA         | float |
+| 2        | parameter2 | NA         | int   |
+| 2        | parameter2 | NA         | int   |
+| 2        | parameter2 | NA         | str   |
+
+After applying the filter:
+
+| Category | VarName    | TypeModule | Type  |
+|----------|------------|------------|-------|
+| 2        | parameter2 | NA         | int   |
+| 2        | parameter2 | NA         | int   |
+| 2        | parameter2 | NA         | str   |
+
+
+#### Keep only first 
+
+Keeps only the first row of each variable. It can be used to ensure that each variable in the trace data has only one type hint. Thus, it is often used as the last filter.
+
+Example:
+
+Configuration File: 
+
+```toml
+[[unifier]]
+name = "keep_first"
+kind = "keep_only_first"
+```
+
+Trace Data:
+
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter  | NA          | int       |
+| 2        | parameter  | NA          | str       |
+| 2        | parameter2 | module_name | SubClass  |
+| 2        | parameter2 | module_name | BaseClass |
+
+After applying the filter:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter  | NA          | int       |
+| 2        | parameter2 | module_name | SubClass  |
+
 
 
 ### Reducing Unifiers
@@ -97,8 +241,56 @@ This unifier uses the [Resolver](../misc/resolver.md) implementation to load the
 The instance can also be defined so that only type hints are replaced if the common base type is also in the trace data.
 No replacement occurs for undesirable base types, such as `abc.ABC`, `abc.ABCMeta` and `object`.
 
-Example:
 
+```toml
+[[unifier]]
+name = "unify_subtypes_relaxed"
+kind = "unify_subty"
+only_unify_if_base_was_traced = false
+```
+
+Trace Data:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter2 | pathlib | WindowsPath  |
+| 2        | parameter2 | pathlib | PosixPath |
+
+(In this example, pathlib.WindowsPath and pathlib.PosixPath inherit from pathlib.Path)
+
+After applying the filter:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter2  | pathlib          | Path       |
+
+Configuration File:
+
+```toml
+[[unifier]]
+name = "unify_subtypes_strict"
+kind = "unify_subty"
+only_unify_if_base_was_traced = true
+```
+
+Trace Data:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter  | NA          | int       |
+| 2        | parameter  | NA          | str       |
+| 2        | parameter2 | module_name | SubClass  |
+| 2        | parameter2 | module_name | BaseClass |
+
+(In this example, module_name.SubClass inherits from module_name.BaseClass)
+
+After applying the filter:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter  | NA          | int       |
+| 2        | parameter  | NA          | str       |
+| 2        | parameter2 | module_name | BaseClass |
 
 
 #### Unions
@@ -106,6 +298,30 @@ Example:
 Replaces rows containing types of the same variable in the data with the union of these types.
 
 Example:
+
+Configuration File:
+
+```toml
+[[unifier]]
+name = "unify"
+kind = "union"
+```
+
+Trace Data:
+
+| Category | VarName    | TypeModule  | Type      |
+|----------|------------|-------------|-----------|
+| 2        | parameter  | NA          | int       |
+| 2        | parameter  | NA          | str       |
+| 2        | parameter2 | module_name1 | SubClass  |
+| 2        | parameter2 | module_name2 | BaseClass |
+
+After applying the filter:
+
+| Category | VarName    | TypeModule              | Type                 |
+|----------|------------|-------------------------|----------------------|
+| 2        | parameter  | NA,NA                   | int\|str             |
+| 2        | parameter2 | module_name1,module_name2 | SubClass\|BaseClass  |
 
 
 #### Transformers
@@ -129,6 +345,8 @@ Used by the stub file generator to generate the stub CST after adding the traced
 * ImportUnionTransformer - Transforms the CST by adding the Import-From node to import `Union` from `typing` (`from typing import Union`) if the corresponding code contains a type hint which uses `Union`.
 Used by the stub file generator to add the missing import in the stub CST as `mypy.stubgen` annotates with `Union`, but does not add the corresponding import.
 
+These transformers all derive from `cst.CSTTransformer`; if a new transformer needs to be made, then deriving from this class is sufficient to reuse said transformer in an annotation generator.
+
 
 ### Type Hint Generators
 
@@ -141,19 +359,3 @@ Type Hint Generators are instances which generate the files with traced type hin
 * InlineGenerator - Overwrites the files by adding the traced type hints inline. Does not overwrite existing type hints. Uses the `TypeHintTransformer` followed by the `AddImportTransformer`.
 * EvaluationInlineGenerator - Overwrites the files by adding the inline type hints, and removing annotations for instances that do not have any trace data. Used to [evaluate the traced type hints compared with the existing type hints](evaluating.md). Uses the `RemoveAllTypeHintsTransformer`, followed by the `TypeHintTransformer` and `AddImportTransformer`.
 * StubFileGenerator - Generates `.pyi` stub files of the affected files with the traced type hints. Existing type hints are kept. Uses the `TypeHintTransformer` followed by the `AddImportTransformer`, `MyPyHintTransformer` and `ImportUnionTransformer`, in that order.
-
-
-
-
-### Developer Documentation
-
-
-
-* Drop Test Functions - Drops all data about test functions. Used to remove data about test functions to prevent test functions to be annotated by the [type hint generator](#type-hint-generators).
-* Drop of multiple types - Drops rows containing variables of multiple types.
-* Min-Threshold - Drops all rows whose types appear less often than the minimum threshold.
-* Keep only first - Keeps only the first row of each variable. Used to ensure that each variable in the trace data has only one type hint. Often used as the last filter.
-* Unify subtypes - Replaces rows containing types of the same variable in the data with their common base type. Does not replace if the common base type is `ABC`, `ABCMeta` or `object`. 
-Used to unify the traced type hints of the variables. The instance can also be defined so that only type hints are replaced if the common base type is also in the trace data.
-* Union - Replaces rows containing types of the same variable in the data with the union of these types. Used to unify the traced type hints of the variables.
-* Filter List - Applies the filters in this list on the trace data. Used to filter the trace data with multiple filters, one-by-one. This is possible due to the common base class

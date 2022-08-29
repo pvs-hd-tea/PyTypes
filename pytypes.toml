@@ -1,47 +1,8 @@
+unifier = []
+
 [pytypes]
 project = "repo"
 stdlib_path = "/usr/lib/python3.10"
-proj_path = "/home/secret/project-dir"
-venv_path = "/home/secret/.cache/pypoetry/virtualenvs/pytypes-xvtnrWJT-py3.10"
+proj_path = "/home/benji/Documents/Uni/heidelberg/04/pytype/repo"
+venv_path = "/home/benji/.cache/pypoetry/virtualenvs/pytypes-xvtnrWJT-py3.10"
 benchmark_performance = false
-
-
-[[unifier]]
-name = "remove_dups"
-kind = "dedup"
-
-[[unifier]]
-name = "ignore_test"
-kind = "drop_test"
-test_name_pat = "test_"
-
-[[unifier]]
-name = "drop_implicit_2"
-kind = "drop_mult_var"
-
-[[unifier]]
-name = "drop_explicit_5"
-kind = "drop_mult_var"
-min_amount_types_to_drop = 5
-
-[[unifier]]
-name = "unify_subtypes_relaxed"
-kind = "unify_subty"
-
-[[unifier]]
-name = "unify_subtypes_strict"
-kind = "unify_subty"
-only_unify_if_base_was_traced = true
-
-[[unifier]]
-name = "keep_first"
-kind = "keep_only_first"
-
-[[unifier]]
-name = "min_threshold"
-kind = "drop_min_threshold"
-min_threshold = 0.3
-
-[[unifier]]
-name = "union_name"
-kind = "union"

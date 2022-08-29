@@ -166,13 +166,15 @@ class Tracer(TracerBase):
 
     def _update_optimisations(self, fwm: FrameWithMetadata) -> None:
         """Remove optimisations that are marked as TriggerStatus.EXITED, and insert new ones as needed."""
-        # Remove dead optimisations
+                # Remove dead optimisations
         while self.optimisation_stack:
             top = self.optimisation_stack[-1]
             if top.status() == TriggerStatus.EXITED:
                 logger.debug(
                     f"Removing {self.optimisation_stack[-1].__class__.__name__} from optimisations"
                 )
+                self.optimisation_stack.pop()
+            else:
                 break
 
         # Appending; only one optimisation at a time

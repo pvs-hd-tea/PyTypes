@@ -30,7 +30,62 @@ Commands:
 
 ## Project layout
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+```
+├── common
+│   ├── data_file_collector.py
+│   ├── ptconfig.py
+│   ├── resolver.py
+│   └── trace_data_category.py
+├── confgen
+│   └── __init__.py
+├── constants.py
+├── docs
+├── evaluation
+│   ├── file_type_hints_collector.py
+│   ├── ipynb_evaluation_template.py
+│   ├── metric_data_calculator.py
+│   ├── normalize_types.py
+│   └── performance_data_file_collector.py
+├── fetching
+│   ├── detector.py
+│   ├── projio.py
+│   ├── repo.py
+│   └── strat.py
+├── LICENSE
+├── main.py
+├── mkdocs.yml
+├── mypy.ini
+├── poetry.lock
+├── pyproject.toml
+├── pytest.ini
+├── pytypes.toml
+├── README.md
+├── test.log
+├── tox.ini
+├── tracing
+│   ├── decorators.py
+│   ├── optimisation
+│   │   ├── base.py
+│   │   ├── enums.py
+│   │   ├── looping.py
+│   │   └── utils.py
+│   ├── tracer.py
+│   └── trace_update.py
+└── typegen
+    ├── strats
+    │   ├── eval_inline.py
+    │   ├── gen.py
+    │   ├── imports.py
+    │   ├── inline.py
+    │   └── stub.py
+    ├── trace_data_file_collector.py
+    └── unification
+        ├── drop_dupes.py
+        ├── drop_min_threshold.py
+        ├── drop_test_func.py
+        ├── drop_vars.py
+        ├── filter_base.py
+        ├── keep_only_first.py
+        ├── subtyping.py
+        └── union.py
+```

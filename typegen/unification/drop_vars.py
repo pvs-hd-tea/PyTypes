@@ -6,21 +6,13 @@ from constants import Column, Schema
 
 
 class DropVariablesOfMultipleTypesFilter(TraceDataFilter):
-    """Drops rows containing variables of multiple types."""
+    """Drops rows containing variables the amount of the corresponding types is higher or equal than the specified min amount."""
 
     ident = "drop_mult_var"
 
     min_amount_types_to_drop: int = 2
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Drops rows containing variables if the amount of inferred types is higher than self.min_amount_types_to_drop
-        and returns the processed data.
-
-        :param trace_data: The provided trace data to process.
-        :returns: The processed trace data.
-        
-        """
         subset = list(Schema.TraceData.keys())
         subset.remove(Column.VARTYPE)
         grouped_trace_data_with_unique_count = (

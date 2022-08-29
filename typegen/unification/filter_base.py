@@ -43,7 +43,7 @@ class TraceDataFilter(abc.ABC):
 
 
 class TraceDataFilterList(TraceDataFilter):
-    """Applies the filters in this list on the trace data."""
+    """Applies the filters in this list on the trace data in the order they were appended"""
 
     ident = "list"
     filters: list[TraceDataFilter] = []
@@ -55,7 +55,7 @@ class TraceDataFilterList(TraceDataFilter):
 
     def apply(self, trace_data: pd.DataFrame) -> pd.DataFrame:
         """
-        Applies the filters on the provided trace data and returns the processed trace data.
+        Chains execution of filters on the provided trace data and returns the processed trace data.
 
         :param trace_data: The provided trace data to process.
         :returns: The processed trace data.

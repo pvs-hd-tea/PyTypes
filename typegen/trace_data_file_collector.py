@@ -20,7 +20,7 @@ class TraceDataFileCollector(DataFileCollector):
         self.trace_data = self.trace_data.astype(Schema.TraceData)
 
     def collect_data(
-        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
+        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = True
     ) -> None:
         """Collects the data in a given path.
         :param path: The path of the folder containing the files. 

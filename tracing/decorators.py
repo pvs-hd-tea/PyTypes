@@ -154,7 +154,7 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
     The implementation makes sure to preserve all arguments to the decorated callable, so that features like
     py.test's monkeypatching, fixtures etc. are all still supported.
 
-    :params c: Any given callable, with any amount of arguments, and any sort of return
+    :param c: Any given callable, with any amount of arguments, and any sort of return
     """
     current_frame = inspect.currentframe()
     if current_frame is None:

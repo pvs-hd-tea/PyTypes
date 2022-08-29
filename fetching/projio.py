@@ -15,6 +15,10 @@ class Project:
 
     @functools.cached_property
     def test_directory(self) -> pathlib.Path | None:
+        """Search for directories in the repository that could contain tests
+
+        :return: List of existing candidate folders
+        """
         # tests folder in root of project?
         if (test_dir := self.root / "tests").is_dir():
             logging.info(f"Detected test folder in root of project - {test_dir}")

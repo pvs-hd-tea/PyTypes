@@ -16,7 +16,14 @@ from .projio import Project
 
 
 class Repository(ABC):
+    """Base class for facilitating fetching of resources for tracing
+    """
     def __init__(self, project_url: str):
+        """Construct an instance with an URI to the requested resource,
+        should be called from deriving classes
+
+        :param project_url: URI to the resource
+        """
         self.project_url = project_url
 
     def fetch(self, output: pathlib.Path) -> Project:
@@ -31,6 +38,14 @@ class Repository(ABC):
 
     @staticmethod
     def factory(project_url: str, fmt: str | None = None) -> "Repository":
+        """Factory method for instantiating subtypes of this class with the
+        purpose of fetching the requested resource
+
+        :param project_url: URI to the resource
+        :param fmt: Indicator / Tag for forcing factory to select certain subtype
+        :raises LookupError: When no fitting subtype can be chosen
+        :return: An appropriate subtype instance
+        """
         if fmt == GitRepository.fmt or project_url.endswith(".git"):
             logging.info(f"Interpreted {project_url} as Git repository")
             return GitRepository(project_url)
@@ -60,6 +75,12 @@ class Repository(ABC):
     def _write_to(
         self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path
     ):
+        """Private method for handling the writing of the fetched resource,
+        and any intermediate operations that may have performed, to the correct location
+
+        :param intermediary: The location of the fetched resource
+        :param output: Where to store the resource
+        """
         output.mkdir(parents=True, exist_ok=True)
 
         inter_path = pathlib.Path(intermediary.name)
@@ -71,6 +92,8 @@ class Repository(ABC):
 
 
 class GitRepository(Repository):
+    """Fetch Git Repositories from .git URIs
+    """
     def __init__(self, project_url: str):
         super().__init__(project_url)
         self.pbar = None
@@ -115,6 +138,8 @@ class GitRepository(Repository):
 
 
 class ArchiveRepository(Repository):
+    """Fetch archives from specified URI 
+    """
     def __init__(self, project_url: str):
         super().__init__(project_url)
 
@@ -156,7 +181,7 @@ class ArchiveRepository(Repository):
             # Skip moving the root folder into itself
             output_path = pathlib.Path(temp_output.name)
             in_path = output_path / paths[0].parts[0]
-            print(in_path, output_path)
+            # print(in_path, output_path)
 
             for subdir in in_path.iterdir():
                 relpath = subdir.relative_to(in_path)

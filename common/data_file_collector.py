@@ -11,12 +11,12 @@ class DataFileCollector(ABC):
 
     def __init__(self, file_pattern: str):
         """Creates an instance of DataFileCollector.
-        :param file_pattern: The file pattern of the data files."""
+        :param file_pattern: The file pattern of the data files to be collected."""
         self.file_pattern = file_pattern
         self.collected_data: list[typing.Any] = list()
 
     def collect_data(
-        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = False
+        self, path: pathlib.Path, include_also_files_in_subdirectories: bool = True
     ) -> None:
         """Collects the data in a given path.
         :param path: The path of the folder containing the files. 

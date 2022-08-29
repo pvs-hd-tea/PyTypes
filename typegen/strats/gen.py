@@ -43,6 +43,9 @@ class TypeHintGenerator(abc.ABC):
         return True
 
     def apply(self, root: pathlib.Path):
+        """Applies the type hint generation on the files in the root folder.
+        
+        :param root: The root folder path."""
         files = self.types[Column.FILENAME].unique()
         as_paths = map(pathlib.Path, files)
         for path in filter(self._is_hintable_file, as_paths):
