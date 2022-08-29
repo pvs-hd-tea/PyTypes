@@ -1,15 +1,17 @@
 import enum
 import logging
-import libcst as cst
-import libcst.matchers as m
 from abc import ABC, abstractmethod
 import pathlib
 import re
-from re import Pattern
+
+import libcst as cst
+import libcst.matchers as m
+import tqdm
 
 from .projio import Project
 import constants
-from common.ptconfig import write_config, TomlCfg, PyTypes
+
+from confgen import generate_cfg
 
 
 class ApplicationStrategy(ABC):
@@ -24,23 +26,17 @@ class ApplicationStrategy(ABC):
         self.globber = pathlib.Path.rglob if recurse_into_subdirs else pathlib.Path.glob
 
     def apply(self, project: Project):
-        assert project.test_directory is not None
+        assert project.test_directories is not None
 
-        for path in filter(
-            self._is_test_file, self.globber(project.test_directory, "*")
-        ):
-            self._apply(path)
+        for test_directory in project.test_directories:
+            test_files = list(filter(self._is_test_file, self.globber(test_directory, "*")))
+            for path in tqdm.tqdm(
+                test_files,
+                desc=f"Updating test files in {test_directory}",
+            ):
+                self._apply(path)
 
-        cfg_path = project.root / constants.CONFIG_FILE_NAME
-        pts = PyTypes(
-            project=project.root.name,
-            proj_path=project.root,
-            stdlib_path=pathlib.Path("stdlib", "goes", "here"),
-            venv_path=pathlib.Path("venv", "goes", "here"),
-        )
-
-        toml = TomlCfg(pts, unifier=None)  # type: ignore
-        write_config(cfg_path, toml)
+        generate_cfg(project.root)
 
     @abstractmethod
     def _apply(self, path: pathlib.Path) -> None:
@@ -118,10 +114,10 @@ class AppendDecoratorTransformer(cst.CSTTransformer):
 
     def __init__(
         self,
-        test_function_name_pattern: Pattern[str],
+        test_function_name_pattern: re.Pattern[str],
         sys_path_ext: cst.BaseSmallStatement,
     ):
-        self.test_function_name_pattern: Pattern[str] = test_function_name_pattern
+        self.test_function_name_pattern: re.Pattern[str] = test_function_name_pattern
         self._sys_path_ext = sys_path_ext
         self._state: AppendDecoratorTransformer.State = (
             AppendDecoratorTransformer.State.INITIAL

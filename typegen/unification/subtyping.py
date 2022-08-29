@@ -141,7 +141,7 @@ class UnifySubTypesFilter(TraceDataFilter):
         variable_type = self._resolver.type_lookup(module_name, type_name)
         if variable_type is None:
             raise ImportError(
-                f"Failed to import {module_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
+                f"Failed to import {module_name}.{type_name} from {self.stdlib_path}, {self.venv_path}, {self.proj_path}"
             )
         mros = variable_type.mro()
 

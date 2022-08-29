@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 import logging
 import os
 import requests
@@ -10,14 +9,14 @@ import shutil
 import zipfile
 
 import git
-import tqdm  # type: ignore
+import tqdm
 
 from .projio import Project
 
 
 class Repository(ABC):
-    def __init__(self, project_url: str):
-        self.project_url = project_url
+    def __init__(self, project_uri: str):
+        self.project_uri = project_uri
 
     def fetch(self, output: pathlib.Path) -> Project:
         """
@@ -30,16 +29,20 @@ class Repository(ABC):
         return Project(output)
 
     @staticmethod
-    def factory(project_url: str, fmt: str | None = None) -> "Repository":
-        if fmt == GitRepository.fmt or project_url.endswith(".git"):
-            logging.info(f"Interpreted {project_url} as Git repository")
-            return GitRepository(project_url)
+    def factory(project_uri: str, fmt: str | None = None) -> "Repository":
+        if fmt == GitRepository.fmt or project_uri.endswith(".git"):
+            logging.info(f"Interpreted {project_uri} as Git repository")
+            return GitRepository(project_uri)
 
-        if fmt == ArchiveRepository.fmt or project_url.endswith((".tar.gz", ".zip")):
-            logging.info(f"Interpreted {project_url} as an URL to an archive")
-            return ArchiveRepository(project_url)
+        if fmt == ArchiveRepository.fmt or project_uri.endswith((".tar.gz", ".zip")):
+            logging.info(f"Interpreted {project_uri} as an URL to an archive")
+            return ArchiveRepository(project_uri)
 
-        raise LookupError(f"Unsupported repository format: {project_url}")
+        if fmt == LocalFolder.fmt or pathlib.Path(project_uri).is_dir():
+            logging.info(f"Interpreted {project_uri} as a path to a local directory")
+            return LocalFolder(project_uri)
+
+        raise LookupError(f"Unsupported repository format: {project_uri}")
 
     @property
     @abstractmethod
@@ -60,20 +63,16 @@ class Repository(ABC):
     def _write_to(
         self, intermediary: tempfile.TemporaryDirectory, output: pathlib.Path
     ):
+        if output.is_dir():
+            shutil.rmtree(str(output))
         output.mkdir(parents=True, exist_ok=True)
-
-        inter_path = pathlib.Path(intermediary.name)
-        for inpath in inter_path.iterdir():
-            relpath = inpath.relative_to(inter_path)
-            outpath = output / relpath
-
-            shutil.move(inpath, outpath)
+        shutil.copytree(intermediary.name, str(output), dirs_exist_ok=True)
 
 
 class GitRepository(Repository):
-    def __init__(self, project_url: str):
-        super().__init__(project_url)
-        self.pbar = None
+    def __init__(self, project_uri: str):
+        super().__init__(project_uri)
+        self.pbar: tqdm.tqdm | None = None
 
     fmt = "Git"
 
@@ -85,7 +84,7 @@ class GitRepository(Repository):
 
         with git.Git().custom_environment(GIT_SSH_CMD=git_ssh_cmd):
             git.Repo.clone_from(
-                self.project_url,
+                self.project_uri,
                 td.name,
                 progress=self._progress(),
                 env={"GIT_SSH_COMMAND": git_ssh_cmd},
@@ -115,14 +114,14 @@ class GitRepository(Repository):
 
 
 class ArchiveRepository(Repository):
-    def __init__(self, project_url: str):
-        super().__init__(project_url)
+    def __init__(self, project_uri: str):
+        super().__init__(project_uri)
 
     fmt = "Archive"
 
     def _fetch(self) -> tempfile.TemporaryDirectory:
         td = tempfile.TemporaryDirectory()
-        if (r := requests.get(self.project_url, stream=True)).status_code == 200:
+        if (r := requests.get(self.project_uri, stream=True)).status_code == 200:
             output = pathlib.Path(td.name) / "repo.zip"
             logging.debug(f"Storing in {output}")
 
@@ -141,7 +140,7 @@ class ArchiveRepository(Repository):
             self._handle_singledir(td, paths)
 
         else:
-            logging.error(f"Failed to download archive from {self.project_url}")
+            logging.error(f"Failed to download archive from {self.project_uri}")
             raise RuntimeError(r.content)
 
         return td
@@ -156,9 +155,20 @@ class ArchiveRepository(Repository):
             # Skip moving the root folder into itself
             output_path = pathlib.Path(temp_output.name)
             in_path = output_path / paths[0].parts[0]
-            print(in_path, output_path)
 
             for subdir in in_path.iterdir():
                 relpath = subdir.relative_to(in_path)
                 to_path = output_path / pathlib.Path(*relpath.parts[1:])
                 shutil.move(subdir, to_path)
+
+
+class LocalFolder(Repository):
+    fmt = "Local"
+
+    def __init__(self, filepath: str):
+        super().__init__(filepath)
+
+    def _fetch(self) -> tempfile.TemporaryDirectory:
+        td = tempfile.TemporaryDirectory()
+        shutil.copytree(self.project_uri, td.name, dirs_exist_ok=True)
+        return td

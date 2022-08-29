@@ -19,10 +19,10 @@ cwd = pathlib.Path.cwd() / "tests" / "resource" / "sample_decorator_appender_fol
 @pytest.fixture()
 def project_folder():
     with mock.patch(
-        "fetching.projio.Project.test_directory",
+        "fetching.projio.Project.test_directories",
         new_callable=mock.PropertyMock,
     ) as m:
-        m.return_value = cwd
+        m.return_value = [cwd]
         p = Project(cwd)
 
         yield p
@@ -163,11 +163,11 @@ def test_if_test_object_searches_for_test_files_in_folders_excluding_subfolders(
 @pytest.fixture
 def future_test_project():
     with mock.patch(
-        "fetching.projio.Project.test_directory",
+        "fetching.projio.Project.test_directories",
         new_callable=mock.PropertyMock,
     ) as m:
         fake_cwd = pathlib.Path("tests", "resource", "fetching_future")
-        m.return_value = fake_cwd
+        m.return_value = [fake_cwd]
         p = Project(fake_cwd)
 
         yield p
@@ -197,11 +197,11 @@ def test_if_future_has_correct_position(
 @pytest.fixture
 def import_test_project():
     with mock.patch(
-        "fetching.projio.Project.test_directory",
+        "fetching.projio.Project.test_directories",
         new_callable=mock.PropertyMock,
     ) as m:
         fake_cwd = pathlib.Path("tests", "resource", "fetching_imports")
-        m.return_value = fake_cwd
+        m.return_value = [fake_cwd]
         p = Project(fake_cwd)
 
         yield p

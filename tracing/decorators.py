@@ -25,7 +25,7 @@ class _TemplateSubstitutes:
     func_name: str
 
 
-def _trace_callable(tracer: TracerBase, call: Callable[..., RetType]) -> str | None:
+def _trace_callable(tracer: TracerBase, call: Callable[[], RetType]) -> str | None:
     try:
         with tracer.active_trace():
             call()
@@ -92,7 +92,7 @@ def _execute_tracing(
             proj_path=config.pytypes.proj_path,
             stdlib_path=config.pytypes.stdlib_path,
             venv_path=config.pytypes.venv_path,
-            apply_opts=True,
+            apply_opts=False,
         )
 
         err = _trace_callable(tracer, lambda: c(*args, **kwargs))
@@ -125,13 +125,12 @@ def _execute_tracing(
 
     trace_output_path = config.pytypes.proj_path / trace_subst
     trace_output_path.parent.mkdir(parents=True, exist_ok=True)
+    traced.to_pickle(str(trace_output_path))
 
     if err is not None:
         err_output_path = trace_output_path.with_suffix(".err")
-        err_output_path.open("w").write(err)
-
-    else:
-        traced.to_pickle(str(trace_output_path))
+        with err_output_path.open("w") as f:
+            f.write(err)
 
     return traced, benchmarks
 
@@ -164,9 +163,10 @@ def trace(c: Callable[..., RetType]) -> _Traceable:
     assert module is not None  # we can never come from a builtin
     module_name = module.__name__.replace(".", os.path.sep)
 
+    cfg = ptconfig.load_config(pathlib.Path(constants.CONFIG_FILE_NAME))
+
     @functools.wraps(c)
     def wrapper(*args, **kwargs) -> tuple[pd.DataFrame, np.ndarray | None]:
-        cfg = ptconfig.load_config(pathlib.Path(constants.CONFIG_FILE_NAME))
         subst = _TemplateSubstitutes(
             project=cfg.pytypes.project,
             test_case=module_name,

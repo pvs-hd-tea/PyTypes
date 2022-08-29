@@ -93,7 +93,7 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
     cfg = toml.load(config_path.open())
 
     try:
-        return dacite.from_dict(
+        deserialised = dacite.from_dict(
             data_class=TomlCfg,
             data=cfg,
             config=dacite.Config(
@@ -106,6 +106,18 @@ def load_config(config_path: pathlib.Path) -> TomlCfg:
     except DaciteError as e:
         print(f"Failed to load config from {config_path}")
         raise e
+
+    pt = deserialised.pytypes
+
+    if pt.venv_path.is_relative_to(pt.proj_path):
+        raise ValueError(
+            "The provided virtualenv path in your config file may not be relative to the project's path"
+        )
+    if pt.stdlib_path.is_relative_to(pt.proj_path):
+        raise ValueError(
+            "The provided standard library path in your config file may not be relative to the project's path"
+        )
+    return deserialised
 
 
 def write_config(config_path: pathlib.Path, pttoml: TomlCfg):

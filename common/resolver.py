@@ -32,8 +32,6 @@ def _attempt_module_lookup(
 
     except FileNotFoundError:
         logger.debug(f"Could not import {module_name} from {str(root / lookup_path)}")
-    #except ModuleNotFoundError:
-    #    logger.debug(f"No module named {module_name} in {str(root / lookup_path)}")
 
     return None
 
