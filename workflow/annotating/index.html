@@ -36,6 +36,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -382,6 +384,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#drop-of-multiple-types" class="md-nav__link">
+    Drop of multiple types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keep-only-first" class="md-nav__link">
+    Keep only first
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -424,13 +440,6 @@
           <li class="md-nav__item">
   <a href="#type-hint-generators" class="md-nav__link">
     Type Hint Generators
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#developer-documentation" class="md-nav__link">
-    Developer Documentation
   </a>
   
 </li>
@@ -531,6 +540,124 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/fetching.md" class="md-nav__link">
+        Fetching
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/tracing/" class="md-nav__link">
+        Tracing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/optimising/" class="md-nav__link">
+        Optimising
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/typegen/" class="md-nav__link">
+        Annotating
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/evaluation/" class="md-nav__link">
+        Evaluation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/common/" class="md-nav__link">
+        Common
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -619,6 +746,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#drop-of-multiple-types" class="md-nav__link">
+    Drop of multiple types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keep-only-first" class="md-nav__link">
+    Keep only first
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -661,13 +802,6 @@
           <li class="md-nav__item">
   <a href="#type-hint-generators" class="md-nav__link">
     Type Hint Generators
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#developer-documentation" class="md-nav__link">
-    Developer Documentation
   </a>
   
 </li>
@@ -731,7 +865,7 @@ From this per-file basis trace data, annotations (also called type hints) can be
 <p>The trace data must be cleaned and appropriately unified to remove redundant data so that at most one type hint can be associated with each traced instance. 
 To this extent, <a href="#unifiers">unifiers</a> with a common interface have been implemented to cover unification needs.
 The unifiers are applied to the trace data in the order specified on the command line; the value given to each <code>-u</code> flag references a unifier by the <code>name</code> key given in the <a href="../../misc/config/#example">config file</a>.</p>
-<p>The examples in the following section only contain <a href="../tracing/#api">"Category", "VarName", "TypeModule" and "Type"</a> for brevity's sake.</p>
+<p>The examples in the following section will contain <a href="../tracing/#api">"Category", "FunctionName", "VarName", "TypeModule" and "Type"</a> at a minimum for brevity's sake.</p>
 <h2 id="unifiers">Unifiers<a class="headerlink" href="#unifiers" title="Permanent link">&para;</a></h2>
 <p>Every unifier performs a different operation upon the trace data.
 These can largely be segmented into two categories, namely 'filtering' and 'reducing'.
@@ -739,20 +873,408 @@ The former removes occurrences of trace data that are undesirable, and the latte
 <h3 id="filtering-unifiers">Filtering Unifiers<a class="headerlink" href="#filtering-unifiers" title="Permanent link">&para;</a></h3>
 <h4 id="drop-duplicates">Drop Duplicates<a class="headerlink" href="#drop-duplicates" title="Permanent link">&para;</a></h4>
 <p>While the <a href="../tracing/#tracer---setting-syssettrace-and-collecting-data">tracer implementation</a> may deduplicate trace data after halting, when the trace data is loaded into memory, every test that shares a call-path usually holds the same information, which is redundant, and can therefore be removed.</p>
-<details>
-<summary>Example:</summary>
-<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World&quot;</span><span class="p">)</span>
+<p>Example:</p>
+<p>Configuration File: </p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;remove_dups&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;dedup&quot;</span><span class="w"></span>
 </code></pre></div>
-</details>
-
+<p>Trace Data: </p>
+<table>
+<thead>
+<tr>
+<th>FunctionName</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>test_function</td>
+<td>local_variable</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>FunctionName</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>test_function</td>
+<td>local_variable</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+</tbody>
+</table>
 <h4 id="drop-test-functions">Drop Test Functions<a class="headerlink" href="#drop-test-functions" title="Permanent link">&para;</a></h4>
 <p>The project always applies its <a href="../fetching/#decorators.trace">decorators to test functions and methods</a>, which leads to trace information about the test also being stored, and possibly generated during the <a href="#type-hint-generators">annotation process</a>.
 If the user does not want to retain this information, then this filter should be applied, which simply drops all rows that reference testing callables.</p>
 <p>Example:</p>
+<p>Configuration File: </p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ignore_test&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;drop_test&quot;</span><span class="w"></span>
+<span class="n">test_name_pat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;test_&quot;</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>FunctionName</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>test_function</td>
+<td>local_variable</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>FunctionName</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>function</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+</tbody>
+</table>
 <h4 id="min-threshold">Min-Threshold<a class="headerlink" href="#min-threshold" title="Permanent link">&para;</a></h4>
 <p>Drop all rows whose types appear less often than the minimum threshold. </p>
 <p>This is a simple attempt to detect API misusage in tests; if a statistically significant amount of tests use a certain signature, and a very low amount of other tests use a different one, then this unifier will remove those rows.</p>
 <p>Example:</p>
+<p>Configuration File: </p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;min_threshold&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;drop_min_threshold&quot;</span><span class="w"></span>
+<span class="n">min_threshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.3</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+</tbody>
+</table>
+<h4 id="drop-of-multiple-types">Drop of multiple types<a class="headerlink" href="#drop-of-multiple-types" title="Permanent link">&para;</a></h4>
+<p>Drops rows containing variables of multiple types. It can be used to drop variables which do not have any distinct type hint as they have too many different type hints.</p>
+<p>Example:</p>
+<p>Configuration File: </p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;drop_explicit_3&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;drop_mult_var&quot;</span><span class="w"></span>
+<span class="n">min_amount_types_to_drop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>float</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+</tbody>
+</table>
+<h4 id="keep-only-first">Keep only first<a class="headerlink" href="#keep-only-first" title="Permanent link">&para;</a></h4>
+<p>Keeps only the first row of each variable. It can be used to ensure that each variable in the trace data has only one type hint. Thus, it is often used as the last filter.</p>
+<p>Example:</p>
+<p>Configuration File: </p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;keep_first&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;keep_only_first&quot;</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>SubClass</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>BaseClass</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>SubClass</td>
+</tr>
+</tbody>
+</table>
 <h3 id="reducing-unifiers">Reducing Unifiers<a class="headerlink" href="#reducing-unifiers" title="Permanent link">&para;</a></h3>
 <h4 id="subtypes-common-interfaces">Subtypes &amp; Common Interfaces<a class="headerlink" href="#subtypes-common-interfaces" title="Permanent link">&para;</a></h4>
 <p>Replaces rows containing types of the same variable in the data with their earliest common base type.
@@ -760,9 +1282,151 @@ This unifier uses the <a href="../../misc/resolver/">Resolver</a> implementation
 The instance can also be defined so that only type hints are replaced if the common base type is also in the trace data.
 No replacement occurs for undesirable base types, such as <code>abc.ABC</code>, <code>abc.ABCMeta</code> and <code>object</code>.</p>
 <p>Example:</p>
+<p>Configuration File:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify_subtypes_strict&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify_subty&quot;</span><span class="w"></span>
+<span class="n">only_unify_if_base_was_traced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>SubClass</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>BaseClass</td>
+</tr>
+</tbody>
+</table>
+<p>(In this example, module_name.SubClass inherits from module_name.BaseClass.)</p>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>BaseClass</td>
+</tr>
+</tbody>
+</table>
 <h4 id="unions">Unions<a class="headerlink" href="#unions" title="Permanent link">&para;</a></h4>
 <p>Replaces rows containing types of the same variable in the data with the union of these types.</p>
 <p>Example:</p>
+<p>Configuration File:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[[unifier]]</span><span class="w"></span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unify&quot;</span><span class="w"></span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;union&quot;</span><span class="w"></span>
+</code></pre></div>
+<p>Trace Data:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>int</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA</td>
+<td>str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>SubClass</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name</td>
+<td>BaseClass</td>
+</tr>
+</tbody>
+</table>
+<p>After applying the filter:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>VarName</th>
+<th>TypeModule</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>parameter</td>
+<td>NA,NA</td>
+<td>int|str</td>
+</tr>
+<tr>
+<td>2</td>
+<td>parameter2</td>
+<td>module_name,module_name</td>
+<td>SubClass|BaseClass</td>
+</tr>
+</tbody>
+</table>
 <h4 id="transformers">Transformers<a class="headerlink" href="#transformers" title="Permanent link">&para;</a></h4>
 <p>To apply changes to the files / add type hints to the code, the code in the file is parsed into a CST. 
 Modifying the CSTs is done by transformers which visit the nodes in the trees and modify these if necessary. 
@@ -797,17 +1461,6 @@ Which type hint generator is used is specified by the <code>--gen-strat</code> o
 <li>InlineGenerator - Overwrites the files by adding the traced type hints inline. Does not overwrite existing type hints. Uses the <code>TypeHintTransformer</code> followed by the <code>AddImportTransformer</code>.</li>
 <li>EvaluationInlineGenerator - Overwrites the files by adding the inline type hints, and removing annotations for instances that do not have any trace data. Used to <a href="../evaluating/">evaluate the traced type hints compared with the existing type hints</a>. Uses the <code>RemoveAllTypeHintsTransformer</code>, followed by the <code>TypeHintTransformer</code> and <code>AddImportTransformer</code>.</li>
 <li>StubFileGenerator - Generates <code>.pyi</code> stub files of the affected files with the traced type hints. Existing type hints are kept. Uses the <code>TypeHintTransformer</code> followed by the <code>AddImportTransformer</code>, <code>MyPyHintTransformer</code> and <code>ImportUnionTransformer</code>, in that order.</li>
-</ul>
-<h3 id="developer-documentation">Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Drop Test Functions - Drops all data about test functions. Used to remove data about test functions to prevent test functions to be annotated by the <a href="#type-hint-generators">type hint generator</a>.</li>
-<li>Drop of multiple types - Drops rows containing variables of multiple types.</li>
-<li>Min-Threshold - Drops all rows whose types appear less often than the minimum threshold.</li>
-<li>Keep only first - Keeps only the first row of each variable. Used to ensure that each variable in the trace data has only one type hint. Often used as the last filter.</li>
-<li>Unify subtypes - Replaces rows containing types of the same variable in the data with their common base type. Does not replace if the common base type is <code>ABC</code>, <code>ABCMeta</code> or <code>object</code>. 
-Used to unify the traced type hints of the variables. The instance can also be defined so that only type hints are replaced if the common base type is also in the trace data.</li>
-<li>Union - Replaces rows containing types of the same variable in the data with the union of these types. Used to unify the traced type hints of the variables.</li>
-<li>Filter List - Applies the filters in this list on the trace data. Used to filter the trace data with multiple filters, one-by-one. This is possible due to the common base class</li>
 </ul>
 
 
